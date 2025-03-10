@@ -10,7 +10,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.print("Enter Employee ID: ");
+            System.out.print("Enter username: ");
             String name = scanner.nextLine();
 
             System.out.print("Enter Password: ");
