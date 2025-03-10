@@ -1,47 +1,88 @@
 package myPackage;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.sql.*;
 
 public class EmployeeService {
+    
+    public String login(String name, String password) {
+    String query = "SELECT role, password_hash FROM employees WHERE name = ?";
 
-    public boolean login(String name, String password, String role) {
-        String query = "SELECT * FROM employees WHERE name = ? AND password_hash = ? AND role = ?";
+    try (Connection conn = EmployeeDB.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+        stmt.setString(1, name);
+        ResultSet rs = stmt.executeQuery();
+
+        if (rs.next()) {
+            String storedHash = rs.getString("password_hash");
+            if (storedHash.equals(PasswordUtil.hashPassword(password))) { 
+                return rs.getString("role"); // ✅ Return role if login successful
+            }
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+
+    public boolean addEmployee(String empId, String name, String password, String role) {
+    String query = "INSERT INTO employees (emp_id, name, password_hash, role) VALUES (?, ?, ?, ?)";
+
+    try (Connection conn = EmployeeDB.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+        stmt.setString(1, empId);
+        stmt.setString(2, name);
+        stmt.setString(3, PasswordUtil.hashPassword(password));
+        stmt.setString(4, role);  // ✅ Store role in DB
+       
+        return stmt.executeUpdate() > 0; 
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
+    public void viewEmployees() {
+        String query = "SELECT emp_id, name FROM employees"; // ✅ Removed `role`
         
         try (Connection conn = EmployeeDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
             
-            stmt.setString(1, name);
-            stmt.setString(2, hashPassword(password)); // Hash the input password before checking
-            stmt.setString(3, role);
+            System.out.println("\nEmployees List:");
+            while (rs.next()) {
+                System.out.println("ID: " + rs.getString("emp_id") +
+                                   " | Name: " + rs.getString("name"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-            ResultSet rs = stmt.executeQuery();
-            return rs.next(); // If a record exists, login is successful
-            
+    public boolean removeEmployee(String name) {
+        String query = "DELETE FROM employees WHERE emp_id = ?";
+
+        try (Connection conn = EmployeeDB.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, name);
+            return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    // Method to hash passwords using SHA-256
-    private String hashPassword(String password) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes());
-            StringBuilder hexString = new StringBuilder();
+    public boolean editEmployee(String empId, String newName, String newPassword) {
+        String query = "UPDATE employees SET name = ?, password_hash = ? WHERE emp_id = ?";
 
-            for (byte b : hash) {
-                hexString.append(String.format("%02x", b)); // Convert bytes to hex
-            }
-
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error: Unable to hash password", e);
+        try (Connection conn = EmployeeDB.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, newName);
+            stmt.setString(2, PasswordUtil.hashPassword(newPassword));
+            stmt.setString(3, empId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }
