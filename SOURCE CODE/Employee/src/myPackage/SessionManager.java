@@ -24,6 +24,6 @@ public class SessionManager {
     public static void logout() {
         loggedInUser = null;
         role = null;
-        System.out.println("Logged out successfully!");
+        
     }
 }

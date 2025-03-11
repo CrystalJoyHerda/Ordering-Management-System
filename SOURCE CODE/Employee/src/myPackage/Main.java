@@ -1,30 +1,29 @@
 package myPackage;
 
 import java.util.Scanner;
-import myPackage.AdminDashboard;
-import myPackage.EmployeeService;
 
 public class Main {
     public static void main(String[] args) {
         EmployeeService employeeService = new EmployeeService();
-        Scanner scanner = new Scanner(System.in);
+        ManageEmployees manageEmployees = new ManageEmployees(employeeService); 
+        Scanner sc = new Scanner(System.in);
 
         while (true) {
             System.out.print("Enter username: ");
-            String name = scanner.nextLine();
+            String name = sc.nextLine();
 
             System.out.print("Enter Password: ");
-            String password = scanner.nextLine();
+            String password = sc.nextLine();
 
-            String role = employeeService.login(name, password); // ✅ Get role
+            String role = employeeService.login(name, password);
 
             if (role != null) {
-                SessionManager.setUser(name, role); // ✅ Store role in session
+                SessionManager.setUser(name, role); 
                 System.out.println("Login successful! Welcome, " + name + "!");
 
-                if (role.equalsIgnoreCase("admin")) { // ✅ Only admins can access dashboard
-                    AdminDashboard adminDashboard = new AdminDashboard(employeeService);
-                    adminDashboard.showDashboard(scanner);
+                if (role.equalsIgnoreCase("admin")) { 
+                    AdminDashboard adminDashboard = new AdminDashboard(manageEmployees);
+                    adminDashboard.showDashboard(sc);
                 } else {
                     System.out.println("You do not have admin privileges.");
                 }
@@ -32,13 +31,13 @@ public class Main {
             } else {
                 System.out.println("❌ Invalid Credentials.");
                 System.out.print("Try again? (yes/no): ");
-                String choice = scanner.nextLine().trim().toLowerCase();
+                String choice = sc.nextLine().trim().toLowerCase();
                 if (!choice.equals("yes")) {
                     System.out.println("Exiting...");
                     break;
                 }
             }
         }
-        scanner.close();
+        sc.close();
     }
 }
