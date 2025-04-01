@@ -1,0 +1,28 @@
+html
+<!DOCTYPE html>
+<html> 
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="globals.css" />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div class="login-screen">
+            <div class="div">
+                    <div class="overlap-group">
+                        <p class="p">BYTE &amp; BEANS BY JJOC</p>
+                        <p class="text-wrapper-2">"Byte into Flavor, Brewed to Perfection!"</p>
+                        <img class="brewlogo" src="img/brewlogo.png" />
+                 </div>
+                <div class="overlap">
+                    <div class="text-wrapper-3">Login</div>
+                    <div class="div-wrapper"><div class="text-wrapper-4">username</div>
+                    <div class="div-wrapper-2"><div class="text-wrapper-5">password</div>
+                    <div class="overlap-2"><div class="text-wrapper-6">Login</div>
+                   
+                    <div class="text-wrapper-7">forget password?</div>
+                 </div>
+            </div>
+        </div>        
+    </body>
+</html>
