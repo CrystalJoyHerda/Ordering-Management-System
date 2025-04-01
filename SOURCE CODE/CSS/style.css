@@ -1,0 +1,176 @@
+.login-screen {
+    background-color: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+}
+
+.login-screen .div {
+    background-color: white;
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+}
+
+.login-screen .overlap-group {
+    position: absolute;
+    width: 1093px;
+    height: 817px;
+    top: 8px;
+    left: 943px;
+}
+
+/* for byte & bean heading*/
+.login-screen .p {
+    position: absolute;
+    width: 2000px;
+    top: 140px;
+    left: -170px;
+    font-family: "Anton-Regular", Helvetica;
+    font-weight: 800;
+    color: black;
+    font-size: 40px;
+    letter-spacing: 1px;
+    line-height: normal;
+}
+
+/* for byte into flavor heading*/
+.login-screen .text-wrapper-2 {
+    position: absolute;
+    width: 960px;
+    top: 220px;
+    left: -90px;
+    font-family: "Anton-Regular", Helvetica;
+    font-weight: 700;
+    color: rgb(70, 40, 16);
+    font-size: 20px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+/* LOGO */
+.login-screen .brewlogo {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    top: 0px;
+    left: 0px;
+    object-fit: cover;
+}
+
+/* GRAY BG */
+.login-screen .overlap {
+    position: absolute;
+    width: 400px;
+    height: 300px;
+    top: 280px;
+    left: 850px;
+    background-color: #00000081;
+    border-radius: 50px;
+}
+
+/* LOGIN TYPE */
+.login-screen .text-wrapper-3 {
+    position: absolute;
+    width: 1000px;
+    top: 20px;
+    left: 30px;
+    font-family: "Abhaya Libre ExtraBold-Regular", Helvetica;
+    font-weight: 700;
+    color: black;
+    font-size: 30px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+/* USERNAME BUTTON */
+.login-screen .div-wrapper {
+    position: absolute;
+    width: 300px;
+    height: 40px;
+    top: 70px;
+    left: 50px;
+    background-color: #fff7f7;
+    border-radius: 50px;
+}
+
+/* USERNAME TYPE */
+.login-screen .text-wrapper-4 {
+    position: absolute;
+    width: 300px;
+    top: 8px;
+    left: 20px;
+    font-family: "Barlow Semi Condensed-Regular", Helvetica;
+    font-weight: 400;
+    color: black;
+    font-size: 18px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+/* LOGIN BUTTON*/
+.login-screen .overlap-2 {
+    position: absolute;
+    width: 150px;
+    height: 50px;
+    top: 80px;
+    left: 78px;
+    background-color: #fff7f7;
+    border-radius: 200px;
+}
+
+/*PASSWORD BUTTON */
+.login-screen .div-wrapper-2 {
+    position: absolute;
+    width: 300px;
+    height: 40px;
+    top: 60px;
+    left: 0px;
+    background-color: #fff7f7;
+    border-radius: 200px;
+}
+/* PASSWORD TYPE */
+.login-screen .text-wrapper-5 {
+    position: absolute;
+    width: 300px;
+    top: 8px;
+    left: 20px;
+    font-family: "Barlow Semi Condensed-Regular", Helvetica;
+    font-weight: 400;
+    color: black;
+    font-size: 18px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+/* login type */
+.login-screen .text-wrapper-6 {
+    position: absolute;
+    width: 150px;
+    top: 5px;
+    left: 35px;
+    font-family: "Abhya Libre ExtraBold-Regular", Helvetica;
+    font-weight: 700;
+    color: black;
+    font-size: 30px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+/*forget password*/
+.login-screen .text-wrapper-7 {
+    position: absolute;
+    width: 500px;
+    top: -40px;
+    left: 90px;
+    font-family: "Abhaya Libre ExtraBold-Regular", Helvetica;
+    font-weight: 700;
+    color: #000000;
+    font-size: 15px;
+    letter-spacing: 0;
+    line-height: normal;
+}
+
+
+
