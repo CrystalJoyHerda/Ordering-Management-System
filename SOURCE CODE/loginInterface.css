@@ -1,0 +1,97 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align content to the top */
+    height: 100vh;
+    background-color: #f0f0f0;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Center the content vertically */
+    width: 100%; /* Full width */
+    max-width: 500px; /* Increased width for responsiveness */
+    padding: 30px; /* Increased padding for spacing */
+    background-color: white; /* Optional: Add a background color */
+    border-radius: 20px; /* Optional: Rounded corners */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Optional: Add shadow for better visibility */
+    margin-top: 200px; /* Increased margin to move the form lower */
+}
+
+h1 {
+    font-size: 28px; /* Increased font size */
+    font-weight: bold;
+    margin-bottom: 10px; /* Increased spacing */
+}
+
+.subtitle {
+    font-size: 16px; /* Increased font size */
+    color: #804000;
+    margin-bottom: 25px; /* Increased spacing */
+}
+
+.login-box {
+    background: gray;
+    padding: 40px; /* Increased padding */
+    border-radius: 20px; /* Slightly larger rounded corners */
+    width: 100%; /* Full width of the container */
+    max-width: 350px; /* Increased max width */
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.15); /* Slightly larger shadow */
+}
+
+.login-box h2 {
+    font-size: 24px; /* Increased font size */
+    font-weight: bold;
+    margin-bottom: 20px; /* Increased spacing */
+}
+
+.login-box input {
+    width: 100%;
+    padding: 15px; /* Increased padding */
+    margin: 15px 0; /* Increased spacing */
+    border: none;
+    border-radius: 12px; /* Slightly larger rounded corners */
+    background: #fff7f7;
+    text-align: center;
+    font-size: 16px; /* Increased font size */
+}
+
+.login-box button {
+    width: 100%;
+    padding: 15px; /* Increased padding */
+    background: white;
+    color: black;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px; /* Slightly larger rounded corners */
+    cursor: pointer;
+    margin-top: 15px; /* Increased spacing */
+    font-size: 16px; /* Increased font size */
+}
+
+.login-box button:hover {
+    background: lightgray;
+}
+
+.forgot-password {
+    display: block;
+    margin-top: 20px; /* Increased spacing */
+    font-size: 16px; /* Increased font size */
+    color: black;
+    text-decoration: none;
+    text-align: center; /* Center the text */
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
