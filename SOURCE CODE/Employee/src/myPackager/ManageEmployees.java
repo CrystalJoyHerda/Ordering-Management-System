@@ -1,7 +1,4 @@
-
-package myPackage;
-
-
+package myPackager;
 import java.util.Scanner;
 
 public class ManageEmployees {
@@ -38,7 +35,7 @@ public class ManageEmployees {
                     removeEmployee(scanner);
                     break;
                 case 5:
-                    return; 
+                    return;
                 default:
                     System.out.println(" Invalid choice. Try again.");
             }
@@ -103,5 +100,5 @@ public class ManageEmployees {
             System.out.println(" Failed to remove employee. ID may not exist.");
         }
     }
-}
 
+}

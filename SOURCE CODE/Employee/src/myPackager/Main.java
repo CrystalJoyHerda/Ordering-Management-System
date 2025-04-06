@@ -1,11 +1,11 @@
-package myPackage;
+package myPackager;
 
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         EmployeeService employeeService = new EmployeeService();
-        ManageEmployees manageEmployees = new ManageEmployees(employeeService); 
+        ManageEmployees manageEmployees = new ManageEmployees(employeeService);
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -18,10 +18,10 @@ public class Main {
             String role = employeeService.login(name, password);
 
             if (role != null) {
-                SessionManager.setUser(name, role); 
+                SessionManager.setUser(name, role);
                 System.out.println("Login successful! Welcome, " + name + "!");
 
-                if (role.equalsIgnoreCase("admin")) { 
+                if (role.equalsIgnoreCase("admin")) {
                     AdminDashboard adminDashboard = new AdminDashboard(manageEmployees);
                     adminDashboard.showDashboard(sc);
                 } else {
@@ -39,5 +39,6 @@ public class Main {
             }
         }
         sc.close();
+
     }
 }

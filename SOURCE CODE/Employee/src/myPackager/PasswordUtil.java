@@ -1,10 +1,9 @@
-package myPackage;
-
+package myPackager;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class PasswordUtil {
-    public static String hashPassword(String password) {
+     public static String hashPassword(String password) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hash = md.digest(password.getBytes());
@@ -17,4 +16,5 @@ public class PasswordUtil {
             throw new RuntimeException(e);
         }
     }
+
 }

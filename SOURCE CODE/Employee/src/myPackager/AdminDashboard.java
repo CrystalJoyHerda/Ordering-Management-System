@@ -1,9 +1,9 @@
-package myPackage;
+package myPackager;
 
 import java.util.Scanner;
 
 public class AdminDashboard {
-    private final ManageEmployees manageEmployees; 
+     private final ManageEmployees manageEmployees; 
 
     public AdminDashboard(ManageEmployees manageEmployees) {
         this.manageEmployees = manageEmployees;
@@ -48,4 +48,5 @@ public class AdminDashboard {
     private void viewStocks() {
         System.out.println("📦 Viewing stocks data... (Functionality not implemented yet)");
     }
+
 }

@@ -1,5 +1,4 @@
-package myPackage;
-
+package myPackager;
 public class SessionManager {
     private static String loggedInUser = null;
     private static String role = null;
@@ -24,6 +23,5 @@ public class SessionManager {
     public static void logout() {
         loggedInUser = null;
         role = null;
-        
     }
 }
