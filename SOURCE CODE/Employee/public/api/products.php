@@ -38,10 +38,11 @@ error_log("products.php - Input data: " . file_get_contents('php://input'));
 $productModel = new ProductModel();
 
 // Check for method override
-$requestMethod = $_SERVER['REQUEST_METHOD'];
 if ($requestMethod === 'POST' && isset($_GET['_method']) && $_GET['_method'] === 'PUT') {
     $requestMethod = 'PUT';
 }
+
+error_log("products.php - Request method before switch: " . $requestMethod);
 
 // Process request based on method
 switch ($requestMethod) {
@@ -93,6 +94,7 @@ switch ($requestMethod) {
         error_log("products.php - Decoded input data: " . json_encode($data));
         
         $result = $productModel->updateProduct($_GET['id'], $data);
+        error_log("products.php - Update result: " . json_encode($result));
         echo json_encode($result);
         break;
         
