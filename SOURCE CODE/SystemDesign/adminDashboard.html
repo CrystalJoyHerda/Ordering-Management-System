@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Byte & Beans</title>
+    <link rel="stylesheet" href="adminDashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <div class="header-content">
+                <h1>Admin Dashboard</h1>
+                <div class="user-info">
+                    Welcome, <span id="admin-name"></span>
+                    <button id="logout">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="crud-section">
+                <h2>Product Management</h2>
+                <button id="add-product">Add New Product</button>
+                
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Category</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-list">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+
+        <!-- Add/Edit Product Modal -->
+        <div id="product-modal" class="modal">
+            <div class="modal-content">
+                <h3>Add/Edit Product</h3>
+                <form id="product-form">
+                    <input type="hidden" id="product-id">
+                    <div class="form-group">
+                        <label for="product-name">Product Name</label>
+                        <input type="text" id="product-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">Price</label>
+                        <input type="number" id="product-price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-category">Category</label>
+                        <select id="product-category" required>
+                            <option value="coffee">Coffee</option>
+                            <option value="food">Food</option>
+                            <option value="dessert">Dessert</option>
+                        </select>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit">Save</button>
+                        <button type="button" onclick="closeModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="adminDashboard.js"></script>
+</body>
+</html>

@@ -9,17 +9,13 @@
             "name": "Main",
             "request": "launch",
             "mainClass": "Main",
-            "projectName": "Ordering-Management-System_5e966554"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
+            "classpath": [
+                "${workspaceFolder}/SOURCE CODE/Employee/src",
+                "${workspaceFolder}/SOURCE CODE/Employee/lib/mysql-connector-java-9.2.0.jar"
+            ]
         }
     ],
     "java.project.referencedLibraries": [
-        "lib/mysql-connector-java.jar"
+        "SOURCE CODE/Employee/lib/mysql-connector-java-9.2.0.jar"
     ]
 }

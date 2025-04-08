@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,25 +8,36 @@
     <link rel="stylesheet" href="loginInterface.css">
 </head>
 <body>
-
     <div class="container">
         <h1>BYTE & BEANS BY JJOC</h1>
         <p class="subtitle">"Byte into Flavor, Brewed to Perfection!"</p>
 
-        <div class="login-box">
-            <h2>Login</h2>
-            <form>
-                <input id="username" type="text" placeholder="username" required>
-                <input id="password" type="password" placeholder="password" required>
+        <div class="login-box" role="main" aria-labelledby="login-title">
+            <h2 id="login-title">Login</h2>
+            <form id="login-form" autocomplete="on">
+                <input id="username" 
+                       name="username"
+                       type="text" 
+                       placeholder="Username" 
+                       required 
+                       minlength="3"
+                       aria-label="Username"
+                       autocomplete="username">
+                <input id="password" 
+                       name="password"
+                       type="password" 
+                       placeholder="Password" 
+                       required 
+                       minlength="4"
+                       aria-label="Password"
+                       autocomplete="current-password">
                 <button id="login-button" type="submit">Login</button>
             </form>
+            <div id="error-message" role="alert"></div>
+            <a href="#" class="forgot-password" aria-label="Forgot password">Forgot password?</a>
         </div>
-
-        <p id="error-message" style="display: none; color: red; font-size: 14px; text-align: center;"></p>
-        <a href="#" class="forgot-password">forgot password?</a>
     </div>
 
-    <!-- Connect the JavaScript file -->
     <script src="loginInterface.js"></script>
 </body>
 </html>

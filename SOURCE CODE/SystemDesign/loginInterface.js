@@ -1,43 +1,79 @@
 // Wait for the DOM to load
 document.addEventListener("DOMContentLoaded", () => {
-    // Get references to form elements
-    const usernameInput = document.querySelector("#username"); // Add an ID to your username input
-    const passwordInput = document.querySelector("#password"); // Add an ID to your password input
-    const loginButton = document.querySelector("#login-button"); // Add an ID to your login button
-    const errorMessage = document.querySelector("#error-message"); // Add an ID for error messages
+    // Check if already logged in - redirect immediately if so
+    const userData = sessionStorage.getItem("user");
+    if (userData) {
+        const user = JSON.parse(userData);
+        redirectToDashboard(user);
+        return;
+    }
 
-    // Add click event listener to the login button
-    loginButton.addEventListener("click", (event) => {
-        event.preventDefault(); // Prevent form submission
+    const loginForm = document.getElementById("login-form");
+    const errorMessage = document.getElementById("error-message");
+    
+    console.log("Login form initialized");
 
-        // Get input values
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
+    loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        console.log("Form submitted");
 
-        // Validate inputs
-        if (!username || !password) {
-            showError("Username and password cannot be empty.");
-            return;
-        }
+        // Show loading indicator
+        const submitButton = loginForm.querySelector("button[type='submit']");
+        const originalButtonText = submitButton.textContent;
+        submitButton.textContent = "Logging in...";
+        submitButton.disabled = true;
 
-        if (password.length < 6) {
-            showError("Password must be at least 6 characters long.");
-            return;
-        }
+        const formData = {
+            username: document.getElementById("username").value.trim(),
+            password: document.getElementById("password").value.trim()
+        };
 
-        // Simulate login (replace this with actual server-side authentication)
-        if (username === "admin" && password === "password123") {
-            alert("Login successful!");
-            // Redirect to another page or perform other actions
-            window.location.href = "dashboard.html"; // Example redirect
-        } else {
-            showError("Invalid username or password.");
+        console.log("Sending data:", formData);
+
+        try {
+            const response = await fetch("http://localhost/Employee/public/api/auth.php?action=login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(formData)
+            });
+
+            console.log("Response status:", response.status);
+            
+            const data = await response.json();
+            console.log("Response data:", data);
+
+            if (data.status === "success") {
+                // Store user data in session storage
+                sessionStorage.setItem("user", JSON.stringify(data.data));
+                
+                // Redirect to appropriate dashboard
+                redirectToDashboard(data.data);
+            } else {
+                errorMessage.textContent = data.message || "Login failed";
+                errorMessage.style.display = "block";
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            errorMessage.textContent = "Connection error. Please try again.";
+            errorMessage.style.display = "block";
+        } finally {
+            // Restore button state
+            submitButton.textContent = originalButtonText;
+            submitButton.disabled = false;
         }
     });
-
-    // Function to display error messages
-    function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.style.display = "block"; // Ensure the error message is visible
-    }
 });
+
+// Function to handle dashboard redirection
+function redirectToDashboard(user) {
+    console.log("Redirecting user with role:", user.role);
+    
+    if (user.role === "admin") {
+        window.location.href = "adminDashboard.html";
+    } else {
+        window.location.href = "dashboard.html";
+    }
+}
