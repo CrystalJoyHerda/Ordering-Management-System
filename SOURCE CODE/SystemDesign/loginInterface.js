@@ -23,15 +23,17 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Logging in...";
         submitButton.disabled = true;
 
+        // CHANGE HERE: Updated to use 'name' instead of 'username' to match our PHP backend
         const formData = {
-            username: document.getElementById("username").value.trim(),
+            name: document.getElementById("username").value.trim(),
             password: document.getElementById("password").value.trim()
         };
 
         console.log("Sending data:", formData);
 
         try {
-            const response = await fetch("http://localhost/Employee/public/api/auth.php?action=login", {
+            // CHANGE HERE: Removed the unnecessary '?action=login' parameter
+            const response = await fetch("http://localhost/Employee/public/api/auth.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

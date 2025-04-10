@@ -1,5 +1,5 @@
 <?php
-// filepath: c:\GitHub\Ordering-Management-System\SOURCE CODE\Employee\public\api\products.php
+// filepath: c:\xampp\htdocs\Employee\public\api\employees.php
 
 // Headers
 header('Access-Control-Allow-Origin: *');
@@ -13,11 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-// Include product model
-require_once '../../src/models/ProductModel.php';
+// Include employee model
+require_once '../../src/models/Employee.php';
 
-// Initialize product object
-$product = new ProductModel();
+// Initialize employee object
+$employee = new Employee();
 
 // Get request method
 $requestMethod = $_SERVER['REQUEST_METHOD'];
@@ -30,54 +30,54 @@ if ($requestMethod === 'POST' && isset($_GET['_method'])) {
 // Handle request based on HTTP method
 switch ($requestMethod) {
     case 'GET':
-        // Get all products or single product
+        // Get all employees or single employee
         if (isset($_GET['id'])) {
-            // Get single product
-            $result = $product->getById($_GET['id']);
+            // Get single employee
+            $result = $employee->getById($_GET['id']);
             echo json_encode($result);
         } else {
-            // Get all products
-            $products = $product->getAll();
+            // Get all employees
+            $employees = $employee->getAll();
             echo json_encode([
                 'status' => 'success',
-                'data' => $products
+                'data' => $employees
             ]);
         }
         break;
         
     case 'POST':
-        // Create new product
+        // Create new employee
         $data = json_decode(file_get_contents('php://input'), true);
-        $result = $product->createProduct($data);
+        $result = $employee->create($data);
         echo json_encode($result);
         break;
         
     case 'PUT':
-        // Update product
+        // Update employee
         if (!isset($_GET['id'])) {
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Product ID is required'
+                'message' => 'Employee ID is required'
             ]);
             break;
         }
         
         $data = json_decode(file_get_contents('php://input'), true);
-        $result = $product->updateProduct($_GET['id'], $data);
+        $result = $employee->update($_GET['id'], $data);
         echo json_encode($result);
         break;
         
     case 'DELETE':
-        // Delete product
+        // Delete employee
         if (!isset($_GET['id'])) {
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Product ID is required'
+                'message' => 'Employee ID is required'
             ]);
             break;
         }
         
-        $result = $product->deleteProduct($_GET['id']);
+        $result = $employee->delete($_GET['id']);
         echo json_encode($result);
         break;
         
