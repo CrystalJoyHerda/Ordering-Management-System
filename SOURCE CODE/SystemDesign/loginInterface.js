@@ -23,38 +23,41 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Logging in...";
         submitButton.disabled = true;
 
-        // CHANGE HERE: Updated to use 'name' instead of 'username' to match our PHP backend
-        const formData = {
-            name: document.getElementById("username").value.trim(),
-            password: document.getElementById("password").value.trim()
+        const formData = new FormData(loginForm);
+        const data = {
+            name: formData.get("username"), // Map "username" to "name"
+            password: formData.get("password"),
         };
 
-        console.log("Sending data:", formData);
+        console.log("Sending data:", data);
 
         try {
-            // CHANGE HERE: Removed the unnecessary '?action=login' parameter
-            const response = await fetch("http://localhost/Employee/public/api/auth.php", {
+            const response = await fetch("http://localhost/SOURCE_CODE/Employee/public/api/auth.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(data), // Send the corrected data
+                mode: 'cors', // Enable CORS
             });
 
             console.log("Response status:", response.status);
             
-            const data = await response.json();
-            console.log("Response data:", data);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            if (data.status === "success") {
+            const result = await response.json();
+            console.log("Login successful:", result);
+
+            if (result.status === "success") {
                 // Store user data in session storage
-                sessionStorage.setItem("user", JSON.stringify(data.data));
+                sessionStorage.setItem("user", JSON.stringify(result.data));
                 
                 // Redirect to appropriate dashboard
-                redirectToDashboard(data.data);
+                redirectToDashboard(result.data);
             } else {
-                errorMessage.textContent = data.message || "Login failed";
+                errorMessage.textContent = result.message || "Login failed";
                 errorMessage.style.display = "block";
             }
         } catch (error) {

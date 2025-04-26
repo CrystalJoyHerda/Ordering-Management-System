@@ -12,10 +12,10 @@ require_once '../../src/models/Employee.php';
 ob_clean();
 
 // Now set headers
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: *'); // Allow all origins
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-Methods, Authorization, X-Requested-With');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS'); // Allowed HTTP methods
+header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Allowed headers
 
 // Handle OPTIONS preflight requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {

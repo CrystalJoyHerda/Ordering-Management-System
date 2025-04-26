@@ -124,7 +124,7 @@ class ProductModel extends BaseModel {
                 $query .= " AND category = :category";
             }
             
-            $query .= " LIMIT :limit OFFSET :offset";
+            $query .= " ORDER BY id DESC LIMIT :limit OFFSET :offset";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':keyword', "%{$keyword}%");
@@ -137,7 +137,7 @@ class ProductModel extends BaseModel {
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             
-            $results = $stmt->fetchAll();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             return [
                 'status' => 'success',
@@ -145,9 +145,10 @@ class ProductModel extends BaseModel {
                 'data' => $results
             ];
         } catch (PDOException $e) {
+            error_log("Error searching products: " . $e->getMessage());
             return [
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Failed to search products'
             ];
         }
     }
@@ -169,6 +170,58 @@ class ProductModel extends BaseModel {
             return [
                 'status' => 'error',
                 'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    // Add method to get all products for dashboard
+    public function getAllProducts() {
+        try {
+            $query = "SELECT * FROM {$this->table} ORDER BY id DESC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'status' => 'success',
+                'data' => $results
+            ];
+        } catch (PDOException $e) {
+            error_log("Error getting products: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to load products'
+            ];
+        }
+    }
+    
+    // Add method to get single product
+    public function getProduct($id) {
+        try {
+            $query = "SELECT * FROM {$this->table} WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$result) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ];
+            }
+            
+            return [
+                'status' => 'success',
+                'data' => $result
+            ];
+        } catch (PDOException $e) {
+            error_log("Error getting product: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to load product'
             ];
         }
     }

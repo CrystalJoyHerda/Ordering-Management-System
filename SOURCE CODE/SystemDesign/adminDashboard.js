@@ -48,7 +48,7 @@ async function loadProducts() {
     console.log('Loading products...');
     
     try {
-        const apiUrl = 'http://localhost/Employee/public/api/products.php';
+        const apiUrl = 'http://localhost/SOURCE_CODE/Employee/public/api/products.php';
         console.log('Fetching from:', apiUrl);
         
         const response = await fetch(apiUrl, {
@@ -134,7 +134,7 @@ function displayProducts(products) {
 async function editProduct(productId) {
     try {
         // Fetch product details
-        const response = await fetch(`http://localhost/Employee/public/api/products.php?id=${productId}`);
+        const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/products.php?id=${productId}`);
         const result = await handleApiResponse(response);
         
         if (result.status === 'success') {
@@ -156,7 +156,7 @@ async function deleteProduct(productId) {
     }
 
     try {
-        const response = await fetch(`http://localhost/Employee/public/api/products.php?id=${productId}`, {
+        const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/products.php?id=${productId}`, {
             method: 'DELETE',
             headers: {
                 'Accept': 'application/json'
@@ -231,8 +231,8 @@ async function handleProductSubmit(event) {
 
     try {
         const url = productId 
-            ? `http://localhost/Employee/public/api/products.php?id=${productId}&_method=PUT` 
-            : 'http://localhost/Employee/public/api/products.php';
+            ? `http://localhost/SOURCE_CODE/Employee/public/api/products.php?id=${productId}&_method=PUT` 
+            : 'http://localhost/SOURCE_CODE/Employee/public/api/products.php';
             
         const response = await fetch(url, {
             method: 'POST', // Always use POST
@@ -259,7 +259,7 @@ async function handleProductSubmit(event) {
 }
 
 function handleLogout() {
-    fetch('http://localhost/Employee/public/api/auth.php?action=logout', {
+    fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
         method: 'GET'
     })
     .then(response => response.json())
