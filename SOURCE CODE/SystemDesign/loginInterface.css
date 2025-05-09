@@ -8,10 +8,11 @@
 body {
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Align content to the top */
-    height: 100vh;
+    align-items: center; /* Center content vertically */
+    height: 100vh; /* Full viewport height */
     background-color: #f0f0f0;
     text-align: center;
+    overflow: hidden; /* Prevent scrolling */
 }
 
 .container {
@@ -25,7 +26,6 @@ body {
     background-color: white; /* Optional: Add a background color */
     border-radius: 20px; /* Optional: Rounded corners */
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Optional: Add shadow for better visibility */
-    margin-top: 200px; /* Increased margin to move the form lower */
 }
 
 h1 {

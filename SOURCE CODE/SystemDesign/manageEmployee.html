@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Employees</title>
+    <link rel="stylesheet" href="manageEmployee.css">
+    
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="coffee-logo.png" alt="Coffee Logo">
+                </div>
+                <div class="admin-text">ADMIN</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#">Dashboard</a></li>
+                    <li><a href="#">Stocks</a></li>
+                </ul>
+            </nav>
+            
+            <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Manage Employees</h1>
+            </div>
+            
+            <div class="controls">
+                <div class="search-container">
+                    <input type="text" placeholder="Search:" class="search-input">
+                </div>
+                <button class="add-btn">Add Employee</button>
+            </div>
+            
+            <div class="table-container">
+                <table class="employee-table">
+                    <thead>
+                        <tr>
+                            <th>USER ID</th>
+                            <th>NAME</th>
+                            <th>EMAIL</th>
+                            <th>ROLE</th>
+                            <th>STATUS</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table data will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
