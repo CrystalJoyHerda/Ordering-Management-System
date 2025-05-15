@@ -1,0 +1,185 @@
+/* General Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.container {
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+/* Header Styles */
+.header {
+  margin-bottom: 30px;
+}
+
+.welcome-text {
+  font-size: 24px;
+  margin: 0;
+}
+
+.welcome {
+  font-family: 'Cursive', serif;
+  font-size: 42px;
+  color: #4A2C1B;
+  display: block;
+}
+
+.to {
+  font-size: 18px;
+  color: #4A2C1B;
+}
+
+.logo {
+  margin: 20px auto;
+}
+
+.logo-circle {
+  width: 150px;  /* Increased from 120px */
+  height: 150px; /* Increased from 120px */
+  background-color: #8B4513;
+  border-radius: 50%;
+  position: relative;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-image {
+  width: 130px;  /* Increased from 100px */
+  height: auto;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: #8B4513;
+  margin: 15px 0;
+}
+
+.tagline {
+  font-size: 14px;
+  color: #555;
+  margin: 10px 0 20px 0;
+  font-style: italic;
+}
+
+/* Menu Button Styles */
+.menu-section {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.menu-button {
+  background-color: #8B4513;
+  color: #fff;
+  border: none;
+  padding: 12px 40px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 25px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.menu-button:hover {
+  background-color: #6A3B0F;
+}
+
+.menu-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .welcome-text {
+    font-size: 20px;
+  }
+
+  .welcome {
+    font-size: 36px;
+  }
+
+  .to {
+    font-size: 16px;
+  }
+
+  .logo-circle {
+    width: 120px;  /* Increased from 100px */
+    height: 120px; /* Increased from 100px */
+  }
+
+  .logo-image {
+    width: 100px;  /* Increased from 80px */
+  }
+
+  .brand-name {
+    font-size: 20px;
+  }
+
+  .tagline {
+    font-size: 12px;
+  }
+
+  .menu-button {
+    font-size: 16px;
+    padding: 10px 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-text {
+    font-size: 18px;
+  }
+
+  .welcome {
+    font-size: 32px;
+  }
+
+  .to {
+    font-size: 14px;
+  }
+
+  .logo-circle {
+    width: 100px;  /* Increased from 80px */
+    height: 100px; /* Increased from 80px */
+  }
+
+  .logo-image {
+    width: 85px;   /* Increased from 70px */
+  }
+
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .tagline {
+    font-size: 10px;
+  }
+
+  .menu-button {
+    font-size: 14px;
+    padding: 8px 20px;
+  }
+}

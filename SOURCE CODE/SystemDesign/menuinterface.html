@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order System</title>
+  <link rel="stylesheet" href="menuinterface.css">
+  <script src="menuinterface.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <header class="header">
+      <div class="logo">
+        <img src="../../RESOURCES/logo.png" alt="Logo" class="logo-image">
+      </div>
+      <div class="datetime">
+        Tuesday, February 25, 2025 &nbsp; 4:33pm
+      </div>
+      <div class="order-type">
+        <button class="order-button">Dine In</button>
+        <button class="order-button">Take out</button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="main-layout">
+      <!-- Left Section -->
+      <div class="left-section">
+        <button class="category-button">Coffee</button>
+        <button class="category-button">Snacks</button>
+      </div>
+      
+      <!-- Center Section -->
+      <div class="center-section">
+        <!-- Coffee Grid -->
+        <div class="food-grid scrollable coffee-grid active">
+          <h3 class="grid-heading">Hot Coffee</h3>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          
+          <h3 class="grid-heading">Cold Coffee</h3>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          
+          <h3 class="grid-heading">Non Coffee</h3>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snacks Grid -->
+        <div class="food-grid scrollable snacks-grid">
+          <h3 class="grid-heading">Pastries</h3>
+          <div class="food-item">
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity-value">1</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item"></div>
+          <div class="food-item"></div>
+
+          <h3 class="grid-heading">Sandwiches</h3>
+          <div class="food-item"></div>
+          <div class="food-item"></div>
+          <div class="food-item"></div>
+
+          <h3 class="grid-heading">Cakes</h3>
+          <div class="food-item"></div>
+          <div class="food-item"></div>
+          <div class="food-item"></div>
+        </div>
+      </div>
+
+      <!-- Right Section -->
+      <div class="right-section">
+        <span class="addons-title">Add ons</span>
+        <div class="addons-grid">
+          <div class="addon-circle"></div>
+          <div class="addon-circle"></div>
+          <div class="addon-circle"></div>
+          <div class="addon-circle"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <div class="order-item">
+        Order #1 <span class="price">0.00</span>
+      </div>
+      <div class="order-item">
+        Order #2 <span class="price">0.00</span>
+      </div>
+      <div class="order-item">
+        Order #3 <span class="price">0.00</span>
+      </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+      <button class="cancel-button">Cancel Order</button>
+      <button class="view-button">View Order</button>
+    </footer>
+  </div>
+</body>
+</html>
