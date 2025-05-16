@@ -25,12 +25,16 @@
 }
 
 .logo {
-    width: 45px;
-    height: 45px;
+    width: 100px;  /* Increased from 80px */
+    height: 100px; /* Increased from 80px */
     border-radius: 50%;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #f0f0f0;
     overflow: hidden;
-    margin-bottom: 20px;
-    border: 2px solid white;
+    margin-bottom: 15px;
 }
 
 .logo img {
