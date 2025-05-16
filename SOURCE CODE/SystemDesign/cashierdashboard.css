@@ -9,6 +9,7 @@ body {
     background-color: #f5f5f5;
 }
 
+/* Container adjustment */
 .container {
     display: flex;
     min-height: 100vh;
@@ -27,8 +28,10 @@ body {
     padding: 20px 0;
     height: 100vh;
     position: fixed;
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Logo section */
 .logo-section {
     display: flex;
     flex-direction: column;
@@ -60,6 +63,7 @@ body {
     letter-spacing: 1px;
 }
 
+/* Sidebar navigation */
 .sidebar-nav {
     width: 100%;
     margin-top: 20px;
@@ -92,6 +96,7 @@ body {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Logout button styles */
 .logout-section {
     margin-top: auto;
     padding: 20px 0;
@@ -131,6 +136,7 @@ body {
     border-radius: 8px;
     margin-bottom: 15px;
     width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header h1 {

@@ -1,0 +1,141 @@
+/* General Reset */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.logo img {
+  width: 25%;
+  height: auto;
+  object-fit: contain;
+}
+
+.details {
+  flex: 1;
+  margin-left: 20px;
+}
+
+.details p {
+  margin: 5px 0;
+}
+
+.date-time {
+  font-size: 14px;
+  color: #555;
+}
+
+.queue-order p {
+  font-size: 16px;
+  color: #333;
+}
+
+.queue-order span {
+  font-weight: bold;
+}
+
+.employee-btn {
+  background-color: #d9d9d9;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.employee-btn:hover {
+  background-color: #c7c7c7;
+}
+
+.main-content {
+  text-align: center;
+}
+
+.order-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.order-table {
+  background-color: #eaeaea;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.table-header, .table-body {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.table-header div {
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+  background-color: #d9d9d9;
+  border-radius: 5px;
+}
+
+.table-body div {
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.total-amount {
+  font-size: 18px;
+  text-align: right;
+  margin-top: 10px;
+}
+
+.total-amount span {
+  font-weight: bold;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.cancel-btn {
+  background-color: red;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  opacity: 0.9;
+}
+
+.confirm-btn {
+  background-color: green;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.confirm-btn:hover {
+  opacity: 0.9;
+}

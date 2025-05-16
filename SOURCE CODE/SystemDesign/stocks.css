@@ -1,4 +1,3 @@
-/* Global Styles */
 * {
     margin: 0;
     padding: 0;
@@ -21,7 +20,7 @@ body {
 /* Sidebar Styles */
 .sidebar {
     width: 220px;
-    background-color: #3b2a1f;  /* Darker brown as shown in image */
+    background-color: #3b2a1f;  /* Standardized dark brown */
     color: white;
     display: flex;
     flex-direction: column;
@@ -31,6 +30,7 @@ body {
     position: fixed;
 }
 
+/* Logo section */
 .logo-section {
     display: flex;
     flex-direction: column;
@@ -38,7 +38,6 @@ body {
     margin-bottom: 30px;
 }
 
-/* Logo adjustments for larger sidebar */
 .logo {
     width: 120px;
     height: 120px;
@@ -63,6 +62,49 @@ body {
     letter-spacing: 1px;
 }
 
+/* Sidebar navigation */
+.menu {
+    margin-top: 20px;
+    width: 100%;
+}
+
+.menu ul {
+    list-style: none;
+    padding: 0;
+}
+
+.menu li {
+    padding: 10px 0;
+    text-align: center;
+    cursor: pointer;
+}
+
+.menu li:hover {
+    background-color: #7d5630;
+}
+
+/* Add these updated logout styles to match other pages */
+.logout-section {
+    margin-top: auto;
+    padding: 20px 0;
+}
+
+.logout-btn {
+    padding: 8px 25px;
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: auto;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Update navigation styles to match manageEmployee */
 .sidebar-nav {
     width: 100%;
     margin-top: 20px;
@@ -88,61 +130,30 @@ body {
 }
 
 .sidebar-nav ul li:hover {
-    background-color: #4a3422;  /* Slightly lighter brown for hover */
+    background-color: #4a3422;
 }
 
 .sidebar-nav ul li.active {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Logout button styles */
-.logout-section {
-    margin-top: auto;
-    padding: 20px 0;
-}
-
-.logout-btn {
-    padding: 8px 25px;
-    background-color: #f5f5f5;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-top: auto;
-    transition: 0.3s;
-}
-
-.logout-btn:hover {
-    background-color: #e0e0e0;
-}
-
-/* Main Content Styles */
+/* Main content */
 .main-content {
     flex: 1;
     padding: 20px;
     margin-left: 220px;
-    min-height: 100vh;
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
 }
 
 .header {
-    background-color: #67503b;
-    color: white;
-    padding: 12px;
     text-align: center;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    width: 100%;
+    background-color: #67503b;  /* Standardized header brown */
+    color: white;
+    padding: 10px 0;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }
 
-.header h1 {
-    font-size: 24px;
-    font-weight: bold;
-}
-
+/* Update search and button styles */
 .controls {
     display: flex;
     justify-content: space-between;
@@ -173,23 +184,18 @@ body {
     font-weight: bold;
 }
 
-/* Table Container Styles */
-.table-container {
-    flex: 1;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: auto;
-}
-
-/* Table Styles */
-.employee-table {
+/* Stocks table */
+.stocks-table {
     width: 100%;
     border-collapse: collapse;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.employee-table th {
-    background-color: #67503b;
+.stocks-table th {
+    background-color: #67503b;  /* Standardized header brown */
     color: white;
     padding: 12px;
     text-align: left;
@@ -197,26 +203,10 @@ body {
     top: 0;
 }
 
-.employee-table td {
+.stocks-table td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
     vertical-align: middle;
-}
-
-.edit-btn, .delete-btn {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right: 5px;
-}
-
-.edit-btn {
-    background-color: #e0e0e0;
-}
-
-.delete-btn {
-    background-color: #e0e0e0;
 }
 
 /* Popup Styles */
@@ -282,49 +272,47 @@ body {
     text-transform: lowercase;
 }
 
-/* Remove the close button styles since we're using the cancel button */
-.close-btn {
-    display: none;
+/* Success Popup Styles */
+.success-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
 }
 
-/* Responsive adjustments for smaller screens */
+.success-content {
+    background-color: #3b2a1f;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    color: white;
+}
+
+.success-content p {
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.success-content button {
+    padding: 5px 20px;
+    background-color: #67503b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.success-content button:hover {
+    background-color: #7d5630;
+}
+
+/* Add responsive styles */
 @media (max-width: 768px) {
-    .container {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        flex-direction: row;
-        padding: 15px;
-        height: auto;
-    }
-    
-    .logo-section {
-        margin-bottom: 0;
-        margin-right: 20px;
-    }
-    
-    .sidebar-nav ul {
-        display: flex;
-    }
-    
-    .sidebar-nav ul li {
-        margin-right: 15px;
-    }
-    
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .search-container {
-        margin-bottom: 10px;
-        margin-right: 0;
-    }
-    
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-    }
+    /* Responsive styles copied from manageEmployee.css */
 }

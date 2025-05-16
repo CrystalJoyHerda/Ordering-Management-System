@@ -10,7 +10,9 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">            <div class="logo-section">                <div class="logo">
+        <div class="sidebar">            
+            <div class="logo-section">                
+                <div class="logo">
                     <img src="../../RESOURCES/logo.png" alt="Coffee Logo">
                 </div>
                 <div class="admin-text">ADMIN</div>
@@ -18,8 +20,11 @@
             
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="#">Dashboard</a></li>
-                    <li><a href="#">Stocks</a></li>
+                    <li><a href="admindashboard1.html">Dashboard</a></li>
+                    <li class="active"><a href="manageEmployee.html">Manage Employees</a></li>
+                    <li><a href="stocks.html">Stocks</a></li>
+                    <li><a href="#">View Sales</a></li>
+                    <li><a href="#">Inventory</a></li>
                 </ul>
             </nav>
             
@@ -38,7 +43,7 @@
                 <div class="search-container">
                     <input type="text" placeholder="Search:" class="search-input">
                 </div>
-                <button class="add-btn">Add Employee</button>
+                <button class="add-btn" id="addEmployeeBtn">Add Employee</button>
             </div>
             
             <div class="table-container">
@@ -60,5 +65,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Employee Popup -->
+    <div class="popup-container" id="popupContainer">
+        <div class="popup-content">
+            <h2>Register new employee?</h2>
+            <form id="employeeForm">
+                <div class="form-group">
+                    <label for="empId">EMP ID:</label>
+                    <input type="text" id="empId" required>
+                </div>
+                <div class="form-group">
+                    <label for="firstName">First name:</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="middleName">Middle name:</label>
+                    <input type="text" id="middleName">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last name:</label>
+                    <input type="text" id="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthday">Birthday:</label>
+                    <input type="date" id="birthday" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact">Contact #:</label>
+                    <input type="tel" id="contact" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role:</label>
+                    <input type="text" id="role" required>
+                </div>
+                <div class="form-buttons">
+                    <button type="button" id="saveBtn">save</button>
+                    <button type="button" id="closeBtn">cancel/close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="addemployee.js"></script>
 </body>
 </html>
