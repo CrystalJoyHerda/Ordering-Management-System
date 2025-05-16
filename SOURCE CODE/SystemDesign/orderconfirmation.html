@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS System</title>
+    <link rel="stylesheet" href="orderconfirmation.css">
+    <style>
+        /* You can move this to orderconfirmation.css */
+        .coffee-logo {
+            width: 150px;       /* Adjust as needed */
+            height: auto;      /* Maintain aspect ratio */
+            display: block;
+            padding: 5px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .datetime-display,
+        .employee-section {
+            font-size: 16px;
+        }
+
+        .queue-section {
+            margin: 20px 0;
+        }
+
+        .queue-input {
+            width: 150px;
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .order-section, .payment-section {
+            width: 48%;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .order-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        .column-header {
+            font-weight: bold;
+        }
+
+        .grid-item {
+            padding: 5px 0;
+        }
+
+        .payment-details {
+            margin-top: 10px;
+        }
+
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .amount-field {
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .print-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <img src="../../RESOURCES/logo.png" alt="Coffee Logo" class="coffee-logo">
+            </div>
+            <div class="datetime-display">Tuesday, February 25, 2025 4:33pm</div>
+            <div class="employee-section">Employee</div>
+        </header>
+
+        <div class="queue-section">
+            <label>Queue Number :</label>
+            <input type="text" class="queue-input" readonly>
+        </div>
+
+        <div class="main-content">
+            <section class="order-section">
+                <div class="section-title">ORDER</div>
+                <div class="order-grid">
+                    <div class="column-header">Quantity</div>
+                    <div class="column-header">Product Name</div>
+                    <div class="column-header">Price</div>
+
+                    <div class="grid-item quantity"></div>
+                    <div class="grid-item product"></div>
+                    <div class="grid-item price"></div>
+                </div>
+            </section>
+
+            <section class="payment-section">
+                <div class="section-title">PAYMENT</div>
+                <div class="payment-details">
+                    <div class="payment-row">
+                        <span>Total Amount:</span>
+                        <div class="amount-field"></div>
+                    </div>
+                    <div class="payment-row cash-row">
+                        <span>Cash:</span>
+                        <div class="amount-field"></div>
+                    </div>
+                    <div class="payment-row">
+                        <span>Change:</span>
+                        <div class="amount-field"></div>
+                    </div>
+                </div>
+                <button class="print-button">Print Receipt</button>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
