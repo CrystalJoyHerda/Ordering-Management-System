@@ -166,12 +166,144 @@
       <div class="column-header">Product Name</div>
       <div class="column-header">Price</div>
 
-      <div class="grid-box"></div>
-      <div class="grid-box"></div>
-      <div class="grid-box"></div>
+      <div id="items-container" class="grid-box"></div>
+      <div id="names-container" class="grid-box"></div>
+      <div id="prices-container" class="grid-box"></div>
     </div>
 
-    <div class="total-amount-box">Total Amount:</div>
+    <div class="total-amount-box" id="total">Total Amount: ₱0.00</div>
+
+    <!-- Add input form for new items -->
+    <div class="add-item-form" style="margin-bottom: 20px;">
+        <input type="number" id="quantity" placeholder="Quantity" min="1" style="padding: 5px;">
+        <input type="text" id="productName" placeholder="Product Name" style="padding: 5px;">
+        <input type="number" id="price" placeholder="Price" min="0" step="0.01" style="padding: 5px;">
+        <button onclick="handleAddItem()" style="padding: 5px 10px;">Add Item</button>
+    </div>
+
+    <script>
+        // Add new function to handle adding items from form
+        function handleAddItem() {
+            const quantity = document.getElementById('quantity').value;
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('price').value;
+
+            if (!quantity || !name || !price) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            addOrderItem(quantity, name, price);
+
+            // Clear form
+            document.getElementById('quantity').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('price').value = '';
+        }
+
+        // Update existing item div style
+        const itemStyle = `
+            padding: 8px;
+            margin: 5px;
+            background-color: #fff;
+            border-radius: 5px;
+            text-align: left;
+        `;
+
+        // Update addOrderItem function
+        function addOrderItem(quantity, name, price) {
+            const itemsContainer = document.getElementById('items-container');
+            const namesContainer = document.getElementById('names-container');
+            const pricesContainer = document.getElementById('prices-container');
+
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = itemStyle;
+            itemDiv.innerHTML = `${quantity} 
+                <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
+                <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = itemStyle;
+            nameDiv.textContent = name;
+            
+            const priceDiv = document.createElement('div');
+            priceDiv.style.cssText = itemStyle;
+            priceDiv.textContent = `₱${parseFloat(price).toFixed(2)}`;
+
+            itemsContainer.appendChild(itemDiv);
+            namesContainer.appendChild(nameDiv);
+            pricesContainer.appendChild(priceDiv);
+            
+            updateTotal();
+        }
+
+        // Add cancel order functionality
+        document.querySelector('.cancel-button').addEventListener('click', function() {
+            if (confirm('Are you sure you want to cancel this order?')) {
+                document.getElementById('items-container').innerHTML = '';
+                document.getElementById('names-container').innerHTML = '';
+                document.getElementById('prices-container').innerHTML = '';
+                updateTotal();
+            }
+        });
+
+        // Add confirm order functionality
+        document.querySelector('.confirm-button').addEventListener('click', function() {
+            const total = document.getElementById('total').textContent;
+            if (total === 'Total Amount: ₱0.00') {
+                alert('Please add items to the order first');
+                return;
+            }
+            
+            if (confirm('Confirm this order?')) {
+                alert('Order confirmed!\n' + total);
+                // Reset everything
+                document.getElementById('items-container').innerHTML = '';
+                document.getElementById('names-container').innerHTML = '';
+                document.getElementById('prices-container').innerHTML = '';
+                updateTotal();
+            }
+        });
+
+        // Function to edit item
+        function editItem(button) {
+            const itemDiv = button.parentElement;
+            const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
+            const newQuantity = prompt('Enter new quantity:');
+            
+            if (newQuantity && !isNaN(newQuantity)) {
+                itemDiv.innerHTML = `${newQuantity} <button onclick="editItem(this)">Edit</button> <button onclick="deleteItem(this)">Delete</button>`;
+                updateTotal();
+            }
+        }
+
+        // Function to delete item
+        function deleteItem(button) {
+            const itemDiv = button.parentElement;
+            const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
+            
+            itemDiv.remove();
+            document.getElementById('names-container').children[index].remove();
+            document.getElementById('prices-container').children[index].remove();
+            
+            updateTotal();
+        }
+
+        // Function to update total
+        function updateTotal() {
+            let total = 0;
+            const quantities = document.getElementById('items-container').children;
+            const prices = document.getElementById('prices-container').children;
+            
+            for (let i = 0; i < quantities.length; i++) {
+                const quantity = parseInt(quantities[i].textContent);
+                const price = parseFloat(prices[i].textContent.replace('₱', ''));
+                total += quantity * price;
+            }
+            
+            document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
+        }
+    </script>
 
     <div class="button-container">
       <button class="action-button cancel-button">Cancel Order</button>
