@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History</title>
+    <link rel="stylesheet" href="saleshistory.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <img src="../../RESOURCES/logo.png" alt="Logo">
+            </div>
+            <div class="cashier-text">CASHIER</div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item">Dashboard</a>
+                <a href="#" class="nav-item">Cashiering</a>
+                <a href="#" class="nav-item">Stocks</a>
+                <a href="#" class="nav-item active">Sales History</a>
+            </nav>
+            <div class="spacer"></div>
+            <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1>SALES HISTORY</h1>
+            </div>
+
+            <div class="sales-container">
+                <!-- Left Box -->
+                <div class="box sales-box">
+                    <h2>SALES</h2>
+                    <div class="chart-container">
+                        <!-- Donut/Circle Chart -->
+                        <div class="donut-chart">
+                            <!-- Chart will be added here -->
+                        </div>
+                        <!-- Bar/Line Chart -->
+                        <div class="bar-graph">
+                            <!-- Chart will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Box -->
+                <div class="box orders-box">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>PRODUCT</th>
+                                <th>QUANTITY</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table rows with divider lines will be added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

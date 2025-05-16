@@ -1,0 +1,106 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.queue-slip, .receipt {
+    width: 80mm; /* Standard thermal paper width */
+    background-color: white;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.header-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.store-logo-small, .store-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.store-info {
+    text-align: center;
+}
+
+.store-name {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.store-slogan {
+    font-size: 12px;
+    font-style: italic;
+}
+
+.receipt-info, .queue-number {
+    text-align: center;
+    font-size: 12px;
+    margin: 10px 0;
+    padding: 5px 0;
+    border-top: 1px dashed #ccc;
+    border-bottom: 1px dashed #ccc;
+}
+
+.number {
+    font-size: 36px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.price-details {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+    font-size: 12px;
+}
+
+.price-details > div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.total-line {
+    font-weight: bold;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+.paper-break {
+    width: 80mm;
+    border-top: 1px dashed #000;
+    position: relative;
+    margin: 20px 0;
+}
+
+.paper-break::after {
+    content: "✂";
+    position: absolute;
+    right: -25px;
+    top: -10px;
+    font-size: 20px;
+}

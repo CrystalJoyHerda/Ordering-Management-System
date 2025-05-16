@@ -1,0 +1,165 @@
+:root {
+    --primary-bg: #f0e6ff;
+    --secondary-bg: #e0e0e0;
+    --button-green: #00ff37;
+    --border-radius: 8px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.logo {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+}
+
+.logo img {
+    width: 95%;
+    height: 95%;
+    object-fit: contain;
+}
+
+.datetime-display {
+    background-color: var(--primary-bg);
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+}
+
+.employee-section {
+    background-color: var(--primary-bg);
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+}
+
+/* Queue Section */
+.queue-section {
+    background-color: var(--primary-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.queue-input {
+    border: none;
+    background: transparent;
+    flex-grow: 1;
+}
+
+/* Main Content Layout */
+.main-content {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 20px;
+}
+
+/* Section Titles */
+.section-title {
+    background-color: var(--secondary-bg);
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: var(--border-radius);
+    margin-bottom: 15px;
+}
+
+/* Order Grid */
+.order-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 10px;
+}
+
+.column-header {
+    background-color: var(--secondary-bg);
+    padding: 10px;
+    text-align: center;
+    border-radius: var(--border-radius);
+}
+
+.grid-item {
+    background-color: var(--secondary-bg);
+    height: 60px;
+    border-radius: var(--border-radius);
+}
+
+/* Payment Section */
+.payment-details {
+    background-color: var(--secondary-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 5px;
+}
+
+.cash-row {
+    background-color: var(--primary-bg);
+    border-radius: var(--border-radius);
+}
+
+.amount-field {
+    min-width: 100px;
+}
+
+/* Print Button */
+.print-button {
+    background-color: var(--button-green);
+    color: black;
+    border: none;
+    padding: 15px;
+    border-radius: 20px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.print-button:hover {
+    background-color: #00e030;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
