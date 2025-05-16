@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History</title>
+    <link rel="stylesheet" href="saleshistoryinter.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="../../RESOURCES/logo.png" alt="Coffee Logo">
+                </div>
+                <div class="cashier-text">CASHIER</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#">Dashboard</a></li>
+                    <li><a href="#">Cashiering</a></li>
+                    <li><a href="#">Stocks</a></li>
+                    <li><a href="#" class="active">Sales History</a></li>
+                </ul>
+            </nav>
+            
+            <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <button class="back-btn">←</button>
+                <h1>Sales History</h1>
+            </div>
+
+            <div class="content-grid">
+                <!-- Left box with charts -->
+                <div class="chart-box">
+                    <h2>SALES</h2>
+                    <div class="chart-container">
+                        <!-- Donut Chart -->
+                        <div class="donut-chart">
+                            <!-- Chart will be added here -->
+                        </div>
+                        <!-- Bar Graph -->
+                        <div class="bar-graph">
+                            <!-- Graph will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right box with table -->
+                <div class="table-box">
+                    <table class="sales-table">
+                        <thead>
+                            <tr>
+                                <th>PRODUCT</th>
+                                <th>QUANTITY</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

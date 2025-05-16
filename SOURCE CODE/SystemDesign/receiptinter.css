@@ -1,0 +1,138 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 20px;
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
+.receipt {
+    width: 80mm; /* Standard thermal receipt width */
+    background: white;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    height: auto; /* Allow height to grow */
+}
+
+.header-center {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #000;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.slogan {
+    font-size: 12px;
+    font-style: italic;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.receipt-info {
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.order-items {
+    margin: 15px 0;
+    padding: 10px 0;
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+    height: auto; /* Remove fixed height */
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 8px;
+    padding-right: 10px; /* Space for scrollbar */
+}
+
+/* Style the scrollbar */
+.order-items::-webkit-scrollbar {
+    width: 5px;
+}
+
+.order-items::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.order-items::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.totals {
+    font-size: 12px;
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.paper-break {
+    width: 300px;
+    border-top: 1px dashed #000;
+    margin: 20px auto;
+    position: relative;
+}
+
+.paper-break::after {
+    content: "✂";
+    position: absolute;
+    right: -25px;
+    top: -10px;
+}
+
+.queue-slip {
+    width: 80mm;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+    margin-top: 20px;
+}
+
+.queue-content {
+    margin-top: 20px;
+}
+
+.queue-content h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.queue-content .number {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.queue-content .datetime {
+    font-size: 12px;
+    color: #666;
+}

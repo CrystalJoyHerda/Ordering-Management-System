@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POS System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo img {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      padding: 5px;
+      background-color: white;
+    }
+
+    .datetime, .employee {
+      background-color: #ecebff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .header-center {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .input-box {
+      background-color: #ecebff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: left;
+    }
+
+    .order-title {
+      background-color: #dcdcdc;
+      padding: 10px;
+      margin: 20px 0 10px;
+      font-size: 24px;
+      font-weight: bold;
+      border-radius: 12px;
+    }
+
+    .order-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .column-header {
+      font-weight: bold;
+      background-color: #e0e0e0;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .grid-box {
+      min-height: 150px;
+      background-color: #d3d3d3;
+      border-radius: 10px;
+    }
+
+    .total-amount-box {
+      background-color: #d3d3d3;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 18px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .action-button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .cancel-button {
+      background-color: red;
+    }
+
+    .confirm-button {
+      background-color: green;
+    }
+  </style>
+  <script>
+    function updateDateTime() {
+        const now = new Date();
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        let hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+
+        const dateTimeString = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()} ${hours}:${minutes}${ampm}`;
+        document.getElementById('datetime').innerHTML = dateTimeString;
+    }
+
+    // Update time every second
+    setInterval(updateDateTime, 1000);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="../../RESOURCES/logo.png" alt="Coffee Logo" />
+      </div>
+      <div class="header-center">
+        <div id="datetime" class="datetime"></div>
+        <div class="input-box">Queue Number :</div>
+        <div class="input-box">Order Number :</div>
+      </div>
+      <div class="employee">Employee</div>
+    </header>
+
+    <div class="order-title">ORDER</div>
+
+    <div class="order-grid">
+      <div class="column-header">Quantity</div>
+      <div class="column-header">Product Name</div>
+      <div class="column-header">Price</div>
+
+      <div class="grid-box"></div>
+      <div class="grid-box"></div>
+      <div class="grid-box"></div>
+    </div>
+
+    <div class="total-amount-box">Total Amount:</div>
+
+    <div class="button-container">
+      <button class="action-button cancel-button">Cancel Order</button>
+      <button class="action-button confirm-button">Confirm Order</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt</title>
+    <link rel="stylesheet" href="receiptinter.css">
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const day = days[now.getDay()];
+            const month = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+
+            const dateTimeString = `${day}, ${month} ${date}, ${year} ${hours}:${minutes}${ampm}`;
+            
+            // Update both receipt and queue slip datetime
+            document.getElementById('receipt-datetime').textContent = dateTimeString;
+            document.getElementById('queue-datetime').textContent = dateTimeString;
+        }
+
+        // Update time when page loads
+        window.onload = function() {
+            updateDateTime();
+            // Update every second
+            setInterval(updateDateTime, 1000);
+        }
+    </script>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header-center">
+            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo">
+            <h1>BYTE & BEANS BY JJOC</h1>
+            <p class="slogan">"Byte into Flavor, Brewed to Perfection!"</p>
+            <div class="receipt-info">
+                <p id="receipt-datetime"></p>
+                <p>Queue Number: 0000</p>
+                <p>Cashier: Ogille Dane Provido</p>
+            </div>
+        </div>
+
+        <div class="order-items">
+            <div class="item">
+                <span>Item 1 x2</span>
+                <span>₱150.00</span>
+            </div>
+            <div class="item">
+                <span>Item 2 x1</span>
+                <span>₱80.00</span>
+            </div>
+            <div class="item">
+                <span>Item 3 x3</span>
+                <span>₱240.00</span>
+            </div>
+        </div>
+
+        <div class="totals">
+            <div class="total-line">
+                <span>Total Amount:</span>
+                <span>₱0.00</span>
+            </div>
+            <div class="total-line">
+                <span>Cash:</span>
+                <span>₱0.00</span>
+            </div>
+            <div class="total-line">
+                <span>Change:</span>
+                <span>₱0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="paper-break"></div>
+
+    <div class="queue-slip">
+        <div class="header-center">
+            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo">
+            <h1>BYTE & BEANS BY JJOC</h1>
+        </div>
+        <div class="queue-content">
+            <h2>Queue Number</h2>
+            <div class="number">0000</div>
+            <div id="queue-datetime" class="datetime"></div>
+        </div>
+    </div>
+</body>
+</html>
