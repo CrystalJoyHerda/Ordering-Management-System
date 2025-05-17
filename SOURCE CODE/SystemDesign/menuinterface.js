@@ -33,19 +33,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Category button selection
+    // Category switching functionality
     const categoryButtons = document.querySelectorAll('.category-button');
+    const coffeeGrid = document.querySelector('.coffee-grid');
+    const snacksGrid = document.querySelector('.snacks-grid');
+
+    // Show coffee grid by default
+    coffeeGrid.classList.add('active');
+    categoryButtons[0].classList.add('active');
+
     categoryButtons.forEach(button => {
         button.addEventListener('click', () => {
             // Update button states
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
-            // Switch grids based on category
-            const coffeeGrid = document.querySelector('.coffee-grid');
-            const snacksGrid = document.querySelector('.snacks-grid');
-            
-            if (button.textContent.trim() === 'Coffee') {
+            // Show appropriate grid
+            if (button.textContent.toLowerCase() === 'coffee') {
                 coffeeGrid.classList.add('active');
                 snacksGrid.classList.remove('active');
             } else {
@@ -53,49 +57,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 coffeeGrid.classList.remove('active');
             }
         });
-    });
-
-    // Food item selection
+    });    // Food item selection and quantity scaler handling
     const foodItems = document.querySelectorAll('.food-item');
     foodItems.forEach(item => {
-        item.addEventListener('click', () => {
-            const wasSelected = item.classList.contains('selected');
+        const quantityValue = item.querySelector('.quantity-value');
+        const scaler = item.querySelector('.quantity-scaler');
+        const minusBtn = item.querySelector('.minus');
+        
+        // Set initial quantity to 0
+        quantityValue.textContent = '0';
+        minusBtn.disabled = true;
+
+        item.addEventListener('click', (e) => {
+            // Don't trigger if clicking quantity buttons
+            if (e.target.closest('.quantity-btn')) {
+                e.stopPropagation();
+                return;
+            }
+
+            // Deselect other items
+            foodItems.forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.classList.remove('selected');
+                }
+            });
+
+            // Toggle selection of current item
             item.classList.toggle('selected');
-            
-            // Hide quantity scaler when unselecting
-            const scaler = item.querySelector('.quantity-scaler');
-            if (!wasSelected) {
-                scaler.classList.add('active');
-            } else {
-                scaler.classList.remove('active');
+
+            // If selecting item with 0 quantity, set to 1
+            if (item.classList.contains('selected') && quantityValue.textContent === '0') {
+                quantityValue.textContent = '1';
+                minusBtn.disabled = false;
             }
             
             updateOrderSummary();
         });
     });
 
-    // Food item and quantity scaler handling
-    foodItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            // Don't trigger if clicking quantity buttons or scaler
-            if (e.target.closest('.quantity-scaler')) {
-                e.stopPropagation(); // Prevent hiding when clicking inside scaler
-                return;
-            }
-            
-            const wasSelected = item.classList.contains('selected');
-            if (!wasSelected) {
-                // Only show scaler when selecting
-                const scaler = item.querySelector('.quantity-scaler');
-                scaler.classList.add('active');
-                
-                // Hide other scalers
-                foodItems.forEach(otherItem => {
-                    if (otherItem !== item) {
-                        otherItem.querySelector('.quantity-scaler').classList.remove('active');
-                    }
-                });
-            }
+    // Prevent quantity buttons from closing the scaler
+    document.querySelectorAll('.quantity-scaler').forEach(scaler => {
+        scaler.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    });
+
+    // Add-on selection
+    const addons = document.querySelectorAll('.addon-circle');
+    addons.forEach(addon => {
+        addon.addEventListener('click', () => {
+            addon.classList.toggle('selected');
+            updateOrderSummary();
         });
     });
 
@@ -107,31 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-
-    // Quantity buttons handling
-    foodItems.forEach(item => {
-        const minusBtn = item.querySelector('.minus');
-        const plusBtn = item.querySelector('.plus');
-        const quantityValue = item.querySelector('.quantity-value');
-
-        minusBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let value = parseInt(quantityValue.textContent);
-            if (value > 1) {
-                quantityValue.textContent = value - 1;
-                updateOrderSummary();
-            }
-        });
-
-        plusBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let value = parseInt(quantityValue.textContent);
-            quantityValue.textContent = value + 1;
-            updateOrderSummary();
-        });
-    });
-
-    // Order summary update
+        // Order summary update
     function updateOrderSummary() {
         // This would be implemented based on your specific needs
         // Example: Calculate total, update order items, etc.
@@ -150,5 +138,60 @@ document.addEventListener('DOMContentLoaded', () => {
     // View order button - Navigate to view order interface
     document.querySelector('.view-button').addEventListener('click', () => {
         window.location.href = 'vieworderinterface.html';
+    });    // Initialize all quantities to 0 and disable minus buttons
+    document.querySelectorAll('.food-item').forEach(item => {
+        const quantityValue = item.querySelector('.quantity-value');
+        const minusBtn = item.querySelector('.minus');
+        quantityValue.textContent = '0';
+        minusBtn.disabled = true;
+    });
+
+    // Handle quantity changes
+    document.querySelectorAll('.quantity-scaler').forEach(scaler => {
+        const minusBtn = scaler.querySelector('.minus');
+        const plusBtn = scaler.querySelector('.plus');
+        const valueSpan = scaler.querySelector('.quantity-value');
+        const foodItem = scaler.closest('.food-item');
+
+        minusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let value = parseInt(valueSpan.textContent);
+            if (value > 0) {
+                value--;
+                valueSpan.textContent = value;
+                minusBtn.disabled = value === 0;
+                
+                if (value === 0) {
+                    foodItem.classList.remove('selected');
+                }
+                
+                updateOrderSummary();
+            }
+        });
+
+        plusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let value = parseInt(valueSpan.textContent);
+            value++;
+            valueSpan.textContent = value;
+            minusBtn.disabled = false;
+            foodItem.classList.add('selected');
+            updateOrderSummary();
+        });
+    });
+
+    function updateTotal() {
+        let total = 0;
+        document.querySelectorAll('.food-item').forEach(item => {
+            const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
+            const quantity = parseInt(item.querySelector('.quantity-value').textContent);
+            total += price * quantity;
+        });
+        document.getElementById('total-amount').textContent = `₱${total.toFixed(2)}`;
+    }
+
+    // Initialize total on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTotal();
     });
 });
