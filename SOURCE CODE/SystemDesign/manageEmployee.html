@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Manage Employees</title>
     <link rel="stylesheet" href="manageEmployee.css">
-    
+    <script src="manageEmployee.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -26,7 +26,7 @@
             </nav>
             
             <div class="logout-section">
-                <button class="logout-btn" onclick="handleLogout()">Log Out</button>
+                <button class="logout-btn">Log Out</button>
             </div>
         </div>
         
@@ -38,7 +38,7 @@
             
             <div class="controls">
                 <div class="search-container">
-                    <input type="text" placeholder="Search:" class="search-input">
+                    <input type="text" placeholder="Search:" class="search-input" id="searchInput">
                 </div>
                 <button class="add-btn" id="addEmployeeBtn">Add Employee</button>
             </div>
@@ -55,7 +55,7 @@
                             <th>ACTION</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="employeeTableBody">
                         <!-- Table data will be populated dynamically -->
                     </tbody>
                 </table>
