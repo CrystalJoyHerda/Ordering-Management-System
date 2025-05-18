@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>POS System</title>
   <style>
-    body {
+  body {
       font-family: Arial, sans-serif;
       background-color: #fff;
       margin: 0;
@@ -106,6 +106,7 @@
       display: flex;
       justify-content: center;
       gap: 20px;
+      margin-bottom: 30px;
     }
 
     .action-button {
@@ -123,8 +124,8 @@
 
     .confirm-button {
       background-color: green;
-    }
-  </style>
+     }
+   </style> 
   <script>
     function updateDateTime() {
         const now = new Date();
@@ -141,7 +142,6 @@
         document.getElementById('datetime').innerHTML = dateTimeString;
     }
 
-    // Update time every second
     setInterval(updateDateTime, 1000);
   </script>
 </head>
@@ -179,7 +179,6 @@
 
     <div class="total-amount-box" id="total">Total Amount: ₱0.00</div>
 
-    <!-- Add input form for new items -->
     <div class="add-item-form" style="margin-bottom: 20px;">
         <input type="number" id="quantity" placeholder="Quantity" min="1" style="padding: 5px;">
         <input type="text" id="productName" placeholder="Product Name" style="padding: 5px;">
@@ -187,8 +186,12 @@
         <button onclick="handleAddItem()" style="padding: 5px 10px;">Add Item</button>
     </div>
 
+    <div class="button-container">
+      <button class="action-button cancel-button">Cancel Order</button>
+      <button class="action-button confirm-button">Confirm Order</button>
+    </div>
+
     <script>
-        // Sample order data (replace with your actual data source)
         const sampleOrders = {
             '001': [
                 { quantity: 2, name: 'Cappuccino', price: 150 },
@@ -205,18 +208,15 @@
                 return;
             }
 
-            // Clear existing items
             document.getElementById('items-container').innerHTML = '';
             document.getElementById('names-container').innerHTML = '';
             document.getElementById('prices-container').innerHTML = '';
 
-            // Display order items
             order.forEach(item => {
                 addOrderItem(item.quantity, item.name, item.price);
             });
         }
 
-        // Add new function to handle adding items from form
         function handleAddItem() {
             const quantity = document.getElementById('quantity').value;
             const name = document.getElementById('productName').value;
@@ -229,13 +229,11 @@
 
             addOrderItem(quantity, name, price);
 
-            // Clear form
             document.getElementById('quantity').value = '';
             document.getElementById('productName').value = '';
             document.getElementById('price').value = '';
         }
 
-        // Update existing item div style
         const itemStyle = `
             padding: 8px;
             margin: 5px;
@@ -244,7 +242,6 @@
             text-align: left;
         `;
 
-        // Update addOrderItem function
         function addOrderItem(quantity, name, price) {
             const itemsContainer = document.getElementById('items-container');
             const namesContainer = document.getElementById('names-container');
@@ -271,156 +268,64 @@
             updateTotal();
         }
 
-        // Update cancel order functionality
+        function updateTotal() {
+            const prices = document.getElementById('prices-container').children;
+            let total = 0;
+            for (let i = 0; i < prices.length; i++) {
+                total += parseFloat(prices[i].textContent.replace('₱', ''));
+            }
+            document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
+        }
+
         document.querySelector('.cancel-button').addEventListener('click', function() {
             if(confirm('Are you sure you want to cancel this order?')) {
-                // Clear all containers
                 document.getElementById('items-container').innerHTML = '';
                 document.getElementById('names-container').innerHTML = '';
                 document.getElementById('prices-container').innerHTML = '';
                 
-                // Clear inputs
                 document.getElementById('orderNumber').value = '';
                 document.getElementById('quantity').value = '';
                 document.getElementById('productName').value = '';
                 document.getElementById('price').value = '';
                 
-                // Reset total
                 document.getElementById('total').textContent = 'Total Amount: ₱0.00';
             }
         });
 
-        // Add confirm order functionality
         document.querySelector('.confirm-button').addEventListener('click', function() {
             const total = document.getElementById('total').textContent;
+            const queueNum = document.getElementById('queueNumber').value;
+
             if (total === 'Total Amount: ₱0.00') {
-                alert('Please add items to the order first');
+                alert('Please add items first');
                 return;
             }
-            
-            if (confirm('Confirm this order?')) {
-                alert('Order confirmed!\n' + total);
-                // Reset everything
-                document.getElementById('items-container').innerHTML = '';
-                document.getElementById('names-container').innerHTML = '';
-                document.getElementById('prices-container').innerHTML = '';
-                updateTotal();
-            }
-        });
 
-        // Function to edit item
-        function editItem(button) {
-            const itemDiv = button.parentElement;
-            const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
-            const newQuantity = prompt('Enter new quantity:');
-            
-            if (newQuantity && !isNaN(newQuantity)) {
-                itemDiv.innerHTML = `${newQuantity} 
-                    <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
-                    <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
-                updateTotal();
-            }
-        }
-
-        // Function to delete item
-        function deleteItem(button) {
-            if (confirm('Are you sure you want to remove this item?')) {
-                const itemDiv = button.parentElement;
-                const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
-                
-                itemDiv.remove();
-                document.getElementById('names-container').children[index].remove();
-                document.getElementById('prices-container').children[index].remove();
-                
-                updateTotal();
-            }
-        }
-
-        // Function to update total
-        function updateTotal() {
-            let total = 0;
+            const orderItems = [];
             const quantities = document.getElementById('items-container').children;
+            const names = document.getElementById('names-container').children;
             const prices = document.getElementById('prices-container').children;
-            
+
             for (let i = 0; i < quantities.length; i++) {
-                const quantity = parseInt(quantities[i].textContent);
-                const price = parseFloat(prices[i].textContent.replace('₱', ''));
-                total += quantity * price;
+                const quantityText = quantities[i].childNodes[0].textContent.trim();
+                orderItems.push({
+                    quantity: parseInt(quantityText),
+                    name: names[i].textContent,
+                    price: parseFloat(prices[i].textContent.replace('₱', ''))
+                });
             }
-            
-            document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
-        }
 
-        // Add functionality to buttons
-        document.querySelector('.cancel-button').addEventListener('click', function() {
-            if(confirm('Are you sure you want to cancel this order?')) {
-                clearOrder();
-                alert('Order cancelled');
-            }
+            const orderData = {
+                items: orderItems,
+                total: total,
+                queueNumber: queueNum,
+                datetime: document.getElementById('datetime').textContent
+            };
+
+            localStorage.setItem('currentOrder', JSON.stringify(orderData));
+            window.location.href = 'orderconfirm.html';
         });
-
-        document.querySelector('.confirm-button').addEventListener('click', function() {
-            if(document.getElementById('total').textContent === 'Total Amount: ₱0.00') {
-                alert('Please add items first');
-                return;
-            }
-            if(confirm('Confirm this order?')) {
-                // Save order data here
-                alert('Order confirmed successfully!');
-                clearOrder();
-            }
-        });
-
-        function clearOrder() {
-            document.getElementById('items-container').innerHTML = '';
-            document.getElementById('names-container').innerHTML = '';
-            document.getElementById('prices-container').innerHTML = '';
-            document.getElementById('orderNumber').value = '';
-            updateTotal();
-        }
-
-        // Make employee text clickable
-        document.querySelector('.employee').addEventListener('click', function() {
-            window.location.href = 'employee.html';
-        });
-
-        // Add functionality to buttons
-        document.querySelector('.cancel-button').addEventListener('click', function() {
-            if(confirm('Are you sure you want to cancel this order?')) {
-                clearOrder();
-                window.location.href = 'cashiering.html'; // Refresh page
-            }
-        });
-
-        document.querySelector('.confirm-button').addEventListener('click', function() {
-            const total = document.getElementById('total').textContent;
-            if(total === 'Total Amount: ₱0.00') {
-                alert('Please add items first');
-                return;
-            }
-            if(confirm('Confirm this order?')) {
-                alert('Order confirmed!\n' + total);
-                window.location.href = 'orderconfirm.html'; // Go to order confirmation
-            }
-        });
-
-        // Add queue number generation
-        function generateQueueNumber() {
-            const today = new Date();
-            const number = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-            document.getElementById('queueNumber').value = number;
-        }
-
-        // Generate queue number when page loads
-        window.onload = function() {
-            generateQueueNumber();
-            updateDateTime();
-        }
     </script>
-    <div class="button-container">
-      <button class="action-button cancel-button">Cancel Order</button>
-      <button class="action-button confirm-button">Confirm Order</button>
-    </div>
   </div>
 </body>
 </html>

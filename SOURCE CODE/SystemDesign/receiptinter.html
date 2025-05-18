@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Receipt</title>
-    <link rel="stylesheet" href="receiptinter.css">
+    <link rel="stylesheet" href="receiptinter.css" />
     <script>
         function updateDateTime() {
             const now = new Date();
@@ -28,18 +28,62 @@
             document.getElementById('queue-datetime').textContent = dateTimeString;
         }
 
-        // Update time when page loads
-        window.onload = function() {
+        // Helper to safely parse and format money values
+        function formatMoney(value) {
+            const num = parseFloat(value);
+            return isNaN(num) ? '₱0.00' : `₱${num.toFixed(2)}`;
+        }
+
+        window.onload = function () {
             updateDateTime();
-            // Update every second
             setInterval(updateDateTime, 1000);
+
+            // Get receipt data from localStorage
+            const receiptData = JSON.parse(localStorage.getItem('receiptData'));
+
+            if (!receiptData) {
+                alert('No receipt data found');
+                window.location.href = 'cashiering.html';
+                return;
+            }
+
+            // Update receipt header info
+            document.getElementById('receipt-datetime').textContent = receiptData.datetime || document.getElementById('receipt-datetime').textContent;
+            const queueNumberText = receiptData.queueNumber ? `Queue Number: ${receiptData.queueNumber}` : 'Queue Number: 0000';
+            const receiptQueueElem = document.querySelector('.receipt-info p:nth-child(2)');
+            receiptQueueElem.textContent = queueNumberText;
+
+            // Display order items
+            const orderItems = document.querySelector('.order-items');
+            orderItems.innerHTML = ''; // Clear existing
+
+            receiptData.items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                const subtotal = (item.price || 0) * (item.quantity || 0);
+                div.innerHTML = `
+                    <span>${item.name} x${item.quantity}</span>
+                    <span>₱${subtotal.toFixed(2)}</span>
+                `;
+                orderItems.appendChild(div);
+            });
+
+            // Update payment totals safely
+            const totals = document.querySelectorAll('.total-line span:last-child');
+            totals[0].textContent = formatMoney(receiptData.total);
+            totals[1].textContent = formatMoney(receiptData.cash);
+            totals[2].textContent = formatMoney(receiptData.change);
+
+            // Update queue slip number and datetime
+            document.querySelector('.queue-slip .number').textContent = receiptData.queueNumber || '0000';
+            document.getElementById('queue-datetime').textContent = receiptData.datetime || document.getElementById('queue-datetime').textContent;
         }
     </script>
 </head>
 <body>
     <div class="receipt">
         <div class="header-center">
-            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo">
+            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo" />
             <h1>BYTE & BEANS BY JJOC</h1>
             <p class="slogan">"Byte into Flavor, Brewed to Perfection!"</p>
             <div class="receipt-info">
@@ -84,7 +128,7 @@
 
     <div class="queue-slip">
         <div class="header-center">
-            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo">
+            <img src="../../RESOURCES/logo.png" alt="Logo" class="logo" />
             <h1>BYTE & BEANS BY JJOC</h1>
         </div>
         <div class="queue-content">
