@@ -153,10 +153,16 @@
       </div>
       <div class="header-center">
         <div id="datetime" class="datetime"></div>
-        <div class="input-box">Queue Number :</div>
-        <div class="input-box">Order Number :</div>
+        <div class="input-box">
+            Queue Number: <input type="text" id="queueNumber" readonly>
+        </div>
+        <div class="input-box">
+            Order Number: 
+            <input type="text" id="orderNumber" placeholder="Enter Order #">
+            <button onclick="lookupOrder()" style="padding: 5px 10px;">Look Up</button>
+        </div>
       </div>
-      <div class="employee">Employee</div>
+      <div class="employee" onclick="window.location.href='employee.html'" style="cursor: pointer;">Employee</div>
     </header>
 
     <div class="order-title">ORDER</div>
@@ -182,6 +188,34 @@
     </div>
 
     <script>
+        // Sample order data (replace with your actual data source)
+        const sampleOrders = {
+            '001': [
+                { quantity: 2, name: 'Cappuccino', price: 150 },
+                { quantity: 1, name: 'Croissant', price: 80 }
+            ]
+        };
+
+        function lookupOrder() {
+            const orderNum = document.getElementById('orderNumber').value;
+            const order = sampleOrders[orderNum];
+            
+            if (!order) {
+                alert('Order not found');
+                return;
+            }
+
+            // Clear existing items
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('names-container').innerHTML = '';
+            document.getElementById('prices-container').innerHTML = '';
+
+            // Display order items
+            order.forEach(item => {
+                addOrderItem(item.quantity, item.name, item.price);
+            });
+        }
+
         // Add new function to handle adding items from form
         function handleAddItem() {
             const quantity = document.getElementById('quantity').value;
@@ -237,13 +271,22 @@
             updateTotal();
         }
 
-        // Add cancel order functionality
+        // Update cancel order functionality
         document.querySelector('.cancel-button').addEventListener('click', function() {
-            if (confirm('Are you sure you want to cancel this order?')) {
+            if(confirm('Are you sure you want to cancel this order?')) {
+                // Clear all containers
                 document.getElementById('items-container').innerHTML = '';
                 document.getElementById('names-container').innerHTML = '';
                 document.getElementById('prices-container').innerHTML = '';
-                updateTotal();
+                
+                // Clear inputs
+                document.getElementById('orderNumber').value = '';
+                document.getElementById('quantity').value = '';
+                document.getElementById('productName').value = '';
+                document.getElementById('price').value = '';
+                
+                // Reset total
+                document.getElementById('total').textContent = 'Total Amount: ₱0.00';
             }
         });
 
@@ -272,21 +315,25 @@
             const newQuantity = prompt('Enter new quantity:');
             
             if (newQuantity && !isNaN(newQuantity)) {
-                itemDiv.innerHTML = `${newQuantity} <button onclick="editItem(this)">Edit</button> <button onclick="deleteItem(this)">Delete</button>`;
+                itemDiv.innerHTML = `${newQuantity} 
+                    <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
+                    <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
                 updateTotal();
             }
         }
 
         // Function to delete item
         function deleteItem(button) {
-            const itemDiv = button.parentElement;
-            const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
-            
-            itemDiv.remove();
-            document.getElementById('names-container').children[index].remove();
-            document.getElementById('prices-container').children[index].remove();
-            
-            updateTotal();
+            if (confirm('Are you sure you want to remove this item?')) {
+                const itemDiv = button.parentElement;
+                const index = Array.from(itemDiv.parentElement.children).indexOf(itemDiv);
+                
+                itemDiv.remove();
+                document.getElementById('names-container').children[index].remove();
+                document.getElementById('prices-container').children[index].remove();
+                
+                updateTotal();
+            }
         }
 
         // Function to update total
@@ -303,8 +350,73 @@
             
             document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
         }
-    </script>
 
+        // Add functionality to buttons
+        document.querySelector('.cancel-button').addEventListener('click', function() {
+            if(confirm('Are you sure you want to cancel this order?')) {
+                clearOrder();
+                alert('Order cancelled');
+            }
+        });
+
+        document.querySelector('.confirm-button').addEventListener('click', function() {
+            if(document.getElementById('total').textContent === 'Total Amount: ₱0.00') {
+                alert('Please add items first');
+                return;
+            }
+            if(confirm('Confirm this order?')) {
+                // Save order data here
+                alert('Order confirmed successfully!');
+                clearOrder();
+            }
+        });
+
+        function clearOrder() {
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('names-container').innerHTML = '';
+            document.getElementById('prices-container').innerHTML = '';
+            document.getElementById('orderNumber').value = '';
+            updateTotal();
+        }
+
+        // Make employee text clickable
+        document.querySelector('.employee').addEventListener('click', function() {
+            window.location.href = 'employee.html';
+        });
+
+        // Add functionality to buttons
+        document.querySelector('.cancel-button').addEventListener('click', function() {
+            if(confirm('Are you sure you want to cancel this order?')) {
+                clearOrder();
+                window.location.href = 'cashiering.html'; // Refresh page
+            }
+        });
+
+        document.querySelector('.confirm-button').addEventListener('click', function() {
+            const total = document.getElementById('total').textContent;
+            if(total === 'Total Amount: ₱0.00') {
+                alert('Please add items first');
+                return;
+            }
+            if(confirm('Confirm this order?')) {
+                alert('Order confirmed!\n' + total);
+                window.location.href = 'orderconfirm.html'; // Go to order confirmation
+            }
+        });
+
+        // Add queue number generation
+        function generateQueueNumber() {
+            const today = new Date();
+            const number = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            document.getElementById('queueNumber').value = number;
+        }
+
+        // Generate queue number when page loads
+        window.onload = function() {
+            generateQueueNumber();
+            updateDateTime();
+        }
+    </script>
     <div class="button-container">
       <button class="action-button cancel-button">Cancel Order</button>
       <button class="action-button confirm-button">Confirm Order</button>

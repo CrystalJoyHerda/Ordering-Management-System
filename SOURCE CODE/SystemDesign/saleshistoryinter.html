@@ -19,10 +19,10 @@
             
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="#">Dashboard</a></li>
-                    <li><a href="#">Cashiering</a></li>
-                    <li><a href="#">Stocks</a></li>
-                    <li><a href="#" class="active">Sales History</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="cashiering.html">Cashiering</a></li>
+                    <li><a href="stocks.html">Stocks</a></li>
+                    <li><a href="saleshistoryinter.html" class="active">Sales History</a></li>
                 </ul>
             </nav>
             
@@ -35,7 +35,11 @@
         <div class="main-content">
             <div class="header">
                 <button class="back-btn">←</button>
-                <h1>Sales History</h1>
+                <h1>Today's Sales History</h1>
+                <div class="shift-info">
+                    <span id="currentShift"></span>
+                    <span id="totalSales">Total: ₱0.00</span>
+                </div>
             </div>
 
             <div class="content-grid">
@@ -72,5 +76,92 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Back button functionality
+        document.querySelector('.back-btn').addEventListener('click', () => {
+            window.history.back();
+        });
+
+        // Logout button functionality
+        document.querySelector('.logout-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to logout?')) {
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Sample sales data structure (replace with your actual data source)
+        let currentShiftSales = {
+            cashier: 'Ogille Dane Provido',
+            shiftStart: '1:00pm',
+            shiftEnd: '8:00pm',
+            sales: [],
+            totalAmount: 0
+        };
+
+        // Function to add new sale
+        function addSale(orderData) {
+            currentShiftSales.sales.push(orderData);
+            updateSalesDisplay();
+            updateCharts();
+        }
+
+        // Function to update sales display
+        function updateSalesDisplay() {
+            const tbody = document.querySelector('.sales-table tbody');
+            tbody.innerHTML = '';
+            
+            currentShiftSales.sales.forEach(sale => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${sale.product}</td>
+                    <td>${sale.quantity}</td>
+                    <td>₱${sale.total.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update total sales
+            currentShiftSales.totalAmount = currentShiftSales.sales.reduce((sum, sale) => sum + sale.total, 0);
+            document.getElementById('totalSales').textContent = `Total: ₱${currentShiftSales.totalAmount.toFixed(2)}`;
+        }
+
+        // Function to update charts (implement with your preferred chart library)
+        function updateCharts() {
+            // Group sales by product for donut chart
+            const productTotals = {};
+            currentShiftSales.sales.forEach(sale => {
+                if (productTotals[sale.product]) {
+                    productTotals[sale.product] += sale.total;
+                } else {
+                    productTotals[sale.product] = sale.total;
+                }
+            });
+
+            // Update donut chart here
+
+            // Group sales by hour for bar graph
+            const hourlyTotals = {};
+            currentShiftSales.sales.forEach(sale => {
+                const hour = new Date(sale.timestamp).getHours();
+                if (hourlyTotals[hour]) {
+                    hourlyTotals[hour] += sale.total;
+                } else {
+                    hourlyTotals[hour] = sale.total;
+                }
+            });
+
+            // Update bar graph here
+        }
+
+        // Display current shift info
+        document.getElementById('currentShift').textContent = 
+            `Current Shift: ${currentShiftSales.shiftStart} - ${currentShiftSales.shiftEnd}`;
+
+        // Initialize display
+        updateSalesDisplay();
+        updateCharts();
+    </script>
 </body>
 </html>

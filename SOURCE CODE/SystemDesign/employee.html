@@ -45,6 +45,16 @@
     </div>
 
     <script>
+        document.querySelector('.back-button').addEventListener('click', function() {
+            window.location.href = 'cashiering.html';
+        });
+
+        document.querySelector('.logout-button').addEventListener('click', function() {
+            if(confirm('Are you sure you want to logout?')) {
+                window.location.href = 'login.html';
+            }
+        });
+
         // Function to update employee info based on who's on duty
         function updateEmployeeInfo(employeeData) {
             // Update profile image if available
