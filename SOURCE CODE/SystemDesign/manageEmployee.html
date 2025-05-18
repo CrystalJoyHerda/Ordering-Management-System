@@ -23,7 +23,7 @@
                     <li><a href="admindashboard1.html">Dashboard</a></li>
                     <li class="active"><a href="manageEmployee.html">Manage Employees</a></li>
                     <li><a href="stocks.html">Stocks</a></li>
-                    <li><a href="#">View Sales</a></li>
+                    <li><a href="#">Sales</a></li>
                     <li><a href="#">Inventory</a></li>
                 </ul>
             </nav>
@@ -93,7 +93,8 @@
                 </div>
                 <div class="form-group">
                     <label for="contact">Contact #:</label>
-                    <input type="tel" id="contact" required>
+                    <input type="tel" id="contact" maxlength="11" pattern="[0-9]{11}" 
+                           onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" required>
                 </div>
                 <div class="form-group">
                     <label for="email">Email:</label>

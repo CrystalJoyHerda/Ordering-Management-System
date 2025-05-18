@@ -272,6 +272,103 @@ body {
     text-transform: lowercase;
 }
 
+/* Image Upload Styles */
+.image-upload {
+    margin-bottom: 20px;
+}
+
+.drop-zone {
+    width: 230px;
+    height: 150px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    color: #333;
+    border: 2px dashed #000;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    background: white;
+}
+
+.drop-zone__prompt {
+    font-size: 14px;
+}
+
+.drop-zone__input {
+    display: none;
+}
+
+.image-preview {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.drop-zone.has-image .drop-zone__prompt {
+    display: none;
+}
+
+.drop-zone.has-image .image-preview {
+    display: block;
+}
+
+.drop-zone--over {
+    border-style: solid;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-color: #67503b;
+    background-color: rgba(103, 80, 59, 0.1);
+}
+
+.has-image .drop-zone__prompt {
+    display: none;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Enhanced Image Upload Styles */
+.image-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 10;
+}
+
+.remove-image {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.remove-image:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
 /* Success Popup Styles */
 .success-popup {
     position: fixed;
