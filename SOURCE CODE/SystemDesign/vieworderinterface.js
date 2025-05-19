@@ -2,11 +2,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get order items from localStorage
     const orderItems = JSON.parse(localStorage.getItem('orderItems') || '[]');
     
+    // Get order type from localStorage
+    const orderType = localStorage.getItem('orderType');
+    
     // Get the order summary container
     const orderSummary = document.querySelector('.order-summary');
     
     // Clear any existing content
     orderSummary.innerHTML = '<div class="order-header"></div>';
+    
+    // Display order type if available
+    if (orderType) {
+        const orderTypeDisplay = document.createElement('div');
+        orderTypeDisplay.className = 'order-type-display';
+        orderTypeDisplay.textContent = `Order Type: ${orderType}`;
+        orderSummary.appendChild(orderTypeDisplay);
+    }
     
     let total = 0;
     
@@ -39,7 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle cancel button
     document.querySelector('.cancel-button').addEventListener('click', () => {
         localStorage.removeItem('orderItems');
-        window.location.href = 'menuinterface.html';    });
+        localStorage.removeItem('orderType');
+        window.location.href = 'menuinterface.html';
+    });
     
     // Handle confirm button
     document.querySelector('.confirm-button').addEventListener('click', () => {
@@ -47,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('lastOrderNumber', orderNumber.toString().padStart(3, '0'));
         alert(`Order #${orderNumber} confirmed!`);
         localStorage.removeItem('orderItems');
+        localStorage.removeItem('orderType');
         window.location.href = 'orderconfirmation.html';
     });
 });
