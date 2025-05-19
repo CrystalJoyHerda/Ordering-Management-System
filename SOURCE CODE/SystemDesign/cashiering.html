@@ -1,46 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POS System</title>
   <link rel="stylesheet" href="cashiering.css">
+  <script src="cashiering.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <header class="header">
+    <header>
       <div class="logo">
-        <img src="../../RESOURCES/logo.png" alt="Logo">
+        <img src="../../RESOURCES/logo.png" alt="Coffee Logo" />
       </div>
-      <div class="details">
-        <div class="date-time">Tuesday, February 25, 2025 &nbsp; 4:33pm</div>
-        <div class="queue-order">
-          <p>Queue Number: <span>000</span></p>
-          <p>Order Number: <span>0000</span></p>
+      <div class="header-center">
+        <div id="datetime" class="datetime"></div>
+        <div class="input-box">
+            Queue Number: <input type="text" id="queueNumber" readonly>
+        </div>
+        <div class="input-box">
+            Order Number: 
+            <input type="text" id="orderNumber" placeholder="Enter Order #">
+            <button onclick="lookupOrder()">Look Up</button>
         </div>
       </div>
-      <button class="employee-btn">Employee</button>
+      <div class="employee" onclick="window.location.href='employee.html'">Employee</div>
     </header>
-    <main class="main-content">
-      <h1 class="order-title">ORDER</h1>
-      <div class="order-table">
-        <div class="table-header">
-          <div>Quantity</div>
-          <div>Product Name</div>
-          <div>Price</div>
-        </div>
-        <div class="table-body">
-          <!-- Rows of orders will go here -->
-        </div>
-        <div class="total-amount">
-          <p>Total Amount: <span>0.00</span></p>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="cancel-btn">Cancel Order</button>
-        <button class="confirm-btn">Confirm Order</button>
-      </div>
-    </main>
+
+    <div class="order-title">ORDER</div>
+
+    <div class="order-grid">
+      <div class="column-header">Quantity</div>
+      <div class="column-header">Product Name</div>
+      <div class="column-header">Price</div>
+
+      <div id="items-container" class="grid-box"></div>
+      <div id="names-container" class="grid-box"></div>
+      <div id="prices-container" class="grid-box"></div>
+    </div>
+
+    <div class="total-amount-box" id="total">Total Amount: ₱0.00</div>
+
+    <div class="add-item-form">
+        <input type="number" id="quantity" placeholder="Quantity" min="1">
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="number" id="price" placeholder="Price" min="0" step="0.01">
+        <button onclick="handleAddItem()">Add Item</button>
+    </div>
+
+    <div class="button-container">
+      <button class="action-button cancel-button">Cancel Order</button>
+      <button class="action-button confirm-button" onclick="handleConfirm()">Confirm Order</button>
+    </div>
   </div>
 </body>
 </html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Receipt</title>
+    <link rel="stylesheet" href="receiptinter.css" />
+    <script src="receiptinter.js" defer></script>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="receipt">
+            <div class="header-center">
+                <img src="../../RESOURCES/logo.png" alt="Logo" class="logo" />
+                <h1>BYTE & BEANS BY JJOC</h1>
+                <p class="slogan">"Byte into Flavor, Brewed to Perfection!"</p>
+                <div class="receipt-info">
+                    <p id="receipt-datetime"></p>
+                    <p>Queue Number: <span class="queue-number">0000</span></p>
+                    <p>Cashier: <span id="cashier-name">Ogille Dane Provido</span></p>
+                </div>
+            </div>
+
+            <div class="order-items" id="orderItemsList">
+                <!-- Items will be populated dynamically -->
+            </div>
+
+            <div class="totals">
+                <div class="total-line">
+                    <span>Total Amount:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Cash:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Change:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="paper-break"></div>
+
+        <div class="queue-slip">
+            <div class="header-center">
+                <img src="../../RESOURCES/logo.png" alt="Logo" class="logo" />
+                <h1>BYTE & BEANS BY JJOC</h1>
+            </div>
+            <div class="queue-content">
+                <h2>Queue Number</h2>
+                <div class="number">0000</div>
+                <div id="queue-datetime" class="datetime"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        window.onload = function() {
+            const receiptData = JSON.parse(localStorage.getItem('receiptData'));
+            if (!receiptData) {
+                alert('No receipt data found');
+                window.location.href = 'cashiering.html';
+                return;
+            }
+
+            // Update queue numbers in all locations
+            const queueNumber = receiptData.queueNumber || '0000';
+            document.querySelector('.queue-number').textContent = queueNumber;
+            document.querySelector('.queue-slip .number').textContent = queueNumber;
+            const queueText = document.querySelector('.receipt-info p:nth-child(2)');
+            queueText.textContent = `Queue Number: ${queueNumber}`;
+
+            // ...existing code...
+        }
+    </script>
+</body>
+</html>

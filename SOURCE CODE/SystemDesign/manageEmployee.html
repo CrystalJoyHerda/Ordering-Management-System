@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Manage Employees</title>
     <link rel="stylesheet" href="manageEmployee.css">
-    
+    <script src="manageEmployee.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -20,11 +20,8 @@
             
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="admindashboard1.html">Dashboard</a></li>
-                    <li class="active"><a href="manageEmployee.html">Manage Employees</a></li>
-                    <li><a href="stocks.html">Stocks</a></li>
-                    <li><a href="#">View Sales</a></li>
-                    <li><a href="#">Inventory</a></li>
+                    <li><a href="#">Dashboard</a></li>
+                    <li><a href="#">Stocks</a></li>
                 </ul>
             </nav>
             
@@ -41,7 +38,7 @@
             
             <div class="controls">
                 <div class="search-container">
-                    <input type="text" placeholder="Search:" class="search-input">
+                    <input type="text" placeholder="Search:" class="search-input" id="searchInput">
                 </div>
                 <button class="add-btn" id="addEmployeeBtn">Add Employee</button>
             </div>
@@ -58,59 +55,12 @@
                             <th>ACTION</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="employeeTableBody">
                         <!-- Table data will be populated dynamically -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
-    <!-- Add Employee Popup -->
-    <div class="popup-container" id="popupContainer">
-        <div class="popup-content">
-            <h2>Register new employee?</h2>
-            <form id="employeeForm">
-                <div class="form-group">
-                    <label for="empId">EMP ID:</label>
-                    <input type="text" id="empId" required>
-                </div>
-                <div class="form-group">
-                    <label for="firstName">First name:</label>
-                    <input type="text" id="firstName" required>
-                </div>
-                <div class="form-group">
-                    <label for="middleName">Middle name:</label>
-                    <input type="text" id="middleName">
-                </div>
-                <div class="form-group">
-                    <label for="lastName">Last name:</label>
-                    <input type="text" id="lastName" required>
-                </div>
-                <div class="form-group">
-                    <label for="birthday">Birthday:</label>
-                    <input type="date" id="birthday" required>
-                </div>
-                <div class="form-group">
-                    <label for="contact">Contact #:</label>
-                    <input type="tel" id="contact" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="role">Role:</label>
-                    <input type="text" id="role" required>
-                </div>
-                <div class="form-buttons">
-                    <button type="button" id="saveBtn">save</button>
-                    <button type="button" id="closeBtn">cancel/close</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script src="addemployee.js"></script>
 </body>
 </html>

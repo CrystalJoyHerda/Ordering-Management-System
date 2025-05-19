@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('employeeForm').reset();
     });
 
+    // Add input validation for contact number
+    const contactInput = document.getElementById('contact');
+    contactInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
     // Save button
     const saveBtn = document.getElementById('saveBtn');
     saveBtn.addEventListener('click', () => {
@@ -31,9 +37,29 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // If all required fields are filled
-        alert('Employee data saved!');
+        // Validate contact number (exactly 11 digits)
+        if (!/^\d{11}$/.test(contact)) {
+            alert('Contact number must be exactly 11 digits');
+            return;
+        }
+
+        // Show success popup
+        showSuccessPopup();
+        
+        // Clear form and close popup
         popupContainer.style.display = 'none';
         document.getElementById('employeeForm').reset();
     });
 });
+
+function showSuccessPopup() {
+    const successPopup = document.createElement('div');
+    successPopup.className = 'success-popup';
+    successPopup.innerHTML = `
+        <div class="success-content">
+            <p>Added Successfully!</p>
+            <button onclick="this.parentElement.parentElement.remove()">OK</button>
+        </div>
+    `;
+    document.body.appendChild(successPopup);
+}

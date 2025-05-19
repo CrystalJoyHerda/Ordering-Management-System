@@ -1,141 +1,265 @@
-/* General Reset */
+:root {
+    --primary-bg: #f0e6ff;
+    --secondary-bg: #e0e0e0;
+    --button-green: #00ff37;
+    --border-radius: 8px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
+    font-family: Arial, sans-serif;
+    background-color: #fff;
+    margin: 0;
+    padding: 0;
+    text-align: center;
 }
 
 .container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .logo img {
-  width: 25%;
-  height: auto;
-  object-fit: contain;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    padding: 5px;
+    background-color: white;
 }
 
-.details {
-  flex: 1;
-  margin-left: 20px;
+.datetime, .employee {
+    background-color: #ecebff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
 }
 
-.details p {
-  margin: 5px 0;
+.employee {
+    cursor: pointer;
 }
 
-.date-time {
-  font-size: 14px;
-  color: #555;
+.header-center {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
-.queue-order p {
-  font-size: 16px;
-  color: #333;
+.input-box {
+    background-color: #ecebff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: left;
 }
 
-.queue-order span {
-  font-weight: bold;
+.input-box button {
+    padding: 5px 10px;
 }
 
-.employee-btn {
-  background-color: #d9d9d9;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.employee-btn:hover {
-  background-color: #c7c7c7;
-}
-
-.main-content {
-  text-align: center;
-}
-
+/* Order section styles */
 .order-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #333;
+    background-color: #dcdcdc;
+    padding: 10px;
+    margin: 20px 0 10px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 12px;
 }
 
-.order-table {
-  background-color: #eaeaea;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
+.order-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
-.table-header, .table-body {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
+.column-header {
+    font-weight: bold;
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 10px;
 }
 
-.table-header div {
-  font-weight: bold;
-  text-align: center;
-  padding: 10px;
-  background-color: #d9d9d9;
-  border-radius: 5px;
+.grid-box {
+    min-height: 150px;
+    background-color: #d3d3d3;
+    border-radius: 10px;
 }
 
-.table-body div {
-  padding: 10px;
-  background-color: #fff;
-  border-radius: 5px;
-  text-align: center;
+.total-amount-box {
+    background-color: #d3d3d3;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 18px;
+    display: inline-block;
+    margin-bottom: 20px;
 }
 
-.total-amount {
-  font-size: 18px;
-  text-align: right;
-  margin-top: 10px;
+.add-item-form {
+    margin-bottom: 20px;
 }
 
-.total-amount span {
-  font-weight: bold;
+.add-item-form input {
+    padding: 5px;
+    margin-right: 5px;
 }
 
-.actions {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
+.add-item-form button {
+    padding: 5px 10px;
 }
 
-.cancel-btn {
-  background-color: red;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+/* Button styles */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
-.cancel-btn:hover {
-  opacity: 0.9;
+.action-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
 }
 
-.confirm-btn {
-  background-color: green;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+.cancel-button {
+    background-color: red;
 }
 
-.confirm-btn:hover {
-  opacity: 0.9;
+.confirm-button {
+    background-color: green;
+}
+
+/* Queue Section */
+.queue-section {
+    background-color: var(--primary-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.queue-input {
+    border: none;
+    background: transparent;
+    flex-grow: 1;
+}
+
+/* Main Content Layout */
+.main-content {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 20px;
+}
+
+/* Section Titles */
+.section-title {
+    background-color: var(--secondary-bg);
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: var(--border-radius);
+    margin-bottom: 15px;
+}
+
+/* Order Grid */
+.order-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 10px;
+}
+
+.column-header {
+    background-color: var(--secondary-bg);
+    padding: 10px;
+    text-align: center;
+    border-radius: var(--border-radius);
+}
+
+.grid-item {
+    background-color: var(--secondary-bg);
+    height: 60px;
+    border-radius: var(--border-radius);
+}
+
+/* Payment Section */
+.payment-details {
+    background-color: var(--secondary-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 5px;
+}
+
+.cash-row {
+    background-color: var(--primary-bg);
+    border-radius: var(--border-radius);
+}
+
+.amount-field {
+    min-width: 100px;
+}
+
+/* Print Button */
+.print-button {
+    background-color: var(--button-green);
+    color: black;
+    border: none;
+    padding: 15px;
+    border-radius: 20px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.print-button:hover {
+    background-color: #00e030;
+}
+
+/* Responsive Design */
+@media (max-width: 767px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
