@@ -24,7 +24,11 @@
             </div>
             <div class="input-box">
                 Order Number: 
-                <input type="text" id="orderNumber" placeholder="Enter Order #">
+                <input type="text" 
+                       id="orderNumber" 
+                       placeholder="Enter Order #" 
+                       onkeypress="return onlyNumbers(event)"
+                       maxlength="4">
                 <button onclick="lookupOrder()">Look Up</button>
             </div>
         </div>

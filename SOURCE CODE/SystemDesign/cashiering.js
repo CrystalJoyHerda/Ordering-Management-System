@@ -419,3 +419,12 @@ function showOrderDetails(order) {
         flash.remove();
     }, 3000);
 }
+
+// Add this function to restrict input to numbers only
+function onlyNumbers(e) {
+    const char = String.fromCharCode(e.which);
+    if (!(/[0-9]/.test(char))) {
+        e.preventDefault();
+        return false;
+    }
+}
