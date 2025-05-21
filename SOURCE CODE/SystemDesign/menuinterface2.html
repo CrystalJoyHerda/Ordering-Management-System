@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order System</title>
+  <link rel="stylesheet" type="text/css" href="menuinterface2.css">
+  <script type="text/javascript" src="menuinterface2.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <header class="header">
+      <div class="logo">
+        <img src="../../RESOURCES/logo.png" alt="Logo" class="logo-image">
+      </div>
+      <div class="datetime-container">
+        <div class="datetime">Tuesday, February 25, 2025 &nbsp; 4:33pm</div>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main class="main-layout">
+      <!-- Left Section -->
+      <div class="left-section">
+        <button class="category-button">Coffee</button>
+        <button class="category-button">Snacks</button>
+      </div>
+      
+      <!-- Center Section -->
+      <div class="center-section">
+        <!-- Coffee Grid -->
+        <div class="food-grid scrollable coffee-grid active">
+          <h3 class="grid-heading">Hot Coffee</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Espresso" class="food-image">
+            <h4 class="food-name">Espresso</h4>
+            <p class="food-price">₱120.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Cappuccino" class="food-image">
+            <h4 class="food-name">Cappuccino</h4>
+            <p class="food-price">₱150.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Cafe Latte" class="food-image">
+            <h4 class="food-name">Cafe Latte</h4>
+            <p class="food-price">₱140.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          
+          <h3 class="grid-heading">Cold Coffee</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Iced Americano" class="food-image">
+            <h4 class="food-name">Iced Americano</h4>
+            <p class="food-price">₱130.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Frappuccino" class="food-image">
+            <h4 class="food-name">Frappuccino</h4>
+            <p class="food-price">₱160.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Cold Brew" class="food-image">
+            <h4 class="food-name">Cold Brew</h4>
+            <p class="food-price">₱140.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          
+          <h3 class="grid-heading">Non Coffee</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Hot Chocolate" class="food-image">
+            <h4 class="food-name">Hot Chocolate</h4>
+            <p class="food-price">₱120.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Green Tea Latte" class="food-image">
+            <h4 class="food-name">Green Tea Latte</h4>
+            <p class="food-price">₱130.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Chai Tea Latte" class="food-image">
+            <h4 class="food-name">Chai Tea Latte</h4>
+            <p class="food-price">₱130.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snacks Grid -->
+        <div class="food-grid scrollable snacks-grid">
+          <h3 class="grid-heading">Pastries</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Croissant" class="food-image">
+            <h4 class="food-name">Croissant</h4>
+            <p class="food-price">₱80.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Danish Pastry" class="food-image">
+            <h4 class="food-name">Danish Pastry</h4>
+            <p class="food-price">₱90.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Muffin" class="food-image">
+            <h4 class="food-name">Muffin</h4>
+            <p class="food-price">₱70.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+
+          <h3 class="grid-heading">Sandwiches</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Club Sandwich" class="food-image">
+            <h4 class="food-name">Club Sandwich</h4>
+            <p class="food-price">₱180.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Grilled Cheese" class="food-image">
+            <h4 class="food-name">Grilled Cheese</h4>
+            <p class="food-price">₱150.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Tuna Sandwich" class="food-image">
+            <h4 class="food-name">Tuna Sandwich</h4>
+            <p class="food-price">₱160.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+
+          <h3 class="grid-heading">Cakes</h3>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Chocolate Cake" class="food-image">
+            <h4 class="food-name">Chocolate Cake</h4>
+            <p class="food-price">₱200.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Cheesecake" class="food-image">
+            <h4 class="food-name">Cheesecake</h4>
+            <p class="food-price">₱220.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <img src="../../RESOURCES/logo.png" alt="Carrot Cake" class="food-image">
+            <h4 class="food-name">Carrot Cake</h4>
+            <p class="food-price">₱190.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Section -->
+      <div class="right-section">
+        <div class="selected-item-display">
+          <span class="selected-for-label">Add-ons for:</span>
+          <span class="selected-item-name">Select an item first</span>
+        </div>
+        <span class="addons-title">Add ons</span>
+        <div class="addons-grid">
+          <div class="addon-circle" data-name="Extra Milk" data-price="15">
+            <img src="../../RESOURCES/milk.png" alt="Milk" class="addon-image">
+            <div class="addon-name">Extra Milk</div>
+            <div class="addon-price">₱15.00</div>
+          </div>
+          <div class="addon-circle" data-name="Extra Sugar" data-price="10">
+            <img src="../../RESOURCES/sugar.png" alt="Sugar" class="addon-image">
+            <div class="addon-name">Extra Sugar</div>
+            <div class="addon-price">₱10.00</div>
+          </div>
+          <div class="addon-circle" data-name="Whipped Cream" data-price="20">
+            <img src="../../RESOURCES/cream.png" alt="Cream" class="addon-image">
+            <div class="addon-name">Whipped Cream</div>
+            <div class="addon-price">₱20.00</div>
+          </div>
+          <div class="addon-circle" data-name="Caramel Syrup" data-price="25">
+            <img src="../../RESOURCES/caramel.png" alt="Caramel" class="addon-image">
+            <div class="addon-name">Caramel Syrup</div>
+            <div class="addon-price">₱25.00</div>
+          </div>
+        </div>
+      </div>    </main>
+    
+    <!-- View Order Modal -->
+    <div class="view-order-modal" id="viewOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Order Details</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="order-type-display"></div>
+                <div class="order-items"></div>
+                <div class="order-total"></div>
+                <div class="order-instructions">
+                    <small>* Click on any item to remove it from your order</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-modal-btn">Cancel</button>
+                <button class="confirm-modal-btn">Confirm Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div class="thank-you-modal" id="thankYouModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Thank You!</h2>
+            </div>
+            <div class="modal-body">
+                <p>Your order has been confirmed.</p>
+                <p>Order Number: <span id="orderNumber"></span></p>
+                <p>Please take your receipt to the cashier.</p>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Printing receipt...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="close-thank-you-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Type Selection Modal -->
+    <div class="notification-modal" id="orderTypeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Order Type Required</h2>
+                <span class="close-notification-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="notification-icon">☕</div>
+                <p>Please select your order type:</p>
+                <div class="option-buttons">
+                    <button class="option-btn" data-type="Dine In">Dine In</button>
+                    <button class="option-btn" data-type="Take out">Take Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty Order Modal -->
+    <div class="notification-modal" id="emptyOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Empty Order</h2>
+            </div>
+            <div class="modal-body">
+                <div class="notification-icon">🛍️</div>
+                <p>Your order is empty</p>
+                <p class="subtitle">Please select items from our menu to proceed</p>
+            </div>
+            <div class="modal-footer">
+                <button class="notification-ok-btn">Continue Ordering</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (for removing items) -->
+    <div class="notification-modal" id="confirmationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirmationTitle">Remove Item?</h2>
+            </div>
+            <div class="modal-body">
+                <div class="notification-icon">⚠️</div>
+                <p id="confirmationMessage">Are you sure you want to remove this item?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-modal-btn" id="confirmCancel">Cancel</button>
+                <button class="confirm-modal-btn" id="confirmYes">Yes, Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="notification-modal" id="errorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>No Items Selected</h2>
+            </div>
+            <div class="modal-body">
+                <div class="notification-icon">⚠️</div>
+                <p>Please select at least one item before proceeding.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="notification-ok-btn" onclick="closeErrorModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+      <button class="add-item-btn" onclick="addItemToCashiering()">＋ Add Item</button>
+    </footer>
+  </div>
+</body>
+</html>

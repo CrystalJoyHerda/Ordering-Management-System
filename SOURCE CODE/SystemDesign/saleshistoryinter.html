@@ -19,22 +19,21 @@
             
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="cashierdashboard.html">Dashboard</a></li>
                     <li><a href="cashiering.html">Cashiering</a></li>
-                    <li><a href="stocks.html">Stocks</a></li>
+                    <li><a href="stockscashier.html">Stocks</a></li>
                     <li><a href="saleshistoryinter.html" class="active">Sales History</a></li>
                 </ul>
             </nav>
             
             <div class="logout-section">
-                <button class="logout-btn">Log Out</button>
+                <button class="logout-btn" onclick="handleLogout()">Log Out</button>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
             <div class="header">
-                <button class="back-btn">←</button>
                 <h1>Today's Sales History</h1>
                 <div class="shift-info">
                     <span id="currentShift"></span>

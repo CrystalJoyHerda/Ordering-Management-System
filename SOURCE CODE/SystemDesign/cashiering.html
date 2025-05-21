@@ -14,17 +14,28 @@
         <img src="../../RESOURCES/logo.png" alt="Coffee Logo" />
       </div>
       <div class="header-center">
-        <div id="datetime" class="datetime"></div>
-        <div class="input-box">
-            Queue Number: <input type="text" id="queueNumber" readonly>
+        <div class="datetime-row">
+          <div class="back-btn" onclick="window.location.href='cashierdashboard.html'">← Back</div>
+          <div id="datetime" class="datetime"></div>
         </div>
-        <div class="input-box">
-            Order Number: 
-            <input type="text" id="orderNumber" placeholder="Enter Order #">
-            <button onclick="lookupOrder()">Look Up</button>
+        <div class="number-inputs">
+            <div class="input-box">
+                Queue Number: <input type="text" id="queueNumber" readonly>
+            </div>
+            <div class="input-box">
+                Order Number: 
+                <input type="text" id="orderNumber" placeholder="Enter Order #">
+                <button onclick="lookupOrder()">Look Up</button>
+            </div>
+        </div>
+        <div class="order-type-selector">
+            <button class="type-button" data-type="dine-in">Dine In</button>
+            <button class="type-button" data-type="takeout">Take Out</button>
         </div>
       </div>
-      <div class="employee" onclick="window.location.href='employee.html'">Employee</div>
+      <div class="header-buttons">
+        <div class="employee" onclick="window.location.href='employee.html'">Employee</div>
+      </div>
     </header>
 
     <div class="order-title">ORDER</div>
@@ -42,10 +53,9 @@
     <div class="total-amount-box" id="total">Total Amount: ₱0.00</div>
 
     <div class="add-item-form">
-        <input type="number" id="quantity" placeholder="Quantity" min="1">
-        <input type="text" id="productName" placeholder="Product Name">
-        <input type="number" id="price" placeholder="Price" min="0" step="0.01">
-        <button onclick="handleAddItem()">Add Item</button>
+        <button onclick="goToMenu()" class="menu-button">
+            + Add Item
+        </button>
     </div>
 
     <div class="button-container">

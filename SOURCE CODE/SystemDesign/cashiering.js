@@ -163,6 +163,108 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for buttons
     document.querySelector('.cancel-button').addEventListener('click', handleCancel);
     document.querySelector('.confirm-button').addEventListener('click', handleConfirm);
+    
+    // Add menu button click handler
+    const menuButton = document.querySelector('.menu-button');
+    if(menuButton) {
+        menuButton.addEventListener('click', goToMenu);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check for newly added items
+    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
+    
+    if (newItems.length > 0) {
+        // Add items to the grid
+        newItems.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'grid-row flash-highlight';
+            row.innerHTML = `
+                <div>${item.quantity}</div>
+                <div>${item.name}</div>
+                <div>₱${item.price.toFixed(2)}</div>
+            `;
+            document.getElementById('items-container').appendChild(row);
+        });
+        
+        // Clear the stored items
+        localStorage.removeItem('newAddedItems');
+        
+        // Update total
+        updateTotal();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check for newly added items from menu
+    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
+    
+    if (newItems.length > 0) {
+        newItems.forEach(item => {
+            // Create the item elements with flash effect
+            const quantityElement = document.createElement('div');
+            quantityElement.textContent = item.quantity;
+            quantityElement.classList.add('flash-highlight');
+            
+            const nameElement = document.createElement('div');
+            nameElement.textContent = item.name;
+            nameElement.classList.add('flash-highlight');
+            
+            const priceElement = document.createElement('div');
+            priceElement.textContent = `₱${(item.price * item.quantity).toFixed(2)}`;
+            priceElement.classList.add('flash-highlight');
+            
+            // Add to containers
+            document.getElementById('items-container').appendChild(quantityElement);
+            document.getElementById('names-container').appendChild(nameElement);
+            document.getElementById('prices-container').appendChild(priceElement);
+        });
+        
+        // Clear storage after adding
+        localStorage.removeItem('newAddedItems');
+        
+        // Update total amount
+        updateTotal();
+    }
+});
+
+// Function to populate grid items from localStorage
+function populateGridFromStorage() {
+    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
+    
+    if (newItems.length > 0) {
+        newItems.forEach(item => {
+            // Create grid items with flash effect
+            const quantityElement = document.createElement('div');
+            quantityElement.textContent = item.quantity;
+            quantityElement.classList.add('flash-highlight');
+            
+            const nameElement = document.createElement('div');
+            nameElement.textContent = item.name;
+            nameElement.classList.add('flash-highlight');
+            
+            const priceElement = document.createElement('div');
+            priceElement.textContent = `₱${item.price.toFixed(2)}`;
+            priceElement.classList.add('flash-highlight');
+            
+            // Add to containers
+            document.getElementById('items-container').appendChild(quantityElement);
+            document.getElementById('names-container').appendChild(nameElement);
+            document.getElementById('prices-container').appendChild(priceElement);
+        });
+        
+        // Clear storage after adding
+        localStorage.removeItem('newAddedItems');
+        
+        // Update total amount
+        updateTotal();
+    }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', () => {
+    populateGridFromStorage();
 });
 
 // Handler functions
@@ -171,6 +273,40 @@ function handleCancel() {
         clearOrder();
         window.location.href = 'cashiering.html';
     }
+}
+
+// Menu navigation function
+function goToMenu() {
+    // Save current order state
+    const orderState = {
+        queueNumber: document.getElementById('queueNumber').value,
+        currentItems: getOrderItems(),
+        datetime: document.getElementById('datetime').textContent,
+        total: document.getElementById('total').textContent
+    };
+    
+    // Save to localStorage for menuinterface2 to access
+    localStorage.setItem('pendingOrder', JSON.stringify(orderState));
+    
+    // Navigate to new menu interface
+    window.location.href = 'menuinterface2.html';
+}
+
+// Helper function to get current order items
+function getOrderItems() {
+    const items = [];
+    const quantities = document.getElementById('items-container').children;
+    const names = document.getElementById('names-container').children;
+    const prices = document.getElementById('prices-container').children;
+
+    for(let i = 0; i < quantities.length; i++) {
+        items.push({
+            quantity: parseInt(quantities[i].childNodes[0].textContent.trim()),
+            name: names[i].textContent,
+            price: parseFloat(prices[i].textContent.replace('₱', ''))
+        });
+    }
+    return items;
 }
 
 // Utility functions
@@ -191,4 +327,95 @@ function clearOrder() {
     clearInputs();
     document.getElementById('orderNumber').value = '';
     document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+}
+
+// Order type selection
+document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        localStorage.setItem('selectedOrderType', btn.dataset.type);
+    });
+});
+
+// Order lookup functionality
+function lookupOrder() {
+    const orderNumber = document.getElementById('orderNumber').value;
+    if (!orderNumber) return;
+
+    // Get order details from localStorage
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders.find(o => o.orderNumber === orderNumber);
+
+    if (order) {
+        showOrderInfo(order);
+    } else {
+        alert('Order not found');
+    }
+}
+
+function showOrderInfo(order) {
+    // Create info display element
+    const display = document.createElement('div');
+    display.className = 'order-info-display';
+    display.innerHTML = `
+        <h3>Order #${order.orderNumber}</h3>
+        <p>Type: ${order.type}</p>
+        <p>Items: ${order.items.map(item => `${item.name} x${item.quantity}`).join(', ')}</p>
+        <p>Total: ₱${order.total.toFixed(2)}</p>
+    `;
+
+    document.body.appendChild(display);
+    display.style.display = 'block';
+
+    // Remove after animation
+    setTimeout(() => {
+        display.remove();
+    }, 3000);
+}
+
+// Add type button functionality
+document.querySelectorAll('.type-button').forEach(button => {
+    button.addEventListener('click', () => {
+        document.querySelectorAll('.type-button').forEach(btn => 
+            btn.classList.remove('active'));
+        button.classList.add('active');
+        localStorage.setItem('orderType', button.dataset.type);
+    });
+});
+
+// Enhance lookupOrder function
+function lookupOrder() {
+    const orderNumber = document.getElementById('orderNumber').value;
+    if (!orderNumber) return;
+
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders.find(o => o.orderNumber === orderNumber);
+
+    if (order) {
+        showOrderDetails(order);
+    } else {
+        alert('Order not found');
+    }
+}
+
+function showOrderDetails(order) {
+    // Create flash element
+    const flash = document.createElement('div');
+    flash.className = 'order-details-flash';
+    flash.innerHTML = `
+        <h3>Order #${order.orderNumber}</h3>
+        <p>Type: ${order.type}</p>
+        <p>Items: ${order.items.map(item => 
+            `${item.name} x${item.quantity}`).join(', ')}</p>
+        <p>Total: ₱${order.total.toFixed(2)}</p>
+    `;
+
+    document.body.appendChild(flash);
+    flash.style.display = 'block';
+
+    // Remove after animation
+    setTimeout(() => {
+        flash.remove();
+    }, 3000);
 }
