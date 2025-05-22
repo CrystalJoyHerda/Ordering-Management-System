@@ -153,6 +153,23 @@ function handleConfirm() {
 
     localStorage.setItem('currentOrder', JSON.stringify(orderData));
     window.location.href = 'orderconfirm.html';
+
+    // Get the selected order type
+    const orderType = document.querySelector('.type-button.active')?.dataset.type || 'dine-in';
+    
+    // Prepare receipt data
+    const receiptData = {
+        items: getCurrentOrderItems(),
+        queueNumber: document.getElementById('queueNumber').value,
+        orderType: orderType === 'dine-in' ? 'Dine In' : 'Take Out',
+        // ...other receipt data
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('receiptData', JSON.stringify(receiptData));
+    
+    // Navigate to receipt page
+    window.location.href = 'receiptinter.html';
 }
 
 // Add CSS animation for fade in effect

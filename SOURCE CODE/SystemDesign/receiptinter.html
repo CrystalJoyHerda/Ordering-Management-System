@@ -6,6 +6,18 @@
     <title>Receipt</title>
     <link rel="stylesheet" href="receiptinter.css" />
     <script src="receiptinter.js" defer></script>
+    <style>
+        .print-button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #printBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="receipt-container">
@@ -17,6 +29,7 @@
                 <div class="receipt-info">
                     <p id="receipt-datetime"></p>
                     <p>Queue Number: <span class="queue-number">0000</span></p>
+                    <p>Order Type: <span id="order-type">---</span></p>
                     <p>Cashier: <span id="cashier-name">Ogille Dane Provido</span></p>
                 </div>
             </div>
@@ -55,6 +68,11 @@
             </div>
         </div>
     </div>
+
+    <div class="print-button-container">
+        <button id="printBtn">Print Receipt</button>
+    </div>
+
     <script>
         window.onload = function() {
             const receiptData = JSON.parse(localStorage.getItem('receiptData'));
@@ -71,8 +89,19 @@
             const queueText = document.querySelector('.receipt-info p:nth-child(2)');
             queueText.textContent = `Queue Number: ${queueNumber}`;
 
-            // ...existing code...
-        }
+            // Optional: Populate other fields (datetime, order items, total, etc.)
+        };
+
+        document.getElementById('printBtn').addEventListener('click', function() {
+            const btn = this;
+            btn.textContent = 'Printing...';
+            btn.disabled = true;
+
+            // Simulate a short "printing" delay
+            setTimeout(() => {
+                window.location.href = 'cashiering.html';
+            }, 1000);
+        });
     </script>
 </body>
 </html>

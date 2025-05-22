@@ -34,6 +34,10 @@ window.onload = function() {
         return;
     }
 
+    // Update order type from cashiering
+    const orderType = receiptData.orderType || localStorage.getItem('orderType') || '---';
+    document.getElementById('order-type').textContent = orderType;
+
     displayReceiptData(receiptData);
 };
 
