@@ -47,16 +47,14 @@
                 <table class="stocks-table">
                     <thead>
                         <tr>
-                            <th>PRD ID</th>
-                            <th>NAME</th>
-                            <th>CATEGORY</th>
-                            <th>QUANTITY</th>
-                            <th>PRICE</th>
+                            <th>PRODUCT</th>
                             <th>STATUS</th>
+                            <th>REMAINING</th>
+                            <th>ALERT</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Table rows will go here -->
+                    <tbody id="stocksTableBody">
+                        <!-- Table will be populated dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -69,6 +67,53 @@
                 window.location.href = 'login.html';
             }
         }
+
+        // Sample data - This would actually come from your database/admin updates
+        const stocksData = [
+            {
+                product: "Espresso",
+                remaining: 15,
+                threshold: 5,
+                unit: "servings"
+            },
+            {
+                product: "Cappuccino",
+                remaining: 3,
+                threshold: 5,
+                unit: "servings"
+            },
+            {
+                product: "Croissant",
+                remaining: 2,
+                threshold: 4,
+                unit: "pieces"
+            }
+        ];
+
+        function updateStocksDisplay() {
+            const tbody = document.getElementById('stocksTableBody');
+            tbody.innerHTML = '';
+
+            stocksData.forEach(item => {
+                const status = item.remaining <= item.threshold ? 'low' : 'good';
+                const alert = status === 'low' ? 'Restock Needed' : 'Stock Level OK';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.product}</td>
+                    <td><span class="status ${status}">${status === 'low' ? 'Low Stock' : 'Good Stock'}</span></td>
+                    <td>${item.remaining} ${item.unit}</td>
+                    <td>${alert}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Initial display
+        updateStocksDisplay();
+
+        // Update stocks every minute (simulating real-time updates)
+        setInterval(updateStocksDisplay, 60000);
     </script>
 </body>
 </html>

@@ -152,13 +152,43 @@ body {
 .stocks-table th {
     background-color: #67503b;
     color: white;
-    padding: 12px;
+    padding: 15px;
     text-align: left;
 }
 
 .stocks-table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.ingredients-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ingredients-list li {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.status {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status.good {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status.low {
+    background-color: #ffebee;
+    color: #c62828;
 }
 
 /* Search Styles */

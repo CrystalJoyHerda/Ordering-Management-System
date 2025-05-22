@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order System</title>
-  <link rel="stylesheet" type="text/css" href="menuinterface2.css">
-  <script type="text/javascript" src="menuinterface2.js" defer></script>
+  <link rel="stylesheet" type="text/css" href="menuinterface.css">
+  <script type="text/javascript" src="menuinterface.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -14,8 +14,12 @@
       <div class="logo">
         <img src="../../RESOURCES/logo.png" alt="Logo" class="logo-image">
       </div>
-      <div class="datetime-container">
-        <div class="datetime">Tuesday, February 25, 2025 &nbsp; 4:33pm</div>
+      <div class="datetime">
+        Tuesday, February 25, 2025 &nbsp; 4:33pm
+      </div>
+      <div class="order-type">
+        <button class="order-button">Dine In</button>
+        <button class="order-button">Take out</button>
       </div>
     </header>
 
@@ -33,8 +37,10 @@
         <div class="food-grid scrollable coffee-grid active">
           <h3 class="grid-heading">Hot Coffee</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Espresso" class="food-image">
-            <h4 class="food-name">Espresso</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/espresso.png" alt="Espresso" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Espresso</h4>
+            </div>
             <p class="food-price">₱120.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -43,8 +49,10 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Cappuccino" class="food-image">
-            <h4 class="food-name">Cappuccino</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/cappuccino.png" alt="Cappuccino" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Cappuccino</h4>
+            </div>
             <p class="food-price">₱150.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -53,9 +61,35 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Cafe Latte" class="food-image">
-            <h4 class="food-name">Cafe Latte</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/americano.png" alt="Americano" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Americano</h4>
+            </div>
+            <p class="food-price">₱130.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/latte.png" alt="Latte" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Latte</h4>
+            </div>
             <p class="food-price">₱140.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/macha.png" alt="Macha" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Macha</h4>
+            </div>
+            <p class="food-price">₱145.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -65,8 +99,22 @@
           
           <h3 class="grid-heading">Cold Coffee</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Iced Americano" class="food-image">
-            <h4 class="food-name">Iced Americano</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/Iced Latte .png" alt="Iced Latte" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Iced Latte</h4>
+            </div>
+            <p class="food-price">₱140.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/iced_americano.png" alt="Iced Americano" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Iced Americano</h4>
+            </div>
             <p class="food-price">₱130.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -75,8 +123,22 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Frappuccino" class="food-image">
-            <h4 class="food-name">Frappuccino</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/cold_brew.png" alt="Cold Brew" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Cold Brew</h4>
+            </div>
+            <p class="food-price">₱140.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/frappuccino.png" alt="Frappuccino" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Frappuccino</h4>
+            </div>
             <p class="food-price">₱160.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -85,9 +147,11 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Cold Brew" class="food-image">
-            <h4 class="food-name">Cold Brew</h4>
-            <p class="food-price">₱140.00</p>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/affogato.png" alt="Affogato" class="food-image" style="width:80px;height:80px;">
+              <h4 class="food-name">Affogato</h4>
+            </div>
+            <p class="food-price">₱155.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -97,8 +161,46 @@
           
           <h3 class="grid-heading">Non Coffee</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Hot Chocolate" class="food-image">
-            <h4 class="food-name">Hot Chocolate</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/strawberry_italian_soda.png" alt="Strawberry Italian Soda" class="food-image">
+              <h4 class="food-name">Strawberry Italian Soda</h4>
+            </div>
+            <p class="food-price">₱110.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/lemon_lime_fizz.png" alt="Lemon-Lime Fizz" class="food-image">
+              <h4 class="food-name">Lemon-Lime Fizz</h4>
+            </div>
+            <p class="food-price">₱110.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/raspberry_pritzer.png" alt="Raspberry Spritzer" class="food-image">
+              <h4 class="food-name">Raspberry Spritzer</h4>
+            </div>
+            <p class="food-price">₱115.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/cucumber_mint_cooler.png" alt="Cucumber Mint Cooler" class="food-image" />
+              <h4 class="food-name">Cucumber Mint Cooler</h4>
+            </div>
             <p class="food-price">₱120.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -107,19 +209,11 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Green Tea Latte" class="food-image">
-            <h4 class="food-name">Green Tea Latte</h4>
-            <p class="food-price">₱130.00</p>
-            <div class="quantity-scaler">
-              <button class="quantity-btn minus" disabled>-</button>
-              <span class="quantity-value">0</span>
-              <button class="quantity-btn plus">+</button>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/blueberry_basil_soda.png" alt="Blueberry Basil Soda" class="food-image" />
+              <h4 class="food-name">Blueberry Basil Soda</h4>
             </div>
-          </div>
-          <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Chai Tea Latte" class="food-image">
-            <h4 class="food-name">Chai Tea Latte</h4>
-            <p class="food-price">₱130.00</p>
+            <p class="food-price">₱120.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -132,8 +226,10 @@
         <div class="food-grid scrollable snacks-grid">
           <h3 class="grid-heading">Pastries</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Croissant" class="food-image">
-            <h4 class="food-name">Croissant</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/donut.png" alt="Donut" class="food-image">
+              <h4 class="food-name">Donut</h4>
+            </div>
             <p class="food-price">₱80.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -142,8 +238,10 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Danish Pastry" class="food-image">
-            <h4 class="food-name">Danish Pastry</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/apple_pie.png" alt="Apple Pie" class="food-image">
+              <h4 class="food-name">Apple Pie</h4>
+            </div>
             <p class="food-price">₱90.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -152,9 +250,35 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Muffin" class="food-image">
-            <h4 class="food-name">Muffin</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/cinnamon_roll.png" alt="Cinnamon Roll" class="food-image">
+              <h4 class="food-name">Cinnamon Roll</h4>
+            </div>
             <p class="food-price">₱70.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/sugar_cookie.png" alt="Sugar Cookie" class="food-image">
+              <h4 class="food-name">Sugar Cookie</h4>
+            </div>
+            <p class="food-price">₱60.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/brownie.png" alt="Brownie" class="food-image">
+              <h4 class="food-name">Brownie</h4>
+            </div>
+            <p class="food-price">₱75.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -164,8 +288,10 @@
 
           <h3 class="grid-heading">Sandwiches</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Club Sandwich" class="food-image">
-            <h4 class="food-name">Club Sandwich</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/blt.png" alt="BLT" class="food-image">
+              <h4 class="food-name">BLT (Bacon, Lettuce, Tomato)</h4>
+            </div>
             <p class="food-price">₱180.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -174,8 +300,22 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Grilled Cheese" class="food-image">
-            <h4 class="food-name">Grilled Cheese</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/club_sandwich.png" alt="Club Sandwich" class="food-image">
+              <h4 class="food-name">Club Sandwich</h4>
+            </div>
+            <p class="food-price">₱190.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/grilled_cheese.png" alt="Grilled Cheese" class="food-image">
+              <h4 class="food-name">Grilled Cheese</h4>
+            </div>
             <p class="food-price">₱150.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -184,9 +324,23 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Tuna Sandwich" class="food-image">
-            <h4 class="food-name">Tuna Sandwich</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/ham_cheese_sandwich.png" alt="Ham and Cheese Sandwich" class="food-image">
+              <h4 class="food-name">Ham and Cheese Sandwich</h4>
+            </div>
             <p class="food-price">₱160.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/tuna_salad_sandwich.png" alt="Tuna Salad Sandwich" class="food-image">
+              <h4 class="food-name">Tuna Salad Sandwich</h4>
+            </div>
+            <p class="food-price">₱170.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -196,8 +350,10 @@
 
           <h3 class="grid-heading">Cakes</h3>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Chocolate Cake" class="food-image">
-            <h4 class="food-name">Chocolate Cake</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/chocolate_cake.png" alt="Chocolate Cake" class="food-image">
+              <h4 class="food-name">Chocolate Cake</h4>
+            </div>
             <p class="food-price">₱200.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -206,8 +362,10 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Cheesecake" class="food-image">
-            <h4 class="food-name">Cheesecake</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/cheesecake.png" alt="Cheesecake" class="food-image">
+              <h4 class="food-name">Cheesecake</h4>
+            </div>
             <p class="food-price">₱220.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
@@ -216,9 +374,35 @@
             </div>
           </div>
           <div class="food-item">
-            <img src="../../RESOURCES/logo.png" alt="Carrot Cake" class="food-image">
-            <h4 class="food-name">Carrot Cake</h4>
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/carrot_cake.png" alt="Carrot Cake" class="food-image">
+              <h4 class="food-name">Carrot Cake</h4>
+            </div>
             <p class="food-price">₱190.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/black_forest_cake.png" alt="Black Forest Cake" class="food-image">
+              <h4 class="food-name">Black Forest Cake</h4>
+            </div>
+            <p class="food-price">₱210.00</p>
+            <div class="quantity-scaler">
+              <button class="quantity-btn minus" disabled>-</button>
+              <span class="quantity-value">0</span>
+              <button class="quantity-btn plus">+</button>
+            </div>
+          </div>
+          <div class="food-item">
+            <div class="food-box">
+              <img src="../../RESOURCES/Orderspictures/red_velvet_cake.png" alt="Red Velvet Cake" class="food-image">
+              <h4 class="food-name">Red Velvet Cake</h4>
+            </div>
+            <p class="food-price">₱215.00</p>
             <div class="quantity-scaler">
               <button class="quantity-btn minus" disabled>-</button>
               <span class="quantity-value">0</span>
@@ -237,22 +421,22 @@
         <span class="addons-title">Add ons</span>
         <div class="addons-grid">
           <div class="addon-circle" data-name="Extra Milk" data-price="15">
-            <img src="../../RESOURCES/milk.png" alt="Milk" class="addon-image">
+            <img src="../../RESOURCES/Orderspictures/milk.png" alt="Milk" class="addon-image">
             <div class="addon-name">Extra Milk</div>
             <div class="addon-price">₱15.00</div>
           </div>
           <div class="addon-circle" data-name="Extra Sugar" data-price="10">
-            <img src="../../RESOURCES/sugar.png" alt="Sugar" class="addon-image">
+            <img src="../../RESOURCES/Orderspictures/sugar.png" alt="Sugar" class="addon-image">
             <div class="addon-name">Extra Sugar</div>
             <div class="addon-price">₱10.00</div>
           </div>
           <div class="addon-circle" data-name="Whipped Cream" data-price="20">
-            <img src="../../RESOURCES/cream.png" alt="Cream" class="addon-image">
+            <img src="../../RESOURCES/Orderspictures/whip_cream.png" alt="Cream" class="addon-image">
             <div class="addon-name">Whipped Cream</div>
             <div class="addon-price">₱20.00</div>
           </div>
           <div class="addon-circle" data-name="Caramel Syrup" data-price="25">
-            <img src="../../RESOURCES/caramel.png" alt="Caramel" class="addon-image">
+            <img src="../../RESOURCES/Orderspictures/caramel_syrup.png" alt="Caramel" class="addon-image">
             <div class="addon-name">Caramel Syrup</div>
             <div class="addon-price">₱25.00</div>
           </div>
@@ -354,25 +538,10 @@
         </div>
     </div>
 
-    <!-- Error Modal -->
-    <div class="notification-modal" id="errorModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>No Items Selected</h2>
-            </div>
-            <div class="modal-body">
-                <div class="notification-icon">⚠️</div>
-                <p>Please select at least one item before proceeding.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="notification-ok-btn" onclick="closeErrorModal()">OK</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer Section -->
     <footer class="footer">
-      <button class="add-item-btn" onclick="addItemToCashiering()">＋ Add Item</button>
+      <button class="cancel-button">Cancel Edit</button>
+      <button class="view-button">View Order</button>
     </footer>
   </div>
 </body>

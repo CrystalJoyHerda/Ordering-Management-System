@@ -96,8 +96,8 @@ body {
 
 /* Header Section */
 .header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: 0 40px;
   background-color: #4A2C1B;
@@ -108,24 +108,13 @@ body {
   z-index: 1000;
 }
 
-.datetime-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.datetime {
-  font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 8px 16px;
-  border-radius: 20px;
-}
-
 .logo-image {
   width: 50px;
   height: auto;
+}
+
+.datetime {
+  font-size: 14px;
 }
 
 .order-type {
@@ -224,13 +213,25 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+.food-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .food-image {
   width: 120px;
   height: 120px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 8px;
   margin-bottom: 10px;
   background-color: #fff;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .food-name {
@@ -327,8 +328,8 @@ body {
 }
 
 .addon-circle {
-  width: 100px;
-  height: 100px;
+  width: 140px;
+  height: 140px;
   background-color: #f8f8f8;
   border-radius: 12px;
   cursor: pointer;
@@ -345,8 +346,8 @@ body {
 }
 
 .addon-image {
-  width: 40px;
-  height: 40px;
+  width: 90px;
+  height: 90px;
   object-fit: contain;
   margin-bottom: 5px;
 }
@@ -527,54 +528,14 @@ body {
 /* Footer Section */
 .footer {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  justify-content: space-between;
+  padding: 0 30px;
+  height: 60px;
   background-color: #fff;
   border-top: 1px solid #eee;
   position: sticky;
   bottom: 0;
   z-index: 1000;
-}
-
-.add-item-btn {
-    width: 250px;
-    padding: 12px 30px;
-    background: linear-gradient(45deg, #3b2a1f, #67503b);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 15px rgba(59, 42, 31, 0.3);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.add-item-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 42, 31, 0.4);
-    background: linear-gradient(45deg, #67503b, #3b2a1f);
-}
-
-.add-item-btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 10px rgba(59, 42, 31, 0.3);
-}
-
-@keyframes flashItem {
-  0% { background-color: #ffffff; }
-  50% { background-color: #e8f5e9; }
-  100% { background-color: #ffffff; }
-}
-
-.flash-highlight {
-  animation: flashItem 1s ease;
 }
 
 .cancel-button {
@@ -676,7 +637,7 @@ body {
   color: #666;
 }
 
-close-modal:hover {
+.close-modal:hover {
   color: #333;
 }
 
@@ -801,7 +762,7 @@ close-modal:hover {
   color: #666;
 }
 
-close-notification-modal:hover {
+.close-notification-modal:hover {
   color: #333;
 }
 
@@ -1052,9 +1013,14 @@ close-notification-modal:hover {
   }
 
   .addon-circle, .circle {
-    width: 40px;
-    height: 40px;
-  }  .footer {
+    width: 70px;
+    height: 70px;
+  }
+  .addon-image {
+    width: 48px;
+    height: 48px;
+  }
+  .footer {
     padding: 0 15px;
     height: 60px;
   }
@@ -1135,21 +1101,4 @@ input, textarea, .editable-field {
   pointer-events: auto;
   cursor: pointer;
   touch-action: manipulation;
-}
-
-.notification-modal#errorModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 2000;
-  justify-content: center;
-  align-items: center;
-}
-
-.notification-modal#errorModal.active {
-  display: flex;
 }

@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add active class and change background for clicked button
             button.classList.add('active');
             button.style.backgroundColor = '#ffffff';
+
+            // Save order type to localStorage for cashiering sync
+            localStorage.setItem('pendingOrderType', button.textContent.trim());
         });
     });    // Category switching functionality
     const categoryButtons = document.querySelectorAll('.category-button');
@@ -618,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Save order type to localStorage
         localStorage.setItem('orderType', orderType.textContent);
-        
+
         // Generate random order number and save to localStorage
         const orderNumber = Math.floor(Math.random() * 999) + 1;
         const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
@@ -630,6 +633,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close the view order modal and show the thank you modal
         document.getElementById('viewOrderModal').classList.remove('active');
         document.getElementById('thankYouModal').classList.add('active');
+        
+        // If coming from cashiering, update the order and redirect back
+        if (window.location.pathname.includes('menuinterface.html')) {
+            // Save updated order for cashiering, including order type
+            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
+                items: updateOrderSummary(),
+                orderType: orderType.textContent
+            }));
+            // Remove pendingOrderType to avoid stale data
+            localStorage.removeItem('pendingOrderType');
+            // Redirect back to cashiering
+            window.location.href = 'cashiering.html';
+            return;
+        }
     });
 
     // Close modal when clicking on X
@@ -730,47 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
             foodItem.classList.add('selected');
             foodItem.classList.add('in-order');  // Add in-order indicator when quantity > 0
             updateOrderSummary();
-        });
-    });
-
-    // Handle quantity changes
-    document.querySelectorAll('.food-item').forEach(item => {
-        const quantityValue = item.querySelector('.quantity-value');
-        const minusBtn = item.querySelector('.minus');
-        const plusBtn = item.querySelector('.plus');
-        
-        // Set initial quantity to 0
-        quantityValue.textContent = '0';
-        minusBtn.disabled = true;
-
-        // Plus button click handler
-        plusBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let value = parseInt(quantityValue.textContent);
-            value++;
-            quantityValue.textContent = value;
-            minusBtn.disabled = false;
-            item.classList.add('selected');
-            item.classList.add('in-order');
-            updateOrderSummary();
-        });
-
-        // Minus button click handler
-        minusBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let value = parseInt(quantityValue.textContent);
-            if (value > 0) {
-                value--;
-                quantityValue.textContent = value;
-                minusBtn.disabled = value === 0;
-                
-                if (value === 0) {
-                    item.classList.remove('selected');
-                    item.classList.remove('in-order');
-                }
-                
-                updateOrderSummary();
-            }
         });
     });
 
@@ -914,144 +890,92 @@ document.addEventListener('DOMContentLoaded', () => {
         currentItemToRemove = null;
         removeCallback = null;
     });
-
-    function handleAddItem() {
-        const selectedItems = [];
+    
+    // Load pending order from cashiering if present
+    const pendingOrder = JSON.parse(localStorage.getItem('pendingOrder') || 'null');
+    if (pendingOrder && Array.isArray(pendingOrder.currentItems)) {
+        // Pre-populate the menu quantities
         document.querySelectorAll('.food-item').forEach(item => {
-            const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-            if (quantity > 0) {
-                const name = item.querySelector('.food-name').textContent;
-                const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-                const addons = [];
-
-                // Get any add-ons associated with this item
-                document.querySelectorAll(`.addon-circle[data-for-item="${name}"]`).forEach(addon => {
-                    addons.push({
-                        name: addon.getAttribute('data-name'),
-                        price: parseFloat(addon.getAttribute('data-price'))
-                    });
-                });
-
-                selectedItems.push({
-                    name,
-                    price,
-                    quantity,
-                    addons
-                });
+            const foodName = item.querySelector('.food-name').textContent;
+            const found = pendingOrder.currentItems.find(i => i.name === foodName);
+            const quantityValue = item.querySelector('.quantity-value');
+            const minusBtn = item.querySelector('.minus');
+            if (found) {
+                quantityValue.textContent = found.quantity;
+                minusBtn.disabled = found.quantity == 0;
+                if (found.quantity > 0) {
+                    item.classList.add('in-order');
+                }
+            } else {
+                quantityValue.textContent = '0';
+                minusBtn.disabled = true;
+                item.classList.remove('in-order');
             }
         });
+        // Restore order type if present
+        const pendingOrderType = localStorage.getItem('pendingOrderType');
+        if (pendingOrderType) {
+            document.querySelectorAll('.order-button').forEach(btn => {
+                if (btn.textContent.trim().toLowerCase() === pendingOrderType.trim().toLowerCase()) {
+                    btn.classList.add('active');
+                    btn.style.backgroundColor = '#ffffff';
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.backgroundColor = '#e0e0e0';
+                }
+            });
+        }
+        // Optionally, set order type if you store it
+        // Remove pendingOrder so it doesn't reload again
+        localStorage.removeItem('pendingOrder');
+    }
+    
+    // Confirm button in modal
+    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
+        // Get the order items
+        const orderItems = updateOrderSummary();
+        
+        if (orderItems.length === 0) {
+            document.getElementById('viewOrderModal').classList.remove('active');
+            document.getElementById('emptyOrderModal').classList.add('active');
+            return;
+        }
+        
+        // Check if order type is selected
+        const orderType = document.querySelector('.order-button.active');
+        if (!orderType) {
+            document.getElementById('viewOrderModal').classList.remove('active');
+            document.getElementById('orderTypeModal').classList.add('active');
+            return;
+        }
+        
+        // Save order type to localStorage
+        localStorage.setItem('orderType', orderType.textContent);
 
-        if (selectedItems.length > 0) {
-            // Store selected items in localStorage
-            localStorage.setItem('newAddedItems', JSON.stringify(selectedItems));
-            // Redirect to cashiering page
+        // Generate random order number and save to localStorage
+        const orderNumber = Math.floor(Math.random() * 999) + 1;
+        const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
+        localStorage.setItem('lastOrderNumber', formattedOrderNumber);
+        
+        // Update order number in Thank You Modal
+        document.getElementById('orderNumber').textContent = formattedOrderNumber;
+        
+        // Close the view order modal and show the thank you modal
+        document.getElementById('viewOrderModal').classList.remove('active');
+        document.getElementById('thankYouModal').classList.add('active');
+        
+        // If coming from cashiering, update the order and redirect back
+        if (window.location.pathname.includes('menuinterface.html')) {
+            // Save updated order for cashiering, including order type
+            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
+                items: updateOrderSummary(),
+                orderType: orderType.textContent
+            }));
+            // Remove pendingOrderType to avoid stale data
+            localStorage.removeItem('pendingOrderType');
+            // Redirect back to cashiering
             window.location.href = 'cashiering.html';
-        } else {
-            // Show error modal if no items selected
-            document.getElementById('errorModal').classList.add('active');
-        }
-    }
-
-    function closeErrorModal() {
-        document.getElementById('errorModal').classList.remove('active');
-    }
-
-    function addItemToCashiering() {
-        // Get all selected items with quantities
-        const selectedItems = [];
-        document.querySelectorAll('.food-item').forEach(item => {
-            const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-            if (quantity > 0) {
-                const name = item.querySelector('.food-name').textContent;
-                const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-                const addons = [];
-
-                // Get add-ons for this item
-                document.querySelectorAll(`.addon-circle[data-for-item="${name}"]`).forEach(addon => {
-                    addons.push({
-                        name: addon.getAttribute('data-name'),
-                        price: parseFloat(addon.getAttribute('data-price'))
-                    });
-                });
-
-                selectedItems.push({
-                    name,
-                    price,
-                    quantity,
-                    addons,
-                    total: (price * quantity) + (addons.reduce((sum, addon) => sum + (addon.price * quantity), 0))
-                });
-            }
-        });
-
-        if (selectedItems.length === 0) {
-            // Show error modal if no items selected
-            document.getElementById('errorModal').classList.add('active');
             return;
         }
-
-        // Store items in localStorage
-        localStorage.setItem('newAddedItems', JSON.stringify(selectedItems));
-
-        // Redirect to cashiering page
-        window.location.href = 'cashiering.html';
-    }
-
-    // Close error modal function
-    function closeErrorModal() {
-        document.getElementById('errorModal').classList.remove('active');
-    }
-
-    // Remove all existing addItemToCashiering functions and replace with this new version
-    window.addItemToCashiering = function() {
-        const selectedItems = [];
-        let hasItems = false;
-
-        // Collect all items with quantity > 0
-        document.querySelectorAll('.food-item').forEach(item => {
-            const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-            if (quantity > 0) {
-                hasItems = true;
-                const name = item.querySelector('.food-name').textContent;
-                const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-                const addons = [];
-
-                // Get add-ons for this item
-                document.querySelectorAll(`.addon-circle[data-for-item="${name}"]`).forEach(addon => {
-                    addons.push({
-                        name: addon.getAttribute('data-name'),
-                        price: parseFloat(addon.getAttribute('data-price'))
-                    });
-                });
-
-                const itemTotal = (price * quantity) + 
-                                (addons.reduce((sum, addon) => sum + (addon.price * quantity), 0));
-
-                selectedItems.push({
-                    name,
-                    price,
-                    quantity,
-                    addons,
-                    total: itemTotal
-                });
-            }
-        });
-
-        if (!hasItems) {
-            // Show error modal if no items selected
-            document.getElementById('errorModal').classList.add('active');
-            return;
-        }
-
-        // Store items in localStorage
-        localStorage.setItem('newAddedItems', JSON.stringify(selectedItems));
-
-        // Redirect to cashiering page
-        window.location.href = 'cashiering.html';
-    };
-
-    // Add error modal close function
-    window.closeErrorModal = function() {
-        document.getElementById('errorModal').classList.remove('active');
-    };
+    });
 });

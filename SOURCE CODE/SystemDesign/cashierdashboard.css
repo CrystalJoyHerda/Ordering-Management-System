@@ -149,6 +149,74 @@ body {
     padding: 15px;
 }
 
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+    color: #666;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.card .amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b2a1f;
+}
+
+.card .count {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b2a1f;
+}
+
+.dashboard-cards .card .queue-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b2a1f;
+}
+
+.recent-orders {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-orders h2 {
+    color: #3b2a1f;
+    margin-bottom: 20px;
+}
+
+.recent-orders table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recent-orders th {
+    background: #f5f5f5;
+    padding: 12px;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+}
+
+.recent-orders td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
