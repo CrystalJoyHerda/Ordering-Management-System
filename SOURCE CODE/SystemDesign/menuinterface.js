@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add active class and change background for clicked button
             button.classList.add('active');
             button.style.backgroundColor = '#ffffff';
+
+            // Save order type to localStorage for cashiering sync
+            localStorage.setItem('pendingOrderType', button.textContent.trim());
         });
     });    // Category switching functionality
     const categoryButtons = document.querySelectorAll('.category-button');
@@ -618,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Save order type to localStorage
         localStorage.setItem('orderType', orderType.textContent);
-        
+
         // Generate random order number and save to localStorage
         const orderNumber = Math.floor(Math.random() * 999) + 1;
         const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
@@ -630,6 +633,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close the view order modal and show the thank you modal
         document.getElementById('viewOrderModal').classList.remove('active');
         document.getElementById('thankYouModal').classList.add('active');
+        
+        // If coming from cashiering, update the order and redirect back
+        if (window.location.pathname.includes('menuinterface.html')) {
+            // Save updated order for cashiering, including order type
+            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
+                items: updateOrderSummary(),
+                orderType: orderType.textContent
+            }));
+            // Remove pendingOrderType to avoid stale data
+            localStorage.removeItem('pendingOrderType');
+            // Redirect back to cashiering
+            window.location.href = 'cashiering.html';
+            return;
+        }
     });
 
     // Close modal when clicking on X
@@ -872,5 +889,93 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentItemToRemove = null;
         removeCallback = null;
+    });
+    
+    // Load pending order from cashiering if present
+    const pendingOrder = JSON.parse(localStorage.getItem('pendingOrder') || 'null');
+    if (pendingOrder && Array.isArray(pendingOrder.currentItems)) {
+        // Pre-populate the menu quantities
+        document.querySelectorAll('.food-item').forEach(item => {
+            const foodName = item.querySelector('.food-name').textContent;
+            const found = pendingOrder.currentItems.find(i => i.name === foodName);
+            const quantityValue = item.querySelector('.quantity-value');
+            const minusBtn = item.querySelector('.minus');
+            if (found) {
+                quantityValue.textContent = found.quantity;
+                minusBtn.disabled = found.quantity == 0;
+                if (found.quantity > 0) {
+                    item.classList.add('in-order');
+                }
+            } else {
+                quantityValue.textContent = '0';
+                minusBtn.disabled = true;
+                item.classList.remove('in-order');
+            }
+        });
+        // Restore order type if present
+        const pendingOrderType = localStorage.getItem('pendingOrderType');
+        if (pendingOrderType) {
+            document.querySelectorAll('.order-button').forEach(btn => {
+                if (btn.textContent.trim().toLowerCase() === pendingOrderType.trim().toLowerCase()) {
+                    btn.classList.add('active');
+                    btn.style.backgroundColor = '#ffffff';
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.backgroundColor = '#e0e0e0';
+                }
+            });
+        }
+        // Optionally, set order type if you store it
+        // Remove pendingOrder so it doesn't reload again
+        localStorage.removeItem('pendingOrder');
+    }
+    
+    // Confirm button in modal
+    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
+        // Get the order items
+        const orderItems = updateOrderSummary();
+        
+        if (orderItems.length === 0) {
+            document.getElementById('viewOrderModal').classList.remove('active');
+            document.getElementById('emptyOrderModal').classList.add('active');
+            return;
+        }
+        
+        // Check if order type is selected
+        const orderType = document.querySelector('.order-button.active');
+        if (!orderType) {
+            document.getElementById('viewOrderModal').classList.remove('active');
+            document.getElementById('orderTypeModal').classList.add('active');
+            return;
+        }
+        
+        // Save order type to localStorage
+        localStorage.setItem('orderType', orderType.textContent);
+
+        // Generate random order number and save to localStorage
+        const orderNumber = Math.floor(Math.random() * 999) + 1;
+        const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
+        localStorage.setItem('lastOrderNumber', formattedOrderNumber);
+        
+        // Update order number in Thank You Modal
+        document.getElementById('orderNumber').textContent = formattedOrderNumber;
+        
+        // Close the view order modal and show the thank you modal
+        document.getElementById('viewOrderModal').classList.remove('active');
+        document.getElementById('thankYouModal').classList.add('active');
+        
+        // If coming from cashiering, update the order and redirect back
+        if (window.location.pathname.includes('menuinterface.html')) {
+            // Save updated order for cashiering, including order type
+            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
+                items: updateOrderSummary(),
+                orderType: orderType.textContent
+            }));
+            // Remove pendingOrderType to avoid stale data
+            localStorage.removeItem('pendingOrderType');
+            // Redirect back to cashiering
+            window.location.href = 'cashiering.html';
+            return;
+        }
     });
 });

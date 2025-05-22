@@ -68,9 +68,10 @@ function handleAddItem() {
     clearInputs();
 }
 
-function addOrderItem(quantity, name, price) {
+function addOrderItem(quantity, name, price, addons) {
     const itemsContainer = document.getElementById('items-container');
     const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
 
     const itemDiv = document.createElement('div');
@@ -83,12 +84,22 @@ function addOrderItem(quantity, name, price) {
     nameDiv.style.cssText = itemStyle;
     nameDiv.textContent = name;
     
+    // Add-ons display
+    const addonsDiv = document.createElement('div');
+    addonsDiv.style.cssText = itemStyle;
+    if (addons && Array.isArray(addons) && addons.length > 0) {
+        addonsDiv.textContent = addons.map(a => a.name).join(', ');
+    } else {
+        addonsDiv.textContent = '-';
+    }
+
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
     priceDiv.textContent = `₱${parseFloat(price).toFixed(2)}`;
 
     itemsContainer.appendChild(itemDiv);
     namesContainer.appendChild(nameDiv);
+    addonsContainer.appendChild(addonsDiv);
     pricesContainer.appendChild(priceDiv);
     
     updateTotal();
@@ -284,12 +295,10 @@ function goToMenu() {
         datetime: document.getElementById('datetime').textContent,
         total: document.getElementById('total').textContent
     };
-    
-    // Save to localStorage for menuinterface2 to access
+    // Save to localStorage for menuinterface to access
     localStorage.setItem('pendingOrder', JSON.stringify(orderState));
-    
-    // Navigate to new menu interface
-    window.location.href = 'menuinterface2.html';
+    // Navigate to menuinterface.html
+    window.location.href = 'menuinterface.html';
 }
 
 // Helper function to get current order items
@@ -297,12 +306,15 @@ function getOrderItems() {
     const items = [];
     const quantities = document.getElementById('items-container').children;
     const names = document.getElementById('names-container').children;
+    const addons = document.getElementById('addons-container') ? document.getElementById('addons-container').children : [];
     const prices = document.getElementById('prices-container').children;
 
     for(let i = 0; i < quantities.length; i++) {
         items.push({
             quantity: parseInt(quantities[i].childNodes[0].textContent.trim()),
             name: names[i].textContent,
+            // For now, add-ons are not editable in cashiering, so just display
+            addons: addons[i] ? addons[i].textContent.split(',').map(a => a.trim()).filter(a => a && a !== '-') : [],
             price: parseFloat(prices[i].textContent.replace('₱', ''))
         });
     }
@@ -313,6 +325,9 @@ function getOrderItems() {
 function clearContainers() {
     document.getElementById('items-container').innerHTML = '';
     document.getElementById('names-container').innerHTML = '';
+    if (document.getElementById('addons-container')) {
+        document.getElementById('addons-container').innerHTML = '';
+    }
     document.getElementById('prices-container').innerHTML = '';
 }
 
@@ -428,3 +443,35 @@ function onlyNumbers(e) {
         return false;
     }
 }
+
+// On page load, check if there is an updated order from menuinterface
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for updated order from menuinterface
+    const updatedOrder = JSON.parse(localStorage.getItem('updatedOrderFromMenu') || 'null');
+    if (updatedOrder) {
+        clearContainers();
+        updatedOrder.items.forEach(item => {
+            addOrderItem(
+                item.quantity,
+                item.name,
+                item.total ? (item.total / item.quantity) : item.price, // Use per-item price if possible
+                item.addons
+            );
+        });
+        updateTotal();
+        // Update order type button if present
+        if (updatedOrder.orderType) {
+            document.querySelectorAll('.type-button').forEach(btn => {
+                if (
+                    btn.textContent.trim().toLowerCase() === updatedOrder.orderType.trim().toLowerCase() ||
+                    btn.dataset.type.replace('-', ' ').replace('out', 'out').toLowerCase() === updatedOrder.orderType.trim().toLowerCase()
+                ) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        localStorage.removeItem('updatedOrderFromMenu');
+    }
+});
