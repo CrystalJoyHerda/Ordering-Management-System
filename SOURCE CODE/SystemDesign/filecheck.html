@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Accessibility Check</title>
+</head>
+<body>
+    <h1>File Accessibility Check</h1>
+    
+    <h2>JavaScript Files</h2>
+    <div id="js-check">Checking JavaScript file...</div>
+    
+    <h2>Image Files</h2>
+    <div>Profile Image Check: <img id="profile-img" src="assets/images/profile.png" alt="Profile" style="max-width: 100px; border: 1px solid #ccc;"></div>
+    <div>Logo Image Check: <img id="logo-img" src="assets/images/logo.png" alt="Logo" style="max-width: 100px; border: 1px solid #ccc;"></div>
+    
+    <script>
+        // Check if inventory.js is accessible
+        fetch('js/inventory.js')
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('js-check').textContent = 'inventory.js is accessible!';
+                    document.getElementById('js-check').style.color = 'green';
+                } else {
+                    document.getElementById('js-check').textContent = 'inventory.js returned status: ' + response.status;
+                    document.getElementById('js-check').style.color = 'red';
+                }
+            })
+            .catch(error => {
+                document.getElementById('js-check').textContent = 'Error accessing inventory.js: ' + error.message;
+                document.getElementById('js-check').style.color = 'red';
+            });
+    </script>
+</body>
+</html>

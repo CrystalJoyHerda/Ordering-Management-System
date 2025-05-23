@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Inventory</title>
+    <link rel="stylesheet" href="../css/admindashboard1.css">
+    <link rel="stylesheet" href="../css/inventory.css">
+    <link rel="icon" href="../assets/images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">    <!-- Auth check script -->
+    <script src="../js/auth-check.js"></script>
+    <!-- RBAC service -->
+    <script src="../js/rbac.js"></script>
+    <!-- Logout helper -->
+    <script src="../js/logout-helper.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="../assets/images/logo.png" alt="Coffee Logo">
+                </div>
+                <div class="admin-text">ADMIN</div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="admindashboard.html">Dashboard</a></li>
+                    <li><a href="manageEmployee.html" data-role-access="admin">Manage Employees</a></li>
+                    <li><a href="stocks.html">Stocks</a></li>
+                    <li><a href="#" data-role-access="admin">Sales</a></li>
+                    <li class="active"><a href="inventory.html" data-role-access="admin">Inventory</a></li>
+                </ul>
+            </nav>
+            <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+          <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Inventory Management</h1>
+                <div class="admin-info">
+                    <span id="admin-name">Admin</span>
+                    <img src="../assets/images/default-profile.png" alt="Admin Profile">
+                </div>
+            </div>
+            
+            <div class="inventory-content">
+                <!-- Inventory Tools: Search and Filter -->
+                <div class="inventory-tools">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="product-search" placeholder="Search products...">
+                    </div>
+                    
+                    <div class="filter-options">
+                        <select class="filter-select" id="category-filter">
+                            <option value="">All Categories</option>
+                            <option value="Coffee">Coffee</option>
+                            <option value="Tea">Tea</option>
+                            <option value="Pastry">Pastry</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        
+                        <select class="filter-select" id="status-filter">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="low">Low Stock</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="products-card">
+                    <div class="card-header">
+                        <div class="header-title">Product Catalog</div>
+                        <button id="add-product" class="btn-add">
+                            <i class="fas fa-plus"></i> Add Product
+                        </button>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th width="15%">Image</th>
+                                    <th width="25%">Product Name</th>
+                                    <th width="15%">Price</th>
+                                    <th width="15%">Category</th>
+                                    <th width="10%">Status</th>
+                                    <th width="15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-list">
+                                <!-- Products will be loaded here dynamically -->
+                                <tr>
+                                    <td colspan="7" class="text-center">Loading products...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination" id="pagination">
+                        <!-- Pagination will be generated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Modal -->
+        <div id="product-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div id="modal-title">Add New Product</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="product-form">
+                        <input type="hidden" id="product-id">
+                        
+                        <!-- Product Image Upload -->
+                        <div class="product-image-upload" id="image-upload-container">
+                            <input type="file" id="product-image" accept="image/*">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Click to upload product image</div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-name">Product Name</label>
+                                    <input type="text" id="product-name" class="form-control" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-price">Price (PHP)</label>
+                                    <input type="number" id="product-price" class="form-control" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-category">Category</label>
+                                    <select id="product-category" class="form-control" required>
+                                        <option value="">-- Select Category --</option>
+                                        <option value="Coffee">Coffee</option>
+                                        <option value="Tea">Tea</option>
+                                        <option value="Pastry">Pastry</option>
+                                        <option value="Beverage">Beverage</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-status">Status</label>
+                                    <select id="product-status" class="form-control" required>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                        <option value="low">Low Stock</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-description">Description</label>
+                            <textarea id="product-description" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                            <button type="submit" class="btn-save">Save Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+          <!-- Toast Notifications Container -->
+        <div class="toast-container" id="toast-container">
+            <!-- Toast notifications will appear here -->
+        </div>    </div>
+    
+    <!-- Script reference for Live Server -->
+    <script src="../js/rbac.js"></script>
+    <script src="../js/api-utils.js"></script>
+    <script src="../js/inventory.js"></script>
+</body>
+</html>

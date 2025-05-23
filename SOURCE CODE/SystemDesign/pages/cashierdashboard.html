@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier Dashboard</title>
+    <link rel="stylesheet" href="../css/cashierdashboard.css">
+    <link rel="icon" href="../assets/images/logo.png" type="image/x-icon">
+    <!-- Auth check script -->
+    <script src="../js/auth-check.js"></script>
+    <!-- RBAC service -->
+    <script src="../js/rbac.js"></script>
+    <!-- Logout helper -->
+    <script src="../js/logout-helper.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="../assets/images/logo.png" alt="Coffee Logo">
+                </div>
+                <div class="admin-text">CASHIER</div>
+            </div>
+              <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="cashierdashboard.html">Dashboard</a></li>
+                    <li><a href="cashiering.html" data-role-access="cashier">Cashiering</a></li>
+                    <li><a href="stockscashier.html" data-role-access="cashier,admin">Stocks</a></li>
+                    <li><a href="saleshistorycashier.html" data-role-access="cashier,admin">Sales History</a></li>
+                </ul>
+            </nav>
+              <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Dashboard</h1>
+                <div class="user-info">
+                    Welcome, <span id="cashier-name">Cashier</span>
+                </div>
+            </div>
+            <div class="content-area">
+                <!-- Dashboard content would go here -->
+                <div class="dashboard-widgets">
+                    <div class="widget">
+                        <h3>Today's Summary</h3>
+                        <div class="date-time">Loading...</div>
+                        <div class="stats-container">
+                            <div class="stat-box">
+                                <div class="stat-label">Orders Today</div>
+                                <div class="stat-value" id="orders-count">-</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Sales Today</div>
+                                <div class="stat-value" id="sales-total">₱0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="widget">
+                        <h3>Recent Orders</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Time</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders">
+                                <tr>
+                                    <td colspan="5">Loading recent orders...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>    </div>    <script src="../js/auth.js"></script>
+    <script src="../js/rbac.js"></script>
+    <script src="../js/logout-helper.js"></script>
+    <script src="../js/cashierdashboard.js"></script>
+</body>
+</html>

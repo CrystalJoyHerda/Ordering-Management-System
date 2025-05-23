@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 06, 2025 at 10:39 PM
+-- Generation Time: May 23, 2025 at 02:22 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -70,9 +70,7 @@ INSERT INTO `products` (`id`, `name`, `price`, `category`, `created_at`) VALUES
 (1, 'Cappuccino', 120.00, 'coffee', '2025-04-06 19:26:58'),
 (2, 'Espresso', 100.00, 'coffee', '2025-04-06 19:26:58'),
 (3, 'Cheesecake', 150.00, 'dessert', '2025-04-06 19:26:58'),
-(4, 'Machiatto', 120.00, 'coffee', '2025-04-06 19:40:22'),
-(5, 'Cappuccino', 120.00, 'coffee', '2025-04-06 19:54:22'),
-(6, 'Cappuccino', 120.00, 'coffee', '2025-04-06 20:05:48');
+(4, 'Machiatto', 120.00, 'coffee', '2025-04-06 19:40:22');
 
 --
 -- Indexes for dumped tables
@@ -104,7 +102,7 @@ ALTER TABLE `employees`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -1,0 +1,22 @@
+# Ensure JavaScript files are served with correct MIME type
+AddType application/javascript .js
+AddType image/png .png
+
+# Enable CORS (Cross-Origin Resource Sharing)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+</IfModule>
+
+# If mod_rewrite is available
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Ensure direct file access works
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    
+    # Redirect 404s to index.html
+    RewriteRule ^ index.html [L]
+</IfModule>

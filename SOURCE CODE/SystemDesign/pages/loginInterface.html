@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Login - Byte & Beans</title>
+    <link rel="stylesheet" href="../css/loginInterface.css">
+    <link rel="icon" href="../assets/images/logo.png" type="image/png">
+    <!-- Load RBAC service only once -->
+    <script src="../js/rbac.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>BYTE & BEANS BY JJOC</h1>
+        <p class="subtitle">"Byte into Flavor, Brewed to Perfection!"</p>
+
+        <div class="login-box" role="main" aria-labelledby="login-title">
+            <h2 id="login-title">Login</h2>
+            <form id="login-form" autocomplete="on">
+                <input id="username" 
+                       name="username"
+                       type="text" 
+                        placeholder="Username" 
+                       required 
+                       minlength="3"
+                       aria-label="Username"
+                       autocomplete="username">
+                <input id="password" 
+                       name="password"
+                       type="password" 
+                       placeholder="Password" 
+                       required 
+                       minlength="4"
+                       aria-label="Password"
+                       autocomplete="current-password">
+                <button id="login-button" type="submit">Login</button>
+            </form>            <div id="error-message" role="alert"></div>
+            <a href="#" class="forgot-password" aria-label="Forgot password">Forgot password?</a>
+            
+            <!-- Fallback form that targets the server directly -->
+            <form id="fallback-form" action="http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api/auth.php" method="POST" style="display:none;" target="_blank">
+                <input type="hidden" name="name" id="fallback-name">
+                <input type="hidden" name="password" id="fallback-password">
+                <input type="hidden" name="format" value="form">
+            </form>
+        </div>    </div>    <!-- Ensure scripts are loaded only once and in the correct order -->
+    <script src="../js/auth.js"></script>
+    <script src="../js/loginInterface.js"></script>
+    
+    <!-- Add special script to help with CORS issues -->
+    <script>
+        // Check if there was a successful login redirect
+        window.addEventListener('load', function() {
+            // If this was loaded via a redirect with success data
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginSuccess = urlParams.get('login_success');
+            const userData = urlParams.get('user_data');
+            
+            if (loginSuccess === 'true' && userData) {
+                try {
+                    const user = JSON.parse(atob(userData));
+                    localStorage.setItem('auth_token', 'REDIRECT.' + userData + '.TOKEN');
+                    
+                    // Use RBACService for redirection if available
+                    if (typeof window.RBACService !== 'undefined') {
+                        window.RBACService.redirectToDashboard();
+                    } else {
+                        // Fallback redirection
+                        const redirectBased = {
+                            'admin': '../pages/adminDashboard.html',
+                            'cashier': '../pages/cashierInterface.html',
+                            'inventory': '../pages/inventoryInterface.html'
+                        };
+                        
+                        const redirectUrl = redirectBased[user.role.toLowerCase()] || '../pages/dashboard.html';
+                        window.location.href = redirectUrl;
+                    }
+                } catch (e) {
+                    console.error('Error processing redirect data:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

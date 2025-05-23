@@ -9,8 +9,8 @@ class Database {
     // Database credentials
     private $host = 'localhost';
     private $dbname = 'employee_db';
-    private $username = 'emp';
-    private $password = 'emp';
+    private $username = 'emp';  // Changed back to emp user
+    private $password = 'emp';  // Changed back to emp password
     private $conn;
     
     /**

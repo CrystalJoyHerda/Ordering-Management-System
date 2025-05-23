@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Receipt</title>
+<<<<<<< HEAD:SOURCE CODE/SystemDesign/pages/receiptinter.html
+    <link rel="stylesheet" href="../css/receiptinter.css" />
+    <script src="../js/receiptinter.js" defer></script>
+=======
+    <link rel="stylesheet" href="receiptinter.css" />
+    <script src="receiptinter.js" defer></script>
+    <style>
+        .print-button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #printBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream:SOURCE CODE/SystemDesign/receiptinter.html
+=======
+>>>>>>> c49642a8ff9c4398d5ed3c99fa840ce37cb73d44:SOURCE CODE/SystemDesign/receiptinter.html
+>>>>>>> Stashed changes:SOURCE CODE/SystemDesign/pages/receiptinter.html
+=======
+>>>>>>> c49642a8ff9c4398d5ed3c99fa840ce37cb73d44:SOURCE CODE/SystemDesign/receiptinter.html
+>>>>>>> Stashed changes
+=======
+>>>>>>> c49642a8ff9c4398d5ed3c99fa840ce37cb73d44:SOURCE CODE/SystemDesign/receiptinter.html
+>>>>>>> Stashed changes
+</head>
+<body>
+    <div class="receipt-container">        <div class="receipt">
+            <div class="header-center">
+                <img src="../assets/images/logo.png" alt="Logo" class="logo" />
+                <h1>BYTE & BEANS BY JJOC</h1>
+                <p class="slogan">"Byte into Flavor, Brewed to Perfection!"</p>
+                <div class="receipt-info">
+                    <p id="receipt-datetime"></p>
+                    <p>Queue Number: <span class="queue-number">0000</span></p>
+                    <p>Order Type: <span id="order-type">---</span></p>
+                    <p>Cashier: <span id="cashier-name">Ogille Dane Provido</span></p>
+                </div>
+            </div>
+
+            <div class="order-items" id="orderItemsList">
+                <!-- Items will be populated dynamically -->
+            </div>
+
+            <div class="totals">
+                <div class="total-line">
+                    <span>Total Amount:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Cash:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+                <div class="total-line">
+                    <span>Change:</span>
+                    <span class="amount">₱0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="paper-break"></div>        <div class="queue-slip">
+            <div class="header-center">
+                <img src="../assets/images/logo.png" alt="Logo" class="logo" />
+                <h1>BYTE & BEANS BY JJOC</h1>
+            </div>
+            <div class="queue-content">
+                <h2>Queue Number</h2>
+                <div class="number">0000</div>
+                <div id="queue-datetime" class="datetime"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-button-container">
+        <button id="printBtn">Print Receipt</button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const receiptData = JSON.parse(localStorage.getItem('receiptData'));
+            if (!receiptData) {
+                alert('No receipt data found');
+                window.location.href = 'cashiering.html';
+                return;
+            }
+
+            // Update queue numbers in all locations
+            const queueNumber = receiptData.queueNumber || '0000';
+            document.querySelector('.queue-number').textContent = queueNumber;
+            document.querySelector('.queue-slip .number').textContent = queueNumber;
+            const queueText = document.querySelector('.receipt-info p:nth-child(2)');
+            queueText.textContent = `Queue Number: ${queueNumber}`;
+
+            // Optional: Populate other fields (datetime, order items, total, etc.)
+        };
+
+        document.getElementById('printBtn').addEventListener('click', function() {
+            const btn = this;
+            btn.textContent = 'Printing...';
+            btn.disabled = true;
+
+            // Simulate a short "printing" delay
+            setTimeout(() => {
+                window.location.href = 'cashiering.html';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

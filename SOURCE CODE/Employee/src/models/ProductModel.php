@@ -8,8 +8,7 @@ class ProductModel extends BaseModel {
         parent::__construct();
         $this->table = 'products';
     }
-    
-    public function createProduct($data) {
+      public function createProduct($data) {
         try {
             $this->conn->beginTransaction();
             
@@ -21,14 +20,22 @@ class ProductModel extends BaseModel {
                 ];
             }
             
-            // Prepare and execute query - ONLY USE EXISTING COLUMNS
-            $query = "INSERT INTO {$this->table} (name, price, category) 
-                      VALUES (:name, :price, :category)";
+            // Set default values for optional fields
+            $status = isset($data['status']) ? $data['status'] : 'active';
+            $description = isset($data['description']) ? $data['description'] : '';
+            $image = isset($data['image']) ? $data['image'] : '../assets/images/logo.png';
+            
+            // Prepare and execute query - now includes all columns
+            $query = "INSERT INTO {$this->table} (name, price, category, status, description, image) 
+                      VALUES (:name, :price, :category, :status, :description, :image)";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':name', $data['name']);
             $stmt->bindValue(':price', $data['price']);
             $stmt->bindValue(':category', $data['category']);
+            $stmt->bindValue(':status', $status);
+            $stmt->bindValue(':description', $description);
+            $stmt->bindValue(':image', $image);
             
             $stmt->execute();
             $id = $this->conn->lastInsertId();

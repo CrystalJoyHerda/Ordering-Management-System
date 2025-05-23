@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Auth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #output {
+            white-space: pre-wrap;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>JWT Authentication Test</h1>
+    
+    <div class="card">
+        <h2>Test JWT Library</h2>
+        <button id="testJwt">Test JWT Library</button>
+    </div>
+    
+    <div class="card">
+        <h2>Login Test</h2>
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="Crystal">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="1123">
+        </div>
+        <button id="login">Login</button>
+    </div>
+    
+    <div class="card">
+        <h2>Test Protected API</h2>
+        <button id="getProducts">Get Products (No Auth)</button>
+        <button id="getProductsAuth">Get Products (With Auth)</button>
+    </div>
+    
+    <div class="card">
+        <h2>Output</h2>
+        <div id="output">Results will appear here...</div>
+    </div>
+    
+    <script>
+        // Output function
+        function log(message, data = null) {
+            const output = document.getElementById('output');
+            
+            if (data) {
+                try {
+                    if (typeof data === 'string') {
+                        output.textContent = `${message}\n${data}`;
+                    } else {
+                        output.textContent = `${message}\n${JSON.stringify(data, null, 2)}`;
+                    }
+                } catch (e) {
+                    output.textContent = `${message}\n[Error displaying data: ${e.message}]`;
+                }
+            } else {
+                output.textContent = message;
+            }
+        }
+        
+        // Test JWT Library
+        document.getElementById('testJwt').addEventListener('click', async () => {
+            try {
+                log('Testing JWT library...');
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/jwt-test.php');
+                const text = await response.text();
+                
+                try {
+                    const data = JSON.parse(text);
+                    log('JWT Test Result:', data);
+                } catch (e) {
+                    log('Error parsing JSON response:', text);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        });
+        
+        // Login Test
+        document.getElementById('login').addEventListener('click', async () => {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                log(`Attempting login with username: ${username}`);
+                  const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: username,
+                        password: password
+                    })
+                });
+                
+                const text = await response.text();
+                log('Raw Response:', text);
+                
+                // Show character codes to help debug
+                const charCodes = [];
+                for (let i = 0; i < text.length; i++) {
+                    charCodes.push(`${i}: ${text.charCodeAt(i)} ('${text[i]}')`);
+                }
+                log('Character codes:', charCodes.join('\n'));
+                
+                try {
+                    const result = JSON.parse(text);
+                    log('Login Result:', result);
+                    
+                    if (result.status === 'success' && result.token) {
+                        localStorage.setItem('auth_token', result.token);
+                        log('Token saved to localStorage');
+                    }
+                } catch (e) {
+                    log('Error parsing JSON response from login');
+                }
+            } catch (error) {
+                log(`Login Error: ${error.message}`);
+            }
+        });
+        
+        // Get Products (No Auth)
+        document.getElementById('getProducts').addEventListener('click', async () => {
+            try {
+                log('Fetching products (no auth)...');
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php');
+                const text = await response.text();
+                
+                try {
+                    const data = JSON.parse(text);
+                    log('Products Result:', data);
+                } catch (e) {
+                    log('Error parsing JSON response:', text);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        });
+        
+        // Get Products (With Auth)
+        document.getElementById('getProductsAuth').addEventListener('click', async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    log('No token found in localStorage. Please login first.');
+                    return;
+                }
+                
+                log('Fetching products with auth token...');
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const text = await response.text();
+                
+                try {
+                    const data = JSON.parse(text);
+                    log('Products Result (With Auth):', data);
+                } catch (e) {
+                    log('Error parsing JSON response:', text);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

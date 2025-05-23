@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #log {
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard Access Test</h1>
+        <p>Use the buttons below to test dashboard access and troubleshoot issues.</p>
+        
+        <div>
+            <button id="testAuth" class="button">Test Auth Token</button>
+            <button id="testAdmin" class="button">Test Admin Dashboard</button>
+            <button id="testCashier" class="button">Test Cashier Dashboard</button>
+            <button id="clearToken" class="button">Clear Auth Token</button>
+        </div>
+        
+        <div>
+            <a href="loginInterface.html" class="button">Go to Login</a>
+            <a href="admindashboard.html" class="button">Admin Dashboard</a>
+            <a href="cashierdashboard.html" class="button">Cashier Dashboard</a>
+        </div>
+        
+        <h2>Debug Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // Helper to log messages
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Check auth token
+        document.getElementById('testAuth').addEventListener('click', function() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                log('No auth token found');
+                return;
+            }
+            
+            log('Auth token exists');
+            
+            try {
+                // Simple token format: SIMPLE.payload.TOKEN
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    log('Invalid token format (should have 3 parts)');
+                    return;
+                }
+                
+                // Decode the base64 payload
+                const payload = atob(parts[1]);
+                
+                // Parse the JSON
+                const tokenData = JSON.parse(payload);
+                log('Token payload: ' + JSON.stringify(tokenData, null, 2));
+                
+                if (tokenData.data && tokenData.data.role) {
+                    log('User role: ' + tokenData.data.role);
+                }
+            } catch (e) {
+                log('Error parsing token: ' + e.message);
+            }
+        });
+        
+        // Test admin dashboard
+        document.getElementById('testAdmin').addEventListener('click', function() {
+            log('Testing admin dashboard access...');
+            
+            // Fetch the admin dashboard to see if it exists
+            fetch('admindashboard.html')
+                .then(response => {
+                    log('Admin dashboard response status: ' + response.status);
+                    if (response.ok) {
+                        log('Admin dashboard exists and is accessible');
+                    } else {
+                        log('Admin dashboard returned status ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    log('Error fetching admin dashboard: ' + error.message);
+                });
+        });
+        
+        // Test cashier dashboard
+        document.getElementById('testCashier').addEventListener('click', function() {
+            log('Testing cashier dashboard access...');
+            
+            // Fetch the cashier dashboard to see if it exists
+            fetch('cashierdashboard.html')
+                .then(response => {
+                    log('Cashier dashboard response status: ' + response.status);
+                    if (response.ok) {
+                        log('Cashier dashboard exists and is accessible');
+                    } else {
+                        log('Cashier dashboard returned status ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    log('Error fetching cashier dashboard: ' + error.message);
+                });
+        });
+        
+        // Clear token button
+        document.getElementById('clearToken').addEventListener('click', function() {
+            localStorage.removeItem('auth_token');
+            log('Auth token cleared');
+        });
+        
+        // Log current page info
+        log('Current page: ' + window.location.href);
+        log('Current path: ' + window.location.pathname);
+        
+        const token = localStorage.getItem('auth_token');
+        log('Auth token exists: ' + (token ? 'Yes' : 'No'));
+    </script>
+</body>
+</html>

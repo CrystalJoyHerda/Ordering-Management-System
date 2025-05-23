@@ -1,22 +1,29 @@
 <?php
-// Enable error reporting for debugging
+// Clear any previous output and enable error reporting
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-
-// Clear any previous output
 ob_clean();
 
-// Set CORS headers
+// Set CORS headers for all requests
 header('Access-Control-Allow-Origin: http://127.0.0.1:5501');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Content-Type: application/json');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Max-Age: 86400'); // 24 hours cache for preflight
 
-// Handle OPTIONS preflight requests
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
-    exit;
+    exit();
 }
+
+// Set JSON content type
+header('Content-Type: application/json');
+
+// Include required files
+require_once '../../src/models/ProductModel.php';
+require_once '../../src/middleware/RbacMiddleware.php';
+require_once '../../src/config/cors.php';
 
 // Debug - Log request details
 error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
@@ -72,15 +79,19 @@ try {
                     'data' => $products
                 ]);
             }
-            break;
-
-        case 'POST':
+            break;        case 'POST':
+            // Only admin and manager can create products
+            RbacMiddleware::requireRole(['admin', 'manager']);
+            
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $product->createProduct($data);
             echo json_encode($result);
             break;
 
         case 'PUT':
+            // Only admin and manager can update products
+            RbacMiddleware::requireRole(['admin', 'manager']);
+            
             if (!isset($_GET['id'])) {
                 echo json_encode([
                     'status' => 'error',
@@ -92,9 +103,10 @@ try {
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $product->updateProduct($_GET['id'], $data);
             echo json_encode($result);
-            break;
-
-        case 'DELETE':
+            break;        case 'DELETE':
+            // Only admin can delete products
+            RbacMiddleware::requireRole('admin');
+            
             if (!isset($_GET['id'])) {
                 echo json_encode([
                     'status' => 'error',
