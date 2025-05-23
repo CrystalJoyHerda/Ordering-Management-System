@@ -63,10 +63,75 @@
     </div>
 
     <div class="button-container">
-      <button class="action-button cancel-button">Cancel Order</button>
+      <button class="action-button cancel-button" onclick="cancelOrder()">Cancel Order</button>
       <button class="action-button confirm-button" onclick="handleConfirm()">Confirm Order</button>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize queue number with date check
+      initializeQueueNumber();
+      
+      // Update datetime display
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+    });
+    
+    function updateDateTime() {
+      const now = new Date();
+      const dateString = now.toLocaleDateString();
+      const timeString = now.toLocaleTimeString();
+      document.getElementById('datetime').textContent = `${dateString} ${timeString}`;
+      
+      // Check if date has changed since last stored date
+      checkForDateChange(now);
+    }
+    
+    function checkForDateChange(currentDate) {
+      const currentDateStr = currentDate.toLocaleDateString();
+      const lastDateStr = localStorage.getItem('lastDate');
+      
+      if (lastDateStr && lastDateStr !== currentDateStr) {
+        // Reset queue number to 1 if the date has changed
+        localStorage.setItem('queueNumber', '1');
+        document.getElementById('queueNumber').value = '1';
+      }
+      
+      // Update stored date
+      localStorage.setItem('lastDate', currentDateStr);
+    }
+    
+    function initializeQueueNumber() {
+      // Check if queue number exists in localStorage
+      let queueNumber = localStorage.getItem('queueNumber');
+      if (!queueNumber) {
+        queueNumber = '1';
+        localStorage.setItem('queueNumber', queueNumber);
+      }
+      
+      // Display queue number
+      document.getElementById('queueNumber').value = queueNumber;
+      
+      // Initialize last date if not set
+      if (!localStorage.getItem('lastDate')) {
+        localStorage.setItem('lastDate', new Date().toLocaleDateString());
+      }
+    }
+    
+    function cancelOrder() {
+      // Reset form or navigate away
+      if (confirm('Are you sure you want to cancel this order?')) {
+        // Clear fields and reset
+        document.getElementById('orderNumber').value = '';
+        document.getElementById('items-container').innerHTML = '';
+        document.getElementById('names-container').innerHTML = '';
+        document.getElementById('addons-container').innerHTML = '';
+        document.getElementById('prices-container').innerHTML = '';
+        document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+      }
+    }
+  </script>
 </body>
 </html>
 

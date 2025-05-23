@@ -117,3 +117,29 @@ body {
     height: 50px;
     border-radius: 50%;
 }
+
+
+        /* Additional styles to make queue slip bigger */
+ .queue-slip {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            font-size: 1.2em;
+        }
+        
+        .store-logo-small {
+            width: 60px;
+            height: auto;
+        }
+        
+        .queue-number .number {
+            font-size: 4em;
+            font-weight: bold;
+        }
+        
+        .header-row {
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+    

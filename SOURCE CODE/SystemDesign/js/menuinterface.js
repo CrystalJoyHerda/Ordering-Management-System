@@ -27,7 +27,9 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Update datetime
+    console.log("DOM Loaded - Initializing interface...");
+    
+    // Update datetime function
     function updateDateTime() {
         const now = new Date();
         const options = { 
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderButtons = document.querySelectorAll('.order-button');
     orderButtons.forEach(button => {
         button.addEventListener('click', () => {
+            console.log("Order button clicked:", button.textContent);
             // Remove active class from all buttons
             orderButtons.forEach(btn => {
                 btn.classList.remove('active');
@@ -62,7 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save order type to localStorage for cashiering sync
             localStorage.setItem('pendingOrderType', button.textContent.trim());
         });
-    });    // Category switching functionality
+    });
+
+    // Category switching functionality
     const categoryButtons = document.querySelectorAll('.category-button');
     const coffeeGrid = document.querySelector('.coffee-grid');
     const snacksGrid = document.querySelector('.snacks-grid');
@@ -100,7 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 rightSection.style.display = 'none'; // Hide add-ons for snacks category
             }
         });
-    });    // Food item selection and quantity scaler handling
+    });
+
+    // Food item selection and quantity scaler handling
     const foodItems = document.querySelectorAll('.food-item');
     foodItems.forEach(item => {
         const quantityValue = item.querySelector('.quantity-value');
@@ -292,19 +299,25 @@ document.addEventListener('DOMContentLoaded', () => {
         * {
             -webkit-tap-highlight-color: transparent;
         }
+        
+        /* Add specific styles for clickable elements to ensure they respond */
+        button, .order-button, .category-button, .option-btn, 
+        .quantity-btn, .confirm-modal-btn, .cancel-modal-btn, .close-modal, 
+        .close-notification-modal, .notification-ok-btn, .close-thank-you-btn {
+            cursor: pointer;
+            pointer-events: auto !important;
+        }
+        
+        /* Make sure modals display properly */
+        .notification-modal, .view-order-modal, .thank-you-modal, #confirmationModal {
+            position: fixed;
+            z-index: 9999;
+            display: none;
+        }
     `;
     document.head.appendChild(style);
 
-    // Close quantity scalers when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.food-item')) {
-            document.querySelectorAll('.quantity-scaler').forEach(scaler => {
-                scaler.classList.remove('active');
-            });
-        }
-    });
-        // Order summary update
-    // Update the updateOrderSummary function to also update visual indicators
+    // Order summary update function
     function updateOrderSummary() {
         // Get all items with quantity > 0
         const selectedItems = [];
@@ -338,7 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.remove('in-order');
             }
         });
-          // Get ALL add-ons that have data-for-item attribute, not just visually selected ones
+        
+        // Get ALL add-ons that have data-for-item attribute, not just visually selected ones
         const allAddons = document.querySelectorAll('.addon-circle[data-for-item]');
         console.log(`Found ${allAddons.length} associated add-ons`);
         
@@ -372,91 +386,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // Log all items with their add-ons
-        selectedItems.forEach(item => {
-            console.log(`Item: ${item.name}, Add-ons count: ${item.addons.length}`);
-            item.addons.forEach(addon => {
-                console.log(`  - ${addon.name} (₱${addon.price})`);
-            });
-        });
-        
         // Save to localStorage for access across pages
         localStorage.setItem('orderItems', JSON.stringify(selectedItems));
         return selectedItems;
     }
 
-    // View order button - Show modal instead of navigating
-    document.querySelector('.view-button').addEventListener('click', () => {
-        // Get current order items
-        const orderItems = updateOrderSummary();
-        
-        // Check if there are any items in the order
-        if (orderItems.length === 0) {
-            // Show empty order modal
-            document.getElementById('emptyOrderModal').classList.add('active');
-            return;
-        }
-        
-        // Check if order type is selected
-        const orderType = document.querySelector('.order-button.active');
-        if (!orderType) {
-            // Show order type selection modal instead of alert
-            document.getElementById('orderTypeModal').classList.add('active');
-            return;
-        }
-        
-        // Show the order modal
-        populateOrderModal();
-        document.getElementById('viewOrderModal').classList.add('active');
-    });
-
-    // Handle order type modal close button
-    document.querySelector('#orderTypeModal .close-notification-modal').addEventListener('click', () => {
-        document.getElementById('orderTypeModal').classList.remove('active');
-    });
-
-    // Handle order type selection from modal
-    document.querySelectorAll('#orderTypeModal .option-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            // Get the order type from data attribute
-            const orderType = button.getAttribute('data-type');
-            
-            // Find and activate the corresponding order button in the header
-            document.querySelectorAll('.order-button').forEach(btn => {
-                if (btn.textContent === orderType) {
-                    // Simulate a click on the correct order button
-                    btn.click();
-                }
-            });
-            
-            // Close the order type modal
-            document.getElementById('orderTypeModal').classList.remove('active');
-            
-            // Show the view order modal
-            populateOrderModal();
-            document.getElementById('viewOrderModal').classList.add('active');
-        });
-    });
-
-    document.querySelector('.notification-ok-btn').addEventListener('click', () => {
-        document.getElementById('emptyOrderModal').classList.remove('active');
-    });
-
-    // Function to populate the order modal - fixed to properly show all add-ons
+    // Function to populate the order modal
     function populateOrderModal() {
-        // Get all add-ons with associations before updating summary
-        const addonsBefore = Array.from(document.querySelectorAll('.addon-circle[data-for-item]')).map(addon => ({
-            name: addon.getAttribute('data-name'),
-            forItem: addon.getAttribute('data-for-item'),
-            selected: addon.classList.contains('selected')
-        }));
-        console.log('Add-ons before summary update:', addonsBefore);
+        console.log('Populating order modal...');
         
-        // Get the order items - make sure to update the summary first to get the latest data
+        // Get the order items
         const orderItems = updateOrderSummary();
-        
-        // Debug the items and their add-ons to verify associations
-        console.log('Order items for modal:', JSON.stringify(orderItems, null, 2));
+        console.log('Order items:', orderItems);
         
         // Get the modal body elements
         const orderTypeDisplay = document.querySelector('.order-type-display');
@@ -469,153 +410,210 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display the selected order type
         const activeOrderType = document.querySelector('.order-button.active');
         if (activeOrderType) {
-            orderTypeDisplay.textContent = `Order Type: ${activeOrderType.textContent}`;
+            const orderTypeText = activeOrderType.textContent.trim();
+            orderTypeDisplay.textContent = `Order Type: ${orderTypeText}`;
+            console.log('Set order type display to:', orderTypeText);
         } else {
             orderTypeDisplay.textContent = 'Please select an order type';
+            console.log('No active order type found');
         }
         
         // Add items to the container
         let total = 0;
+        let itemsHtml = '<ul class="order-item-list">';
         
         orderItems.forEach(item => {
-            // Double check that quantity is > 0
-            if (item.quantity > 0) {
-                // Calculate item totals
-                const basePrice = item.price * item.quantity;
-                let addonTotal = 0;
-                
-                const orderItem = document.createElement('div');
-                orderItem.className = 'order-item';
-                orderItem.setAttribute('data-item-name', item.name);                // Format add-ons as a string if they exist
-                const addonNames = [];
-                
-                if (item.addons && item.addons.length > 0) {
-                    item.addons.forEach(addon => {
-                        const addonCost = addon.price * item.quantity;
-                        addonTotal += addonCost;
-                        addonNames.push(addon.name);
-                        
-                        console.log(`Adding ${addon.name} to ${item.name} display`);
-                    });
-                }
-                
-                // Add debugging message about add-ons
-                console.log(`Displaying ${item.name}: Has ${item.addons ? item.addons.length : 0} add-ons`);
-                
-                // Start with the main item, including add-ons inline if they exist
-                let formattedAddons = '';
-                if (addonNames.length > 0) {
-                    if (addonNames.length > 2) {
-                        // If there are more than 2 add-ons, display count instead
-                        formattedAddons = `<span class="inline-addons">(+ ${addonNames.length} add-ons)</span>`;
-                    } else {
-                        formattedAddons = `<span class="inline-addons">(+ ${addonNames.join(', ')})</span>`;
-                    }
-                }
-                
-                let itemHTML = `
-                    <div class="item-main">
-                        <div>
-                            ${item.name} x ${item.quantity}
-                            ${formattedAddons}
-                        </div>
-                        <div>₱${basePrice.toFixed(2)}</div>
-                    </div>
-                `;
-                  // Add item total including add-ons
-                const itemTotal = basePrice + addonTotal;
-                
-                // Show add-on costs separately if there are any
-                if (addonTotal > 0) {
-                    itemHTML += `
-                        <div class="addon-cost-summary">
-                            <div>Add-ons:</div>
-                            <div>₱${addonTotal.toFixed(2)}</div>
-                        </div>
-                    `;
-                }
-                
-                itemHTML += `
-                    <div class="item-total">
-                        <div>Item Total:</div>
-                        <div>₱${itemTotal.toFixed(2)}</div>
-                    </div>
-                `;
-                
-                orderItem.innerHTML = itemHTML;
-                
-                // Add click event to remove the item
-                orderItem.addEventListener('click', function() {
-                    const itemName = this.getAttribute('data-item-name');
-                    
-                    showConfirmationModal(itemName, () => {
-                        // Visual feedback - add removing animation
-                        this.classList.add('removing');
-                        
-                        // After a short delay, remove the item from the DOM and data
-                        setTimeout(() => {
-                            // Find the food item in the menu and reset it
-                            document.querySelectorAll('.food-item').forEach(foodItem => {
-                                const foodName = foodItem.querySelector('.food-name').textContent;
-                                if (foodName === itemName) {
-                                    // Reset quantity to 0
-                                    const quantityValue = foodItem.querySelector('.quantity-value');
-                                    const minusBtn = foodItem.querySelector('.minus');
-                                    
-                                    quantityValue.textContent = '0';
-                                    minusBtn.disabled = true;
-                                    foodItem.classList.remove('selected', 'in-order');
-                                    
-                                    // Clean up associated add-ons
-                                    document.querySelectorAll('.addon-circle').forEach(addon => {
-                                        if (addon.getAttribute('data-for-item') === foodName) {
-                                            addon.classList.remove('selected');
-                                            addon.removeAttribute('data-for-item');
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            // Update the order summary
-                            const updatedOrder = updateOrderSummary();
-                            
-                            // If no items left, close modal and show empty order modal
-                            if (updatedOrder.length === 0) {
-                                document.getElementById('viewOrderModal').classList.remove('active');
-                                document.getElementById('emptyOrderModal').classList.add('active');
-                            } else {
-                                // Otherwise repopulate the modal
-                                populateOrderModal();
-                            }
-                        }, 300); // Short delay for the animation to play
-                    });
+            // Calculate item totals
+            const basePrice = item.price * item.quantity;
+            let addonTotal = 0;
+            
+            // Calculate addon costs
+            if (item.addons && item.addons.length > 0) {
+                item.addons.forEach(addon => {
+                    addonTotal += addon.price * item.quantity;
                 });
-                
-                orderItemsContainer.appendChild(orderItem);
-                total += itemTotal;
             }
+            
+            const itemTotal = basePrice + addonTotal;
+            total += itemTotal;
+            
+            // Create addon text if there are addons
+            let addonText = '';
+            if (item.addons && item.addons.length > 0) {
+                addonText = `<div class="item-addons">`;
+                item.addons.forEach(addon => {
+                    addonText += `<div class="addon-item">${addon.name} (₱${addon.price.toFixed(2)} × ${item.quantity})</div>`;
+                });
+                addonText += `</div>`;
+            }
+            
+            // Add the item to the HTML
+            itemsHtml += `
+                <li class="order-item" data-name="${item.name}">
+                    <div class="item-main">
+                        <span class="item-quantity">${item.quantity}x</span>
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-price">₱${basePrice.toFixed(2)}</span>
+                    </div>
+                    ${addonText}
+                    <div class="item-total">₱${itemTotal.toFixed(2)}</div>
+                </li>
+            `;
         });
         
-        // Display total
-        orderTotalContainer.innerHTML = `Total: ₱${total.toFixed(2)}`;
+        itemsHtml += '</ul>';
+        orderItemsContainer.innerHTML = itemsHtml;
+        orderTotalContainer.textContent = `Total: ₱${total.toFixed(2)}`;
+        
+        // Add click handlers to remove items
+        document.querySelectorAll('.order-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const itemName = this.getAttribute('data-name');
+                showRemoveConfirmation(itemName);
+            });
+        });
+        
+        console.log('Order modal populated with', orderItems.length, 'items');
     }
 
-    // Confirm button in modal
-    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
-        // Get the order items
+    // View order button click handler
+    document.querySelector('.view-button').addEventListener('click', () => {
+        console.log("View order button clicked");
+        
+        // Get current order items
         const orderItems = updateOrderSummary();
         
+        // Check if there are any items in the order
         if (orderItems.length === 0) {
-            document.getElementById('viewOrderModal').classList.remove('active');
-            document.getElementById('emptyOrderModal').classList.add('active');
+            // Show empty order modal
+            console.log("No items in order, showing empty order modal");
+            document.getElementById('emptyOrderModal').style.display = 'flex';
             return;
         }
         
         // Check if order type is selected
         const orderType = document.querySelector('.order-button.active');
         if (!orderType) {
-            document.getElementById('viewOrderModal').classList.remove('active');
-            document.getElementById('orderTypeModal').classList.add('active');
+            // Show order type selection modal instead of alert
+            console.log("No order type selected, showing order type modal");
+            document.getElementById('orderTypeModal').style.display = 'flex';
+            return;
+        }
+        
+        // Only if we have items and order type is selected, show the order modal
+        console.log("Order has items and type is selected, showing view order modal");
+        populateOrderModal();
+        document.getElementById('viewOrderModal').style.display = 'flex';
+    });
+
+    // Handle order type modal close button
+    document.querySelector('#orderTypeModal .close-notification-modal').addEventListener('click', () => {
+        console.log("Order type modal close button clicked");
+        document.getElementById('orderTypeModal').style.display = 'none';
+    });
+
+    // Handle order type selection from modal
+    document.querySelectorAll('#orderTypeModal .option-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            console.log('Order type button clicked:', this.getAttribute('data-type'));
+            
+            // Get the order type from data attribute
+            const orderType = this.getAttribute('data-type');
+            
+            // Find and activate the corresponding order button in the header
+            document.querySelectorAll('.order-button').forEach(btn => {
+                if (btn.textContent.trim() === orderType.trim()) {
+                    // Set this button as active
+                    btn.classList.add('active');
+                    btn.style.backgroundColor = '#ffffff';
+                    // Save order type to localStorage
+                    localStorage.setItem('pendingOrderType', btn.textContent.trim());
+                } else {
+                    // Deactivate other buttons
+                    btn.classList.remove('active');
+                    btn.style.backgroundColor = '#e0e0e0';
+                }
+            });
+            
+            // Hide the order type modal immediately
+            document.getElementById('orderTypeModal').style.display = 'none';
+            
+            // Show the view order modal
+            setTimeout(function() {
+                populateOrderModal();
+                document.getElementById('viewOrderModal').style.display = 'flex';
+            }, 50);
+        });
+    });
+
+    // Empty order modal OK button
+    document.querySelector('.notification-ok-btn').addEventListener('click', () => {
+        console.log("Empty order modal OK button clicked");
+        document.getElementById('emptyOrderModal').style.display = 'none';
+    });
+
+    // Function to show confirmation for removing an item
+    function showRemoveConfirmation(itemName) {
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        
+        confirmationMessage.textContent = `Are you sure you want to remove "${itemName}" from your order?`;
+        confirmationModal.style.display = 'flex';
+        
+        // Set up buttons
+        document.getElementById('confirmYes').onclick = function() {
+            removeItemFromOrder(itemName);
+            confirmationModal.style.display = 'none';
+        };
+        
+        document.getElementById('confirmCancel').onclick = function() {
+            confirmationModal.style.display = 'none';
+        };
+    }
+    
+    // Function to remove item from order
+    function removeItemFromOrder(itemName) {
+        // Find the item in the menu and reset its quantity
+        document.querySelectorAll('.food-item').forEach(item => {
+            const name = item.querySelector('.food-name').textContent;
+            if (name === itemName) {
+                item.querySelector('.quantity-value').textContent = '0';
+                item.querySelector('.quantity-btn.minus').disabled = true;
+                item.classList.remove('in-order');
+                
+                // Clean up any associated add-ons
+                document.querySelectorAll('.addon-circle').forEach(addon => {
+                    if (addon.getAttribute('data-for-item') === itemName) {
+                        addon.classList.remove('selected');
+                        addon.removeAttribute('data-for-item');
+                    }
+                });
+            }
+        });
+        
+        // Update order summary and repopulate the modal
+        updateOrderSummary();
+        populateOrderModal();
+    }
+
+    // Modal control buttons - Fix the order confirmation flow
+    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
+        console.log("Confirm order button clicked");
+        
+        // Get the order items
+        const orderItems = updateOrderSummary();
+        
+        if (orderItems.length === 0) {
+            document.getElementById('viewOrderModal').style.display = 'none';
+            document.getElementById('emptyOrderModal').style.display = 'flex';
+            return;
+        }
+        
+        // Check if order type is selected
+        const orderType = document.querySelector('.order-button.active');
+        if (!orderType) {
+            document.getElementById('viewOrderModal').style.display = 'none';
+            document.getElementById('orderTypeModal').style.display = 'flex';
             return;
         }
         
@@ -631,36 +629,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('orderNumber').textContent = formattedOrderNumber;
         
         // Close the view order modal and show the thank you modal
-        document.getElementById('viewOrderModal').classList.remove('active');
-        document.getElementById('thankYouModal').classList.add('active');
-        
-        // If coming from cashiering, update the order and redirect back
-        if (window.location.pathname.includes('menuinterface.html')) {
-            // Save updated order for cashiering, including order type
-            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
-                items: updateOrderSummary(),
-                orderType: orderType.textContent
-            }));
-            // Remove pendingOrderType to avoid stale data
-            localStorage.removeItem('pendingOrderType');
-            // Redirect back to cashiering
-            window.location.href = 'cashiering.html';
-            return;
-        }
+        document.getElementById('viewOrderModal').style.display = 'none';
+        document.getElementById('thankYouModal').style.display = 'flex';
     });
 
-    // Close modal when clicking on X
-    document.querySelector('.close-modal').addEventListener('click', () => {
-        document.getElementById('viewOrderModal').classList.remove('active');
-    });
-
-    // Close modal when clicking on Cancel button
-    document.querySelector('.cancel-modal-btn').addEventListener('click', () => {
-        document.getElementById('viewOrderModal').classList.remove('active');
-    });
-
-    // Handle Thank You Modal close button
+    // Handle Thank You Modal close button - Update to go back to welcome screen
     document.querySelector('.close-thank-you-btn').addEventListener('click', function() {
+        console.log("Thank you modal close button clicked");
+        
         // Check if we're already showing the success message
         const loadingSpinner = document.getElementById('loadingSpinner');
         
@@ -683,11 +659,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add a delay to simulate printing the receipt (3 seconds)
         setTimeout(() => {
             // Show a success message instead of the spinner
-            loadingSpinner.innerHTML = '<p class="success-message" style="font-size: 18px; color: #388e3c; font-weight: bold;">✓ Receipt printed successfully!</p><p>Please proceed to the cashier.</p>';
+            loadingSpinner.innerHTML = '<p class="success-message" style="font-size: 18px; color: #388e3c; font-weight: bold;">✓ Receipt printed successfully!</p><p>Your queue number is <strong>' + document.getElementById('orderNumber').textContent + '</strong></p><p>Please wait for your order to be called.</p>';
             
             // Re-enable the OK button so it can be clicked to immediately go to welcome page
             document.querySelector('.close-thank-you-btn').disabled = false;
-            document.querySelector('.close-thank-you-btn').textContent = 'Go to Home';
+            document.querySelector('.close-thank-you-btn').textContent = 'Return to Home';
             
             // Still add a fallback automatic redirect after 8 seconds in case user doesn't click
             setTimeout(() => {
@@ -698,6 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cancel order button - Navigate to welcome interface
     document.querySelector('.cancel-button').addEventListener('click', () => {
+        console.log("Cancel order button clicked");
+        
         // Clear selections
         document.querySelectorAll('.selected').forEach(item => {
             item.classList.remove('selected');
@@ -706,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'welcomeinterface.html';
     });
 
-    // Initialize all quantities to 0 and disable minus buttons
+    // Initialize quantities and handle quantity changes
     document.querySelectorAll('.food-item').forEach(item => {
         const quantityValue = item.querySelector('.quantity-value');
         const minusBtn = item.querySelector('.minus');
@@ -714,7 +692,6 @@ document.addEventListener('DOMContentLoaded', () => {
         minusBtn.disabled = true;
     });
 
-    // Handle quantity changes
     document.querySelectorAll('.quantity-scaler').forEach(scaler => {
         const minusBtn = scaler.querySelector('.minus');
         const plusBtn = scaler.querySelector('.plus');
@@ -769,6 +746,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize total on page load
     updateTotal();    // Prevent dragging and text selection for all elements in the document
     const preventDragging = () => {
+        console.log("Setting up drag prevention");
+        
         // Apply to all elements in the document
         const allElements = document.querySelectorAll('*');
         
@@ -789,53 +768,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // Prevent highlighting when clicking and dragging
-        document.addEventListener('mousedown', (e) => {
-            // Don't prevent default on form controls
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.classList.contains('editable-field')) {
-                // Still allow primary button clicks for functionality
-                if (e.button !== 0 || e.ctrlKey) {
-                    e.preventDefault();
-                }
-                
-                // Clear any existing text selection
-                window.getSelection().removeAllRanges();
-            }
-        });
-        
-        // Process all specific UI elements
-        allElements.forEach(element => {
-            // Skip form elements
-            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.classList.contains('editable-field')) {
-                return;
-            }
-            
-            // Set draggable attribute to false
-            element.setAttribute('draggable', 'false');
-            
-            // Prevent context menu (right click) on non-form elements
-            element.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                return false;
-            });
-            
-            // Prevent touch selection
-            element.addEventListener('touchstart', (e) => {
-                // Allow touch for buttons and interactive elements
-                if (!e.target.closest('.quantity-btn, .cancel-button, .view-button, .cancel-modal-btn, .confirm-modal-btn')) {
-                    // Prevent default touch behavior that might lead to text selection
-                    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                        // Don't call preventDefault here to maintain scrolling functionality
-                        e.stopPropagation();
-                    }
-                }
-            }, { passive: true });
-        });
-        
         // Make sure all images are not draggable
         document.querySelectorAll('img').forEach(img => {
             img.setAttribute('draggable', 'false');
             img.style.pointerEvents = 'none'; // Prevent image dragging
+        });
+        
+        // Make sure all buttons have pointer events enabled
+        document.querySelectorAll('button, .order-button, .category-button, .option-btn').forEach(btn => {
+            btn.style.pointerEvents = 'auto';
         });
     };
     
@@ -848,47 +789,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.view-button') || e.target.closest('.option-btn')) {
             setTimeout(preventDragging, 100);
         }
-    });
-    
-    // Reapply when modals are opened
-    ['#viewOrderModal', '#confirmationModal', '#notificationModal', '#thankYouModal'].forEach(selector => {
-        const modal = document.querySelector(selector);
-        if (modal) {
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.attributeName === 'class' && modal.classList.contains('active')) {
-                        setTimeout(preventDragging, 100);
-                    }
-                });
-            });
-            observer.observe(modal, { attributes: true });
-        }
-    });
-
-    // Add confirmation modal functionality
-    let currentItemToRemove = null;
-    let removeCallback = null;
-
-    function showConfirmationModal(itemName, callback) {
-        document.getElementById('confirmationMessage').textContent = `Are you sure you want to remove "${itemName}" from your order?`;
-        document.getElementById('confirmationModal').classList.add('active');
-        currentItemToRemove = itemName;
-        removeCallback = callback;
-    }
-
-    document.getElementById('confirmCancel').addEventListener('click', () => {
-        document.getElementById('confirmationModal').classList.remove('active');
-        currentItemToRemove = null;
-        removeCallback = null;
-    });
-
-    document.getElementById('confirmYes').addEventListener('click', () => {
-        document.getElementById('confirmationModal').classList.remove('active');
-        if (removeCallback) {
-            removeCallback();
-        }
-        currentItemToRemove = null;
-        removeCallback = null;
     });
     
     // Load pending order from cashiering if present
@@ -925,57 +825,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        // Optionally, set order type if you store it
         // Remove pendingOrder so it doesn't reload again
         localStorage.removeItem('pendingOrder');
     }
     
-    // Confirm button in modal
-    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
-        // Get the order items
-        const orderItems = updateOrderSummary();
-        
-        if (orderItems.length === 0) {
-            document.getElementById('viewOrderModal').classList.remove('active');
-            document.getElementById('emptyOrderModal').classList.add('active');
-            return;
-        }
-        
-        // Check if order type is selected
-        const orderType = document.querySelector('.order-button.active');
-        if (!orderType) {
-            document.getElementById('viewOrderModal').classList.remove('active');
-            document.getElementById('orderTypeModal').classList.add('active');
-            return;
-        }
-        
-        // Save order type to localStorage
-        localStorage.setItem('orderType', orderType.textContent);
-
-        // Generate random order number and save to localStorage
-        const orderNumber = Math.floor(Math.random() * 999) + 1;
-        const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
-        localStorage.setItem('lastOrderNumber', formattedOrderNumber);
-        
-        // Update order number in Thank You Modal
-        document.getElementById('orderNumber').textContent = formattedOrderNumber;
-        
-        // Close the view order modal and show the thank you modal
-        document.getElementById('viewOrderModal').classList.remove('active');
-        document.getElementById('thankYouModal').classList.add('active');
-        
-        // If coming from cashiering, update the order and redirect back
-        if (window.location.pathname.includes('menuinterface.html')) {
-            // Save updated order for cashiering, including order type
-            localStorage.setItem('updatedOrderFromMenu', JSON.stringify({
-                items: updateOrderSummary(),
-                orderType: orderType.textContent
-            }));
-            // Remove pendingOrderType to avoid stale data
-            localStorage.removeItem('pendingOrderType');
-            // Redirect back to cashiering
-            window.location.href = 'cashiering.html';
-            return;
-        }
-    });
+    console.log("Menu interface initialization complete");
 });
