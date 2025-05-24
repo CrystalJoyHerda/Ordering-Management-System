@@ -125,6 +125,9 @@ class ProductModel extends BaseModel {
     
     public function searchProducts($keyword, $category = null, $limit = 100, $offset = 0) {
         try {
+            // Log the search parameters for debugging
+            error_log("Searching for products - Keyword: {$keyword}, Category: {$category}, Limit: {$limit}, Offset: {$offset}");
+            
             $query = "SELECT * FROM {$this->table} WHERE name LIKE :keyword";
             
             if ($category) {
@@ -142,6 +145,7 @@ class ProductModel extends BaseModel {
             
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            
             $stmt->execute();
             
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -153,9 +157,10 @@ class ProductModel extends BaseModel {
             ];
         } catch (PDOException $e) {
             error_log("Error searching products: " . $e->getMessage());
+            error_log("SQL Query: " . $query);
             return [
                 'status' => 'error',
-                'message' => 'Failed to search products'
+                'message' => 'Failed to search products: ' . $e->getMessage()
             ];
         }
     }

@@ -1,44 +1,83 @@
 <?php
-// CORS headers - CRITICAL to be at the very top before any output
-header("Access-Control-Allow-Origin: http://127.0.0.1:5501");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
-header("Access-Control-Allow-Credentials: true");
+// Disable error reporting for notices
+error_reporting(E_ALL & ~E_NOTICE);
 
-// Handle preflight OPTIONS request
+// Clear any existing output buffers
+while (ob_get_level()) {
+    @ob_end_clean();
+}
+
+// Start fresh output buffer
+ob_start();
+
+// Set content type first
+header('Content-Type: application/json; charset=utf-8');
+
+// CORS headers - Must be set after content type
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'http://localhost:5501',
+    'http://127.0.0.1:5501'
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+} else {
+    header('Access-Control-Allow-Origin: http://127.0.0.1:5501');
+}
+
+// Set remaining CORS headers
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
+header('Access-Control-Allow-Credentials: true');
+
+// Handle preflight OPTIONS request first
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
+    @ob_end_clean();
     exit();
 }
 
-// Enable error reporting for debugging
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Check if file exists before including
+$docRoot = $_SERVER['DOCUMENT_ROOT'];
+$requiredFiles = [
+    '/SOURCE_CODE/Employee/src/config/database.php',
+    '/SOURCE_CODE/Employee/src/models/Employee.php',
+    '/SOURCE_CODE/Employee/src/utils/JwtHelper.php'
+];
 
-// Set content type to JSON
-header('Content-Type: application/json');
-
-// Start output buffering
-ob_start();
+foreach ($requiredFiles as $file) {
+    if (!file_exists($docRoot . $file)) {
+        error_log("Missing required file: " . $docRoot . $file);
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+        exit();
+    }
+}
 
 try {
-    // Clear any output
-    if (ob_get_length()) ob_clean();
+    ob_clean();
     
-    // Include database and Employee model
-    require_once '../../src/config/database.php';
-    require_once '../../src/models/Employee.php';
-    require_once '../../src/utils/JwtHelper.php';
+    require_once $docRoot . '/SOURCE_CODE/Employee/src/config/database.php';
+    require_once $docRoot . '/SOURCE_CODE/Employee/src/models/Employee.php';
+    require_once $docRoot . '/SOURCE_CODE/Employee/src/utils/JwtHelper.php';
 
     // Initialize employee object
     $employee = new Employee();
 
-    // Check if it's a POST request
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    // Accept both POST and GET methods
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
         http_response_code(405);
         echo json_encode([
             'status' => 'error',
-            'message' => 'Method not allowed'
+            'message' => 'Method not allowed. Use POST or GET.',
+            'method' => $_SERVER['REQUEST_METHOD']
         ]);
         exit;
     }
@@ -46,44 +85,54 @@ try {
     // Get data from various sources
     $name = null;
     $password = null;
+    $format = $_REQUEST['format'] ?? 'json'; // Get format from either GET or POST
     
-    // Check for JSON input
-    $rawInput = file_get_contents('php://input');
-    if (!empty($rawInput)) {
-        $data = json_decode($rawInput, true);
-        // If JSON parsing failed, try to parse as form data
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log("JSON parsing failed: " . json_last_error_msg());
+    // Check request method and parse accordingly
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Handle GET request parameters
+        $name = $_GET['name'] ?? ($_GET['username'] ?? null);
+        $password = $_GET['password'] ?? null;
+        
+        error_log("GET Auth Request - Name: " . ($name ?? "EMPTY") . ", Source: " . ($_SERVER['HTTP_REFERER'] ?? "DIRECT"));
+    } else {
+        // Handle POST request - check for JSON input
+        $rawInput = file_get_contents('php://input');
+        if (!empty($rawInput)) {
+            $data = json_decode($rawInput, true);
+            // If JSON parsing failed, try to parse as form data
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON parsing failed: " . json_last_error_msg());
+                
+                // Try to parse as query string (x-www-form-urlencoded)
+                parse_str($rawInput, $formData);
+                if (!empty($formData)) {
+                    $data = $formData;
+                    error_log("Parsed as form data: " . print_r($data, true));
+                }
+            }
             
-            // Try to parse as query string (x-www-form-urlencoded)
-            parse_str($rawInput, $formData);
-            if (!empty($formData)) {
-                $data = $formData;
-                error_log("Parsed as form data: " . print_r($data, true));
+            // Extract credentials from parsed data
+            if (isset($data['name'])) {
+                $name = $data['name'];
+            } else if (isset($data['username'])) {
+                $name = $data['username'];
+            }
+            
+            if (isset($data['password'])) {
+                $password = $data['password'];
             }
         }
         
-        // Extract credentials from parsed data
-        if (isset($data['name'])) {
-            $name = $data['name'];
-        } else if (isset($data['username'])) {
-            $name = $data['username'];
+        // Check POST data if not found in raw input
+        if (empty($name) && isset($_POST['name'])) {
+            $name = $_POST['name'];
+        } else if (empty($name) && isset($_POST['username'])) {
+            $name = $_POST['username'];
         }
         
-        if (isset($data['password'])) {
-            $password = $data['password'];
+        if (empty($password) && isset($_POST['password'])) {
+            $password = $_POST['password'];
         }
-    }
-    
-    // Check POST data if not found in raw input
-    if (empty($name) && isset($_POST['name'])) {
-        $name = $_POST['name'];
-    } else if (empty($name) && isset($_POST['username'])) {
-        $name = $_POST['username'];
-    }
-    
-    if (empty($password) && isset($_POST['password'])) {
-        $password = $_POST['password'];
     }
     
     // Log what we received for debugging
@@ -95,8 +144,10 @@ try {
             'status' => 'error',
             'message' => 'Name and password are required',
             'debug' => [
-                'raw_input' => $rawInput,
-                'post' => $_POST
+                'method' => $_SERVER['REQUEST_METHOD'],
+                'got_name' => !empty($name),
+                'got_password' => !empty($password),
+                'request_data' => $_SERVER['REQUEST_METHOD'] === 'GET' ? $_GET : $_POST
             ]
         ]);
         exit;
@@ -144,16 +195,27 @@ try {
         }
     }
 
-    // Return response
-    ob_clean(); // Clear any output before sending response
+    // Ensure clean output
+    while (ob_get_level()) {
+        @ob_end_clean();
+    }
+    
+    // Send the response
     echo json_encode($result);
-    exit; // Make sure we exit here
+    exit;
+    
 } catch (Exception $e) {
     // Handle any other exceptions
     error_log("Auth Exception: " . $e->getMessage());
-    ob_clean();
+    
+    // Ensure clean output
+    while (ob_get_level()) {
+        @ob_end_clean();
+    }
+    
     echo json_encode([
         'status' => 'error',
         'message' => 'Server error: ' . $e->getMessage()
     ]);
+    exit;
 }

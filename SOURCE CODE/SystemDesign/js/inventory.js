@@ -8,123 +8,118 @@ let filteredProducts = [];
 let currentModalMode = 'add'; // 'add' or 'edit'
 let selectedImageFile = null;
 
-// Add error handling helper at the top of the file
-async function handleApiResponse(response) {
-    if (!response.ok) {
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        
+// API configuration - integrated directly in inventory.js
+const API_CONFIG = {
+    baseUrl: 'http://localhost:3000/SOURCE_CODE/Employee/public/api',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    getAuthToken: () => localStorage.getItem('auth_token')
+};
+
+// Simple API client methods integrated directly
+const productApi = {
+    // Basic fetch wrapper with error handling
+    async fetch(url, options = {}) {
+        console.log(`Sending request to: ${url}`);
         try {
-            // Get response as text first
-            const responseText = await response.text();
-            console.log("Error response:", responseText);
+            // Set default headers
+            const headers = {
+                ...API_CONFIG.headers,
+                ...options?.headers
+            };
             
-            // Try to parse as JSON if it appears to be JSON
-            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-                try {
-                    const error = JSON.parse(responseText);
-                    throw new Error(error.message || `HTTP error! status: ${response.status}`);
-                } catch (parseError) {
-                    // If parsing fails, it's not valid JSON
-                    throw new Error(`HTTP error! status: ${response.status} - ${responseText.substring(0, 100)}...`);
-                }
-            } else {
-                // Not JSON, return the error with some of the response text
-                throw new Error(`HTTP error! status: ${response.status} - ${responseText.substring(0, 100)}...`);
+            // Add auth token if available
+            const token = API_CONFIG.getAuthToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
-        } catch (e) {
-            throw new Error(`HTTP error! status: ${response.status} - ${e.message}`);
+            
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                credentials: 'include',
+                mode: 'cors'
+            });
+
+            // Handle HTTP errors
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API response error:', errorText);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            // Parse JSON response
+            const responseText = await response.text();
+            if (!responseText.trim()) {
+                return { status: 'success', data: [] };
+            }
+            return JSON.parse(responseText);
+        } catch (error) {
+            console.error('API fetch error:', error);
+            
+            // Provide more specific error for connection issues
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Cannot connect to the server. Please ensure the server is running and accessible.');
+            }
+            throw error;
         }
-    }
-    
-    try {
-        // Get response as text first
-        const responseText = await response.text();
-        console.log("Raw success response:", responseText);
-        
-        // Check if it's empty or whitespace
-        if (!responseText.trim()) {
-            throw new Error("Empty response from server");
+    },
+
+    // API methods
+    async getProducts() {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php`);
+    },
+
+    async getProduct(id) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${id}`);
+    },
+
+    async searchProducts(keyword, category) {
+        let url = `${API_CONFIG.baseUrl}/products.php?search=${encodeURIComponent(keyword || '')}`;
+        if (category) {
+            url += `&category=${encodeURIComponent(category)}`;
         }
-        
-        // Try to parse as JSON
-        return JSON.parse(responseText);
-    } catch (e) {
-        console.error("JSON parse error:", e);
-        throw new Error("Invalid JSON response from server: " + e.message);
+        return this.fetch(url);
+    },
+
+    async addProduct(productData) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php`, {
+            method: 'POST',
+            body: JSON.stringify(productData)
+        });
+    },
+
+    async updateProduct(productData) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${productData.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(productData)
+        });
+    },
+
+    async deleteProduct(id) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${id}`, {
+            method: 'DELETE'
+        });
     }
-}
+};
 
 // Initialize everything when the document is ready
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Inventory page loaded');
     
-    // Check if RBAC service is available
-    if (typeof RBACService !== 'undefined') {
-        // Enforce admin-only access to this page
-        RBACService.enforcePageAccess('admin');
-        
-        // Get user data and display name
-        const userData = RBACService.getUserData();
-        if (userData) {
-            const adminNameElement = document.getElementById('admin-name');
-            if (adminNameElement) {
-                adminNameElement.textContent = userData.name;
-            }
-        }
-    } else {
-        // Fallback to basic authentication if RBAC is not available
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            // Not logged in, redirect to login
-            window.location.href = '../loginInterface.html';
-            return;
-        }
-        
-        try {
-            // Decode token to get user data
-            const payload = token.split('.')[1];
-            const userData = JSON.parse(atob(payload));
-            const user = userData.data;
-            
-            if (user.role !== 'admin') {
-                // Not an admin, redirect to appropriate dashboard
-                if (user.role === 'cashier') {
-                    window.location.href = 'cashierdashboard.html';
-                } else {
-                    window.location.href = '../loginInterface.html';
-                }
-                return;
-            }
-            
-            // User is admin, continue loading inventory page
-            // Display admin name if element exists
-            const adminNameElement = document.getElementById('admin-name');
-            if (adminNameElement) {
-                adminNameElement.textContent = user.name;
-            }
-        } catch (e) {
-            // Invalid token, redirect to login
-            console.error('Token validation error:', e);
-            localStorage.removeItem('auth_token');
-            window.location.href = '../loginInterface.html';
-            return;
-        }
-    }
+    // Skip checking for API client since we're using integrated API functions
+    
+    // Check authentication and roles
+    checkAuth();
     
     // Load products automatically
     loadProducts();
 
-    // Add event listeners for CRUD operations
+    // Set up event listeners
     document.getElementById('add-product').addEventListener('click', () => openModal('add'));
-    document.querySelector('.logout-btn').addEventListener('click', function() {
-        // Use shared logout helper if available, otherwise fall back to local implementation
-        if (typeof window.handleLogout === 'function') {
-            window.handleLogout();
-        } else {
-            handleLogoutFallback();
-        }
-    });
+    document.querySelector('.logout-btn').addEventListener('click', handleLogout);
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
     
     // Search and filter functionality
@@ -133,96 +128,59 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('status-filter').addEventListener('change', filterProducts);
     
     // Image upload preview
-    const imageInput = document.getElementById('product-image');
-    const uploadContainer = document.getElementById('image-upload-container');
-    
-    imageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            selectedImageFile = file;
-            
-            // Create preview
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                // Remove previous preview if exists
-                const oldPreview = uploadContainer.querySelector('.image-preview');
-                if (oldPreview) {
-                    oldPreview.remove();
-                }
-                
-                // Create new preview
-                uploadContainer.style.border = 'none';
-                uploadContainer.innerHTML = `
-                    <div class="image-preview" style="width:100%;height:100%;position:relative;">
-                        <img src="${event.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                            <i class="fas fa-times"></i>
-                        </div>
-                    </div>
-                `;
-                
-                // Add event listener to remove button
-                uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    resetImageUpload();
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // Make sure clicking the container triggers file input
-    uploadContainer.addEventListener('click', function() {
-        if (!uploadContainer.querySelector('.image-preview')) {
-            imageInput.click();
-        }
-    });
+    setupImageUpload();
 });
 
-// Reset image upload to default state
-function resetImageUpload() {
-    const uploadContainer = document.getElementById('image-upload-container');
-    const imageInput = document.getElementById('product-image');
+// Authentication check
+function checkAuth() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '../pages/loginInterface.html';
+        return;
+    }
     
-    selectedImageFile = null;
-    imageInput.value = '';
-    
-    uploadContainer.style.border = '2px dashed #d4c8b9';
-    uploadContainer.innerHTML = `
-        <input type="file" id="product-image" accept="image/*">
-        <div class="upload-icon">
-            <i class="fas fa-cloud-upload-alt"></i>
-        </div>
-        <div class="upload-text">Click to upload product image</div>
-    `;
-    
-    // Re-add event listener to new input
-    document.getElementById('product-image').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            selectedImageFile = file;
-            
-            // Create preview (reuse the same code as above)
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                uploadContainer.style.border = 'none';
-                uploadContainer.innerHTML = `
-                    <div class="image-preview" style="width:100%;height:100%;position:relative;">
-                        <img src="${event.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                            <i class="fas fa-times"></i>
-                        </div>
-                    </div>
-                `;
-                
-                uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    resetImageUpload();
-                });
-            };
-            reader.readAsDataURL(file);
+    // If RBAC service is available, use it
+    if (typeof RBACService !== 'undefined') {
+        RBACService.enforcePageAccess('admin');
+        
+        const userData = RBACService.getUserData();
+        if (userData) {
+            const adminNameElement = document.getElementById('admin-name');
+            if (adminNameElement) {
+                adminNameElement.textContent = userData.name;
+            }
         }
-    });
+    } else {
+        // Fallback to basic token parsing
+        try {
+            // Simple token format: SIMPLE.payload.TOKEN or REDIRECT.payload.TOKEN
+            const parts = token.split('.');
+            if (parts.length !== 3) throw new Error('Invalid token format');
+            
+            const payload = atob(parts[1]);
+            const userData = JSON.parse(payload);
+            
+            if (userData.data && userData.data.role !== 'admin') {
+                window.location.href = '../pages/loginInterface.html';
+                return;
+            }
+            
+            const adminNameElement = document.getElementById('admin-name');
+            if (adminNameElement && userData.data) {
+                adminNameElement.textContent = userData.data.name;
+            }
+        } catch (e) {
+            console.error('Error validating token', e);
+            localStorage.removeItem('auth_token');
+            window.location.href = '../pages/loginInterface.html';
+        }
+    }
+}
+
+// Function to handle logout
+function handleLogout() {
+    localStorage.removeItem('auth_token');
+    window.location.href = '../pages/loginInterface.html';
 }
 
 // Function to load products from API
@@ -240,11 +198,12 @@ async function loadProducts() {
             </td></tr>
         `;
 
-        const data = await window.apiClient.getProducts();
+        // Use the integrated API client to fetch products
+        const data = await productApi.getProducts();
         console.log('Raw products data:', data);
         
         if (data.status === 'success' && Array.isArray(data.data)) {
-            // Store products in global variable
+            // Process the products data
             products = data.data.map(product => ({
                 ...product,
                 price: parseFloat(product.price),
@@ -258,15 +217,9 @@ async function loadProducts() {
             // Initialize filteredProducts with all products
             filteredProducts = [...products];
             
-            // Get products for first page
-            const start = 0;
-            const end = productsPerPage;
-            const productsToShow = filteredProducts.slice(start, end);
-            
-            console.log('Products to show:', productsToShow);
-            
             // Display products and update pagination
-            await displayProducts(productsToShow);
+            const productsToShow = filteredProducts.slice(0, productsPerPage);
+            displayProducts(productsToShow);
             updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
         } else {
             throw new Error('Invalid response format from server');
@@ -274,7 +227,7 @@ async function loadProducts() {
     } catch (error) {
         console.error('API error:', error);
         
-        // Show error message with retry option
+        // Show user-friendly error message with retry option
         document.getElementById('products-list').innerHTML = `
             <tr>
                 <td colspan="7" class="text-center">
@@ -282,9 +235,14 @@ async function loadProducts() {
                         <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
                         <p style="margin-top: 10px;">Unable to load products. Please try again.</p>
                         <p style="margin-top: 5px; font-size: 14px; color: #777;">${error.message}</p>
-                        <button onclick="loadProducts()" style="margin-top: 10px; padding: 5px 15px; background-color: #67503b; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            <i class="fas fa-redo"></i> Retry
-                        </button>
+                        <div style="margin-top: 15px;">
+                            <button onclick="testApiConnection()" style="margin-right: 10px; padding: 5px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-vial"></i> Test Connection
+                            </button>
+                            <button onclick="loadProducts()" style="padding: 5px 15px; background-color: #67503b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -292,6 +250,66 @@ async function loadProducts() {
     }
 }
 
+// Function to test API connection
+function testApiConnection() {
+    const testUrl = `${API_CONFIG.baseUrl}/products.php?test=1`;
+    
+    document.getElementById('products-list').innerHTML = `
+        <tr><td colspan="7" class="text-center">
+            <div style="padding: 20px; text-align: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #67503b;"></i>
+                <p style="margin-top: 10px; color: #67503b;">Testing API connection...</p>
+            </div>
+        </td></tr>
+    `;
+    
+    fetch(testUrl, { 
+        mode: 'cors',
+        headers: API_CONFIG.headers
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text()
+                .then(text => {
+                    document.getElementById('products-list').innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div style="padding: 20px; text-align: center; color: #4CAF50;">
+                                    <i class="fas fa-check-circle" style="font-size: 24px;"></i>
+                                    <p style="margin-top: 10px;">Connection successful!</p>
+                                    <p style="margin-top: 5px; font-size: 14px; color: #777;">Response: ${text}</p>
+                                    <button onclick="loadProducts()" style="margin-top: 10px; padding: 5px 15px; background-color: #67503b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        <i class="fas fa-redo"></i> Load Products
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+        } else {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+    })
+    .catch(error => {
+        document.getElementById('products-list').innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    <div style="padding: 20px; text-align: center; color: #e53935;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
+                        <p style="margin-top: 10px;">Connection test failed: ${error.message}</p>
+                        <p style="margin-top: 5px; font-size: 14px; color: #777;">
+                            Make sure the server is running and the API endpoint is accessible at:
+                            <br>${testUrl}
+                        </p>
+                        <button onclick="loadProducts()" style="margin-top: 10px; padding: 5px 15px; background-color: #67503b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+}
 
 // Function to filter products based on search and filter options
 function filterProducts() {
@@ -302,31 +320,28 @@ function filterProducts() {
     // Filter products based on search term and filters
     filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
-                            product.description.toLowerCase().includes(searchTerm);
+                            (product.description && product.description.toLowerCase().includes(searchTerm));
         const matchesCategory = categoryFilter === 'all' || product.category.toLowerCase() === categoryFilter;
         const matchesStatus = statusFilter === 'all' || product.status.toLowerCase() === statusFilter;
         
         return matchesSearch && matchesCategory && matchesStatus;
     });
     
-    // Calculate pagination
-    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-    currentPage = Math.min(currentPage, totalPages) || 1;
-
+    // Reset to first page
+    currentPage = 1;
+    
     // Get products for current page
-    const start = (currentPage - 1) * productsPerPage;
-    const end = start + productsPerPage;
+    const start = 0;
+    const end = productsPerPage;
     const productsToShow = filteredProducts.slice(start, end);
-
-    console.log('Filtered products to show:', productsToShow);
-
+    
     // Display products and update pagination
     displayProducts(productsToShow);
-    updatePagination(totalPages);
+    updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
 }
 
 // Function to display products with pagination
-async function displayProducts(productsToShow) {
+function displayProducts(productsToShow) {
     const tableBody = document.getElementById('products-list');
     if (!tableBody) {
         console.error('Products list container not found');
@@ -381,7 +396,7 @@ async function displayProducts(productsToShow) {
     });
 }
 
-// Add pagination update function
+// Function to update pagination
 function updatePagination(totalPages) {
     const paginationContainer = document.getElementById('pagination');
     if (!paginationContainer) return;
@@ -399,7 +414,7 @@ function updatePagination(totalPages) {
     `;
 }
 
-// Add page change handler
+// Function to handle page changes
 function changePage(newPage) {
     if (newPage < 1 || newPage > Math.ceil(filteredProducts.length / productsPerPage)) return;
     currentPage = newPage;
@@ -478,45 +493,64 @@ async function handleProductSubmit(e) {
     const productStatus = document.getElementById('product-status').value;
     const productDescription = document.getElementById('product-description').value;
     
+    // Validate required fields
+    if (!productName || !productPrice || !productCategory) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
     // Prepare product data object
     const productData = {
-        id: productId ? parseInt(productId) : undefined,
         name: productName,
         price: parseFloat(productPrice),
         category: productCategory,
         status: productStatus || 'active',
-        description: productDescription,
+        description: productDescription || '',
         image: '../assets/images/logo.png' // Default image
     };
     
     try {
-        const response = currentModalMode === 'add' 
-            ? await window.apiClient.addProduct(productData)
-            : await window.apiClient.updateProduct(productData);
-            
+        let response;
+        
         if (currentModalMode === 'add') {
-            // Add new product to local state
-            products.unshift({
-                ...productData,
-                id: response.data.id // Use ID from response
-            });
-            showToast('Product added successfully!', 'success');
-        } else if (currentModalMode === 'edit') {
-            // Update existing product in local state
-            const productIndex = products.findIndex(p => p.id === productData.id);
-            if (productIndex !== -1) {
-                products[productIndex] = {
-                    ...products[productIndex],
-                    ...productData
-                };
+            // Add new product
+            response = await productApi.addProduct(productData);
+            
+            if (response.status === 'success') {
+                // Add to local array with new ID
+                productData.id = response.id;
+                products.unshift(productData);
+                showToast('Product added successfully!', 'success');
+            } else {
+                throw new Error(response.message || 'Failed to add product');
+            }
+        } else {
+            // Update existing product
+            productData.id = parseInt(productId);
+            response = await productApi.updateProduct(productData);
+            
+            if (response.status === 'success') {
+                // Update in local array
+                const index = products.findIndex(p => p.id === productData.id);
+                if (index !== -1) {
+                    products[index] = {...products[index], ...productData};
+                }
                 showToast('Product updated successfully!', 'success');
+            } else {
+                throw new Error(response.message || 'Failed to update product');
             }
         }
         
         // Close modal and refresh product list
         closeModal();
         filteredProducts = [...products];
-        displayProducts();
+        
+        // Reset to page 1
+        currentPage = 1;
+        const productsToShow = filteredProducts.slice(0, productsPerPage);
+        displayProducts(productsToShow);
+        updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
+        
     } catch (error) {
         console.error('Error saving product:', error);
         showToast(`Error: ${error.message}`, 'error');
@@ -616,17 +650,26 @@ function viewProduct(productId) {
 async function deleteProduct(productId) {
     if (confirm('Are you sure you want to delete this product?')) {
         try {
-            await window.apiClient.deleteProduct(productId);
+            const response = await productApi.deleteProduct(productId);
             
-            // Remove product from local state
-            products = products.filter(p => p.id !== productId);
-            filteredProducts = filteredProducts.filter(p => p.id !== productId);
-            
-            // Refresh display
-            displayProducts();
-            
-            // Show success message
-            showToast('Product deleted successfully!', 'success');
+            if (response.status === 'success') {
+                // Remove product from local state
+                products = products.filter(p => p.id !== productId);
+                filteredProducts = filteredProducts.filter(p => p.id !== productId);
+                
+                // Refresh display
+                const start = (currentPage - 1) * productsPerPage;
+                const end = start + productsPerPage;
+                const productsToShow = filteredProducts.slice(start, end);
+                
+                displayProducts(productsToShow);
+                updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
+                
+                // Show success message
+                showToast('Product deleted successfully!', 'success');
+            } else {
+                throw new Error(response.message || 'Failed to delete product');
+            }
         } catch (error) {
             console.error('Error deleting product:', error);
             showToast(`Error: ${error.message}`, 'error');
@@ -682,7 +725,7 @@ function handleLogoutFallback() {
         sessionStorage.removeItem('user');
         
         // Attempt to call server-side logout
-        fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
+        fetch(`${API_CONFIG.baseUrl}/auth.php?action=logout`, {
             method: 'GET'
         }).catch(error => {
             console.error('Logout API error:', error);
@@ -702,6 +745,82 @@ function handleLogoutFallback() {
     }
 }
 
+// Function to setup image upload preview
+function setupImageUpload() {
+    const imageInput = document.getElementById('product-image');
+    const uploadContainer = document.getElementById('image-upload-container');
+    
+    // Check if elements exist
+    if (!imageInput || !uploadContainer) {
+        console.warn('Image upload elements not found');
+        return;
+    }
+    
+    // Handle file selection
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            selectedImageFile = file;
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // Remove previous preview if exists
+                const oldPreview = uploadContainer.querySelector('.image-preview');
+                if (oldPreview) {
+                    oldPreview.remove();
+                }
+                
+                // Create new preview
+                uploadContainer.style.border = 'none';
+                uploadContainer.innerHTML = `
+                    <div class="image-preview" style="width:100%;height:100%;position:relative;">
+                        <img src="${event.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listener to remove button
+                uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    resetImageUpload();
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Make sure clicking the container triggers file input
+    uploadContainer.addEventListener('click', function() {
+        if (!uploadContainer.querySelector('.image-preview')) {
+            imageInput.click();
+        }
+    });
+}
+
+// Function to reset image upload
+function resetImageUpload() {
+    const imageInput = document.getElementById('product-image');
+    const uploadContainer = document.getElementById('image-upload-container');
+    
+    if (!imageInput || !uploadContainer) return;
+    
+    // Clear file input
+    imageInput.value = '';
+    selectedImageFile = null;
+    
+    // Reset container appearance
+    uploadContainer.style.border = '2px dashed #ccc';
+    uploadContainer.innerHTML = `
+        <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Click to upload image</p>
+        </div>
+    `;
+}
+
 // Add event listener for clicking outside modal to close
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('product-modal');
@@ -709,3 +828,9 @@ window.addEventListener('click', (event) => {
         closeModal();
     }
 });
+
+// Add this line at the end of the file to expose the test function globally
+window.testApiConnection = testApiConnection;
+
+// Add this to make loadProducts accessible globally for the retry button
+window.loadProducts = loadProducts;

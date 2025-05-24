@@ -1,98 +1,95 @@
 <?php
-// Clear any previous output and enable error reporting
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-ob_clean();
+// CORS headers MUST be first before any output
+header("Access-Control-Allow-Origin: http://127.0.0.1:5501");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
+header("Access-Control-Allow-Credentials: true");
 
-// Set CORS headers for all requests
-header('Access-Control-Allow-Origin: http://127.0.0.1:5501');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Max-Age: 86400'); // 24 hours cache for preflight
-
-// Handle preflight requests
+// Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Set JSON content type
+// Set content type after handling CORS
 header('Content-Type: application/json');
 
-// Include required files
-require_once '../../src/models/ProductModel.php';
-require_once '../../src/middleware/RbacMiddleware.php';
-require_once '../../src/config/cors.php';
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-// Debug - Log request details
-error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
-error_log("Request URI: " . $_SERVER['REQUEST_URI']);
+// Log request details for debugging
+error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
+error_log("Request from origin: " . ($_SERVER['HTTP_ORIGIN'] ?? 'Unknown'));
+error_log("Request headers: " . json_encode(getallheaders()));
 
-// Check if ProductModel.php exists
-$modelPath = __DIR__ . '/../../src/models/ProductModel.php';
-if (!file_exists($modelPath)) {
-    error_log("ProductModel.php not found at: " . $modelPath);
-    http_response_code(500);
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Internal server error: Model not found'
-    ]);
-    exit;
-}
-
-require_once $modelPath;
+// Start output buffering
+ob_start();
 
 try {
+    // Include required files
+    require_once '../../src/config/database.php';
+    require_once '../../src/models/ProductModel.php';
+
+    // Test parameter - just return success response
+    if (isset($_GET['test'])) {
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Products API is working correctly',
+            'paths' => [
+                'document_root' => $_SERVER['DOCUMENT_ROOT'],
+                'script_filename' => $_SERVER['SCRIPT_FILENAME'],
+                'physical_path' => __FILE__
+            ]
+        ]);
+        exit;
+    }
+
     // Initialize product object
     $product = new ProductModel();
 
     // Get request method
     $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-    // Check for method override (for PUT/DELETE)
-    if ($requestMethod === 'POST' && isset($_GET['_method'])) {
-        $requestMethod = $_GET['_method'];
-    }
-
     // Handle request based on HTTP method
     switch ($requestMethod) {
         case 'GET':
             if (isset($_GET['id'])) {
                 $result = $product->getById($_GET['id']);
-                if (!$result) {
-                    http_response_code(404);
-                    echo json_encode([
-                        'status' => 'error',
-                        'message' => 'Product not found'
-                    ]);
-                } else {
-                    echo json_encode([
-                        'status' => 'success',
-                        'data' => $result
-                    ]);
-                }
+                echo json_encode($result);
+            } else if (isset($_GET['search'])) {
+                $keyword = $_GET['search'] ?? '';
+                $category = $_GET['category'] ?? null;
+                $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+                $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+                
+                $result = $product->searchProducts($keyword, $category, $limit, $offset);
+                echo json_encode($result);
             } else {
-                $products = $product->getAll();
-                echo json_encode([
-                    'status' => 'success',
-                    'data' => $products
-                ]);
+                // Get all products
+                $result = $product->getAllProducts();
+                echo json_encode($result);
             }
-            break;        case 'POST':
-            // Only admin and manager can create products
-            RbacMiddleware::requireRole(['admin', 'manager']);
+            break;
+        
+        case 'POST':
+            // Get raw input
+            $rawInput = file_get_contents('php://input');
+            $data = json_decode($rawInput, true);
             
-            $data = json_decode(file_get_contents('php://input'), true);
+            // If JSON parsing failed, try to use $_POST
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON parsing failed: " . json_last_error_msg());
+                $data = $_POST;
+            }
+            
             $result = $product->createProduct($data);
             echo json_encode($result);
             break;
 
         case 'PUT':
-            // Only admin and manager can update products
-            RbacMiddleware::requireRole(['admin', 'manager']);
-            
             if (!isset($_GET['id'])) {
+                http_response_code(400);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'Product ID is required'
@@ -100,14 +97,28 @@ try {
                 break;
             }
 
-            $data = json_decode(file_get_contents('php://input'), true);
+            // Get raw input
+            $rawInput = file_get_contents('php://input');
+            $data = json_decode($rawInput, true);
+            
+            // If JSON parsing failed, throw error
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON parsing failed: " . json_last_error_msg());
+                http_response_code(400);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Invalid JSON data: ' . json_last_error_msg()
+                ]);
+                break;
+            }
+            
             $result = $product->updateProduct($_GET['id'], $data);
             echo json_encode($result);
-            break;        case 'DELETE':
-            // Only admin can delete products
-            RbacMiddleware::requireRole('admin');
-            
+            break;
+
+        case 'DELETE':
             if (!isset($_GET['id'])) {
+                http_response_code(400);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'Product ID is required'
@@ -128,11 +139,17 @@ try {
             break;
     }
 } catch (Exception $e) {
-    error_log("Error in products.php: " . $e->getMessage());
+    // Log the error
+    error_log("Products API Error: " . $e->getMessage());
+    
+    // Clean output buffer
+    if (ob_get_length()) ob_clean();
+    
+    // Return error response
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Internal server error'
+        'message' => 'Server error: ' . $e->getMessage()
     ]);
 }
 ?>

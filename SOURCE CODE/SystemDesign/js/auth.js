@@ -44,18 +44,64 @@ const AuthService = {
         if (!token) return null;
         
         try {
-            // Simple token format: SIMPLE.payload.TOKEN
+            console.log('Parsing token structure...');
+            
+            // Check if it's a JWT token or our simple token format
             const parts = token.split('.');
-            if (parts.length !== 3) return null;
+            console.log(`Token has ${parts.length} parts`);
             
-            // Decode the base64 payload
-            const payload = atob(parts[1]);
+            if (parts.length === 3) {
+                // It could be a JWT token or our SIMPLE token format
+                if (token.startsWith('SIMPLE.') || token.startsWith('REDIRECT.')) {
+                    // Simple token format: SIMPLE.payload.TOKEN or REDIRECT.payload.TOKEN
+                    const payload = atob(parts[1]);
+                    const tokenData = JSON.parse(payload);
+                    return tokenData.data || tokenData;
+                } else {
+                    // Standard JWT token
+                    // JWT tokens use base64url encoding, not standard base64
+                    // We need to replace characters and add padding
+                    const base64Url = parts[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+                    
+                    try {
+                        // Now we can decode
+                        const payload = atob(padded);
+                        const tokenData = JSON.parse(payload);
+                        console.log('Extracted user data from token:', tokenData);
+                        
+                        // Handle various token structures
+                        if (tokenData.data) {
+                            return tokenData.data;
+                        } else if (tokenData.user) {
+                            return tokenData.user;
+                        } else {
+                            return tokenData;
+                        }
+                    } catch (decodeError) {
+                        console.log('JWT decode failed, trying fallback to stored user data');
+                        // If JWT decode fails, try to use the stored user data
+                        const userData = localStorage.getItem('user_data');
+                        if (userData) {
+                            return JSON.parse(userData);
+                        }
+                    }
+                }
+            }
             
-            // Parse the JSON
-            const tokenData = JSON.parse(payload);
-            return tokenData.data;
+            return null;
         } catch (e) {
             console.error('Error parsing token', e);
+            // Try to use stored user data as fallback
+            try {
+                const userData = localStorage.getItem('user_data');
+                if (userData) {
+                    return JSON.parse(userData);
+                }
+            } catch (storageError) {
+                console.error('Error reading user data from storage', storageError);
+            }
             return null;
         }
     },
@@ -110,26 +156,40 @@ const AuthService = {
         if (!token) return false;
         
         try {
-            // Simple token format: SIMPLE.payload.TOKEN
+            // Check if it's a JWT token or our simple token format
             const parts = token.split('.');
-            if (parts.length !== 3) return false;
             
-            // Decode the base64 payload
-            const payload = atob(parts[1]);
-            
-            // Parse the JSON
-            const tokenData = JSON.parse(payload);
-            
-            // Check if token has expiration time
-            if (tokenData.exp) {
-                // Token expiration is in seconds, current time is in milliseconds
-                const now = Math.floor(Date.now() / 1000);
-                if (now >= tokenData.exp) {
-                    return false; // Token has expired
+            if (parts.length === 3) {
+                let tokenData;
+                
+                if (token.startsWith('SIMPLE.') || token.startsWith('REDIRECT.')) {
+                    // Simple token format
+                    const payload = atob(parts[1]);
+                    tokenData = JSON.parse(payload);
+                } else {
+                    // Standard JWT token - handle base64url encoding
+                    const base64Url = parts[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+                    
+                    const payload = atob(padded);
+                    tokenData = JSON.parse(payload);
                 }
+                
+                // Check if token has expiration time
+                if (tokenData.exp) {
+                    // Token expiration is in seconds, current time is in milliseconds
+                    const now = Math.floor(Date.now() / 1000);
+                    if (now >= tokenData.exp) {
+                        console.log('Token has expired');
+                        return false; // Token has expired
+                    }
+                }
+                
+                return true;
             }
             
-            return true;
+            return false;
         } catch (e) {
             console.error('Error validating token', e);
             return false;

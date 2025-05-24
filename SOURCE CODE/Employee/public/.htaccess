@@ -10,23 +10,50 @@ AddHandler application/x-httpd-php .php
 # Set default character set
 AddDefaultCharset UTF-8
 
-# Enable CORS
+# Enable CORS - important for API access
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+    # Always set these headers for all responses
+    Header always set Access-Control-Allow-Origin "http://127.0.0.1:5501"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    Header always set Access-Control-Allow-Credentials "true"
+
+    # Handle OPTIONS preflight requests
+    <If "%{REQUEST_METHOD} == 'OPTIONS'">
+        Header always set Access-Control-Max-Age "1728000"
+        Header always set Content-Type "text/plain charset=UTF-8"
+        Header always set Content-Length "0"
+        Header always set Status "200"
+    </If>
 </IfModule>
 
-# Rewrite rules
+# Enable rewrite engine
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
-
-    # Handle OPTIONS method for CORS
+    
+    # Redirect OPTIONS requests
     RewriteCond %{REQUEST_METHOD} OPTIONS
     RewriteRule ^(.*)$ $1 [R=200,L]
     
-    # Ensure PHP files are processed correctly
-    RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^(.+)\.php$ $1.php [L]
+    # Serve existing files and directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Add specific rewrite rules for SOURCE CODE path
+    RewriteBase /SOURCE%20CODE/Employee/public/
+
+    # Handle spaces in URL
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^SOURCE\ CODE/(.*)$ SOURCE%20CODE/$1 [L,NC]
+
+    # Rewrite API requests
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api/$1.php [QSA,L]
 </IfModule>
+
+# PHP settings
+php_flag display_errors on
+php_value error_reporting E_ALL

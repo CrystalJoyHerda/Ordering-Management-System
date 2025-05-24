@@ -13,12 +13,11 @@
         <p class="subtitle">"Byte into Flavor, Brewed to Perfection!"</p>
 
         <div class="login-box" role="main" aria-labelledby="login-title">
-            <h2 id="login-title">Login</h2>
-            <form id="login-form" autocomplete="on">
+            <h2 id="login-title">Login</h2>            <form id="login-form" autocomplete="on">
                 <input id="username" 
-                       name="username"
+                       name="name"
                        type="text" 
-                        placeholder="Username" 
+                       placeholder="Username" 
                        required 
                        minlength="3"
                        aria-label="Username"
@@ -32,17 +31,39 @@
                        aria-label="Password"
                        autocomplete="current-password">
                 <button id="login-button" type="submit">Login</button>
-            </form>            <div id="error-message" role="alert"></div>
+            </form>            
+            <div id="error-message" role="alert"></div>
             <a href="#" class="forgot-password" aria-label="Forgot password">Forgot password?</a>
-            
-            <!-- Fallback form that targets the server directly -->
-            <form id="fallback-form" action="http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api/auth.php" method="POST" style="display:none;" target="_blank">
+            <!-- Fallback form with configurable action based on environment -->
+            <form id="fallback-form" method="POST" style="display:none;">
                 <input type="hidden" name="name" id="fallback-name">
                 <input type="hidden" name="password" id="fallback-password">
-                <input type="hidden" name="format" value="form">
+                <input type="hidden" name="format" id="fallback-format" value="form">
             </form>
-        </div>    </div>    <!-- Ensure scripts are loaded only once and in the correct order -->
+        </div>    </div>    
+    <!-- Ensure scripts are loaded only once and in the correct order -->
     <script src="../js/auth.js"></script>
+    
+    <!-- Configure fallback form URL based on environment -->
+    <script>
+        // Set the form action to the exact URL that's working
+        window.addEventListener('DOMContentLoaded', function() {
+            const fallbackForm = document.getElementById('fallback-form');
+            // Use the exact URL that's working
+            fallbackForm.action = 'http://localhost/SOURCE_CODE/Employee/public/api/auth.php';
+            
+            // Add the Content-Type parameter for Postman compatibility
+            const contentTypeInput = document.createElement('input');
+            contentTypeInput.type = 'hidden';
+            contentTypeInput.name = 'Content-Type';
+            contentTypeInput.id = 'fallback-content-type';
+            contentTypeInput.value = 'application/json';
+            fallbackForm.appendChild(contentTypeInput);
+            
+            console.log('Fallback form configured with exact working URL:', fallbackForm.action);
+        });
+    </script>
+    
     <script src="../js/loginInterface.js"></script>
     
     <!-- Add special script to help with CORS issues -->
@@ -59,20 +80,8 @@
                     const user = JSON.parse(atob(userData));
                     localStorage.setItem('auth_token', 'REDIRECT.' + userData + '.TOKEN');
                     
-                    // Use RBACService for redirection if available
-                    if (typeof window.RBACService !== 'undefined') {
-                        window.RBACService.redirectToDashboard();
-                    } else {
-                        // Fallback redirection
-                        const redirectBased = {
-                            'admin': '../pages/adminDashboard.html',
-                            'cashier': '../pages/cashierInterface.html',
-                            'inventory': '../pages/inventoryInterface.html'
-                        };
-                        
-                        const redirectUrl = redirectBased[user.role.toLowerCase()] || '../pages/dashboard.html';
-                        window.location.href = redirectUrl;
-                    }
+                    // Use the global redirect function
+                    window.redirectToDashboard(user);
                 } catch (e) {
                     console.error('Error processing redirect data:', e);
                 }

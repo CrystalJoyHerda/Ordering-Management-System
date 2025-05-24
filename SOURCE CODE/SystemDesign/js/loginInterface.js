@@ -1,214 +1,193 @@
-// Wait for the DOM to load
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("Login page loaded");
+/**
+ * Login Interface Controller
+ * Handles login form submission and authentication
+ */
+
+// Update API configuration to use the exact working URL
+
+// Port configuration - Default to standard HTTP port 80 for backend
+const FRONTEND_PORT = '8000'; 
+const BACKEND_PORT = '80';
+
+// Live Server ports
+const LIVE_SERVER_PORTS = ['5500', '5501'];
+
+// Primary API path - Use exactly what works
+const PRIMARY_API_PATH = '/SOURCE_CODE/Employee/public/api';
+
+// Check if running under Live Server or other development server
+const isLiveServer = LIVE_SERVER_PORTS.includes(window.location.port);
+const isCustomFrontend = window.location.port === FRONTEND_PORT;
+const isDevServer = isLiveServer || isCustomFrontend;
+
+// For development servers, we need to use the full URL with proper backend port
+const API_FULL_URL = isDevServer 
+    ? `http://127.0.0.1${PRIMARY_API_PATH}` // Use 127.0.0.1 to match origin
+    : PRIMARY_API_PATH;
+
+// Log configuration on startup
+console.log('Environment:', isLiveServer ? 'Live Server' : (isCustomFrontend ? 'Custom Frontend' : 'Production'));
+console.log('API endpoint:', API_FULL_URL + '/auth.php');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Login interface initialized');
     
-    // Check if already logged in - redirect immediately if so
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-        try {
-            // Decode token to get user data
-            const payload = token.split('.')[1];
-            const userData = JSON.parse(atob(payload));
-            redirectToDashboard(userData.data);
-            return;
-        } catch (e) {
-            // Invalid token, clear it
-            console.error("Invalid token detected:", e);
-            localStorage.removeItem("auth_token");
+    // Get form elements
+    const loginForm = document.getElementById('login-form');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const errorMessage = document.getElementById('error-message');
+    const loginButton = document.getElementById('login-button');
+    
+    // Check if already logged in
+    if (localStorage.getItem('auth_token')) {
+        // Get user info from the token
+        const userData = AuthService.getUserInfo();
+        if (userData) {
+            console.log('User already logged in, redirecting to dashboard');
+            redirectBasedOnRole(userData);
         }
     }
-
-    const loginForm = document.getElementById("login-form");
-    const errorMessage = document.getElementById("error-message");
-    const fallbackForm = document.getElementById("fallback-form");
     
-    // Update fallback form fields when main form changes
-    const usernameField = document.getElementById("username");
-    const passwordField = document.getElementById("password");
-    const fallbackNameField = document.getElementById("fallback-name");
-    const fallbackPasswordField = document.getElementById("fallback-password");
-    
-    usernameField.addEventListener("input", () => {
-        fallbackNameField.value = usernameField.value;
-    });
-    
-    passwordField.addEventListener("input", () => {
-        fallbackPasswordField.value = passwordField.value;
-    });
-    
-    console.log("Login form initialized");
-
-    loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        console.log("Form submitted");
-
-        // Show loading indicator
-        const submitButton = loginForm.querySelector("button[type='submit']");
-        const originalButtonText = submitButton.textContent;
-        submitButton.textContent = "Logging in...";
-        submitButton.disabled = true;
+    // Handle form submission
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        const username = usernameField.value;
-        const password = passwordField.value;
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
         
         if (!username || !password) {
             showError('Please enter both username and password');
-            submitButton.textContent = originalButtonText;
-            submitButton.disabled = false;
             return;
         }
         
-        // Update fallback form values
-        fallbackNameField.value = username;
-        fallbackPasswordField.value = password;
+        // Clear error and show loading state
+        clearError();
+        loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+        loginButton.disabled = true;
         
-        // Try to login with fetch first using form data to match what server expects
         try {
+            // Use 127.0.0.1 instead of localhost to match origin
+            const apiUrl = `${API_FULL_URL}/auth.php`;
+            console.log(`Attempting login at: ${apiUrl}`);
+            console.log('Login data:', { name: username, password: '***' });
+
+            // Create form data
             const formData = new FormData();
             formData.append('name', username);
             formData.append('password', password);
-            
-            console.log("Attempting to login with form data");
-            
-            const response = await fetch('http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api/auth.php', {
+
+            // Send the request
+            const response = await fetch(apiUrl, {
                 method: 'POST',
-                body: formData,
-                credentials: 'include'
+                body: formData
             });
-            
-            console.log("Response status:", response.status);
-            
-            const result = await response.json();
-            console.log("Login result:", result);
-            
-            if (result.status === "success") {
-                // Store JWT token in localStorage
-                localStorage.setItem("auth_token", result.token);
+
+            // Log the raw response for debugging
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+
+            // Try to parse the response as JSON
+            let responseData;
+            try {
+                responseData = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', e);
+                throw new Error('Invalid server response');
+            }
+
+            if (responseData.status === 'success' && responseData.token) {
+                // Store JWT token
+                localStorage.setItem('auth_token', responseData.token);
+                // Store user data
+                localStorage.setItem('user_data', JSON.stringify(responseData.data));
                 
-                // Redirect to appropriate dashboard
-                redirectToDashboard(result.data);
-                return;
+                console.log('Login successful! User data:', responseData.data);
+                
+                // Add success message to UI
+                showSuccess('Login successful! Redirecting...');
+                
+                // Wait a moment before redirecting for better UX
+                setTimeout(() => {
+                    redirectBasedOnRole(responseData.data);
+                }, 800);
             } else {
-                showError(result.message || "Login failed");
+                showError(responseData.message || 'Login failed');
             }
         } catch (error) {
-            console.error("Form data login attempt failed:", error);
-            
-            // Try with JSON as fallback
-            try {
-                console.log("Attempting to login with JSON data");
-                
-                const jsonData = {
-                    name: username,
-                    password: password
-                };
-                
-                const response = await fetch('http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api/auth.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(jsonData),
-                    credentials: 'include'
-                });
-                
-                console.log("JSON response status:", response.status);
-                
-                const result = await response.json();
-                console.log("JSON login result:", result);
-                
-                if (result.status === "success") {
-                    // Store JWT token in localStorage
-                    localStorage.setItem("auth_token", result.token);
-                    
-                    // Redirect to appropriate dashboard
-                    redirectToDashboard(result.data);
-                    return;
-                } else {
-                    showError(result.message || "Login failed");
-                }
-            } catch (jsonError) {
-                console.error("JSON login attempt failed:", jsonError);
-                
-                // Last resort: Try direct form submission
-                console.log("Attempting direct form submission");
-                fallbackForm.submit();
-                return;
-            }
+            console.error('Login error:', error);
+            showError('Connection error. Please try again.');
         } finally {
-            // Restore button state
-            submitButton.textContent = originalButtonText;
-            submitButton.disabled = false;
+            loginButton.innerHTML = 'Login';
+            loginButton.disabled = false;
         }
     });
-    
-    // Function to display error messages
+
+    // Add success message function
+    function showSuccess(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        errorMessage.className = 'success-message';
+    }
+
     function showError(message) {
         errorMessage.textContent = message;
-        errorMessage.style.display = "block";
-        setTimeout(() => {
-            errorMessage.style.display = "none";
-        }, 5000);
+        errorMessage.style.display = 'block';
+        errorMessage.className = 'error-message';
     }
     
-    // Use the global RBACService
-    function redirectToDashboard(user) {
-        console.log("Redirecting user with role:", user.role);
-        
-        // Log the current location for debugging
-        console.log("Current location:", window.location.href);
-          
-        // Use the RBAC service for redirection if available
-        if (typeof window.RBACService !== 'undefined') {
-            console.log("Using RBAC service for redirection");
-            window.RBACService.redirectToDashboard();
-            return;
-        }
-        
-        // Fallback if RBAC service is not available
-        console.log("RBAC service not available, using fallback redirection");
-        let targetUrl;
-        
-        switch(user.role.toLowerCase()) {
-            case "admin":
-                console.log("Role is admin, redirecting to admin dashboard");
-                targetUrl = "admindashboard.html";
-                break;
-            case "cashier":
-                console.log("Role is cashier, redirecting to cashier dashboard");
-                targetUrl = "cashierdashboard.html";
-                break;
-            case "manager":
-                console.log("Role is manager, redirecting to manager dashboard");
-                targetUrl = "managerdashboard.html";
-                break;
-            case "inventory":
-                console.log("Role is inventory, redirecting to inventory dashboard");
-                targetUrl = "inventoryInterface.html";
-                break;
-            default:
-                // Fallback for any other role
-                console.log("Unknown role, redirecting to default dashboard");
-                targetUrl = "dashboard.html";
-                break;
-        }
-        
-        // Calculate the correct path based on current location
-        let basePath = "";
-        if (window.location.pathname.includes('/pages/')) {
-            console.log("Currently in pages directory");
-            basePath = ""; // Already in pages directory
-        } else if (window.location.pathname.includes('/loginInterface.html')) {
-            console.log("In root loginInterface.html");
-            basePath = "pages/";
-        } else {
-            console.log("Not in pages directory");
-            basePath = "pages/";
-        }
-        
-        const fullPath = basePath + targetUrl;
-        console.log("Redirecting to:", fullPath);
-        window.location.href = fullPath;
+    function clearError() {
+        errorMessage.textContent = '';
+        errorMessage.style.display = 'none';
+        errorMessage.className = 'error-message';
     }
+    
+    // Disable submit on Enter in password field (use the button instead)
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            loginButton.click();
+        }
+    });
 });
+
+/**
+ * Redirect user to appropriate dashboard based on role
+ */
+function redirectBasedOnRole(userData) {
+    console.log('Redirecting based on role:', userData);
+    
+    // Extract role directly from the userData object
+    let role = userData?.role?.toLowerCase() || null;
+    console.log('Detected user role:', role);
+    
+    // Get current path to determine the correct relative path
+    const currentPath = window.location.pathname.toLowerCase();
+    let basePath = '';
+    
+    // If we're in the pages directory, we don't need to add it to the path
+    if (!currentPath.includes('/pages/')) {
+        basePath = 'pages/';
+    }
+    
+    // Simple direct redirection based on role
+    if (role === 'admin') {
+        console.log('Redirecting to admin dashboard...');
+        window.location.href = `${basePath}adminDashboard.html`;
+    } 
+    else if (role === 'cashier') {
+        console.log('Redirecting to cashier dashboard...');
+        window.location.href = `${basePath}cashierdashboard.html`;
+    }
+    else if (role === 'inventory') {
+        console.log('Redirecting to inventory dashboard...');
+        window.location.href = `${basePath}inventory.html`;
+    }
+    else {
+        console.error('Unknown role:', role);
+        showError('Invalid user role. Please contact administrator.');
+    }
+}
+
+// Global redirect function for use in the HTML
+window.redirectToDashboard = redirectBasedOnRole;

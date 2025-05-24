@@ -1,42 +1,50 @@
 <?php
-// filepath: c:\xampp\htdocs\Employee\db_test.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
 
-// Include the Database class
-require_once 'src/config/database.php';
+// Using absolute path with __DIR__ since both files are in the same directory
+require_once __DIR__ . '/database.php';
 
-// Test database.php connection
 try {
-    // Create a new Database instance
     $database = new Database();
+    $db = $database->getConnection();
     
-    // Get connection from the Database class
-    $conn = $database->getConnection();
-    
-    if ($conn) {
-        echo "Connection successful! Database class from database.php is working properly.";
-        
-        // Get database info from connection to verify
-        $stmt = $conn->query("SELECT DATABASE() as db_name");
+    if($db) {
+        // Test connection and get database info
+        $stmt = $db->query("SELECT DATABASE() as current_db");
         $result = $stmt->fetch();
-        $dbname = $result['db_name'];
         
-        echo "<br>Connected to database: " . $dbname;
+        // Get list of tables
+        $stmt = $db->query("SHOW TABLES");
+        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
-        // Test a simple query to verify connection is functional
-        try {
-            $query = "SHOW TABLES";
-            $stmt = $conn->prepare($query);
-            $stmt->execute();
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
-            echo "<br>Tables in database: " . implode(", ", $tables);
-        } catch(PDOException $e) {
-            echo "<br>Query error: " . $e->getMessage();
+        // Add table structure information
+        $tableInfo = [];
+        foreach ($tables as $table) {
+            $stmt = $db->query("DESCRIBE $table");
+            $tableInfo[$table] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-    } else {
-        echo "Connection failed: getConnection() returned null";
+        
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Database connection successful',
+            'database' => $result['current_db'],
+            'tables' => $tables,
+            'table_structure' => $tableInfo,
+            'connection_info' => [
+                'host' => $database->host,
+                'database' => $database->dbname
+            ]
+        ], JSON_PRETTY_PRINT);
     }
-} catch(Exception $e) {
-    echo "Connection failed: " . $e->getMessage();
+} catch(PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Connection failed: ' . $e->getMessage()
+    ], JSON_PRETTY_PRINT);
 }
 ?>

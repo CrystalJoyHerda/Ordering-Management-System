@@ -2,11 +2,20 @@
 AddType application/javascript .js
 AddType image/png .png
 
-# Enable CORS (Cross-Origin Resource Sharing)
+# Set caching headers
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    
+    # Cache control for static resources
+    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico)$">
+        Header set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+    
+    # No caching for HTML files
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
 </IfModule>
 
 # If mod_rewrite is available

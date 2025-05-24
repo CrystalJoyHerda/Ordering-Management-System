@@ -1,16 +1,16 @@
 <?php
-// filepath: c:\xampp\htdocs\Employee\src\config\database.php
+// Updated file path to match actual URL access path
+// http://localhost/SOURCE_CODE/Employee/public/api/auth.php
 
 // Display all errors (only for testing)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 class Database {
-    // Database credentials
-    private $host = 'localhost';
-    private $dbname = 'employee_db';
-    private $username = 'emp';  // Changed back to emp user
-    private $password = 'emp';  // Changed back to emp password
+    public $host = 'localhost';
+    public $dbname = 'employee_db';
+    public $username = 'emp';
+    public $password = 'emp';
     private $conn;
     
     /**
@@ -22,12 +22,18 @@ class Database {
         $this->conn = null;
         
         try {
-            $this->conn = new PDO("mysql:host={$this->host};dbname={$this->dbname}", $this->username, $this->password);
+            error_log("[DATABASE] Connecting to {$this->dbname} at http://localhost/SOURCE_CODE/Employee/");
+            
+            // Simplified DSN without explicit port
+            $dsn = "mysql:host={$this->host};dbname={$this->dbname};charset=utf8";
+            $this->conn = new PDO($dsn, $this->username, $this->password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $this->conn->exec("set names utf8");
+            
+            error_log("Database connection successful at SOURCE_CODE path");
         } catch(PDOException $e) {
-            echo "Connection Error: " . $e->getMessage();
+            error_log("[DATABASE] Connection error at http://localhost/SOURCE_CODE/Employee/: " . $e->getMessage());
+            throw new Exception("Database connection failed. Check configuration.");
         }
         
         return $this->conn;

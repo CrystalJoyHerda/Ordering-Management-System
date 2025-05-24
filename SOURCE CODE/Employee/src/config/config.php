@@ -1,19 +1,21 @@
 <?php
 class Config {
-    // Base URLs for different environments
+    // Update API URLs to use direct paths
     public static $apiUrls = [
-        'localhost' => 'http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api',
-        'liveserver' => 'http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api'
+        'localhost' => 'http://localhost/SOURCE_CODE/Employee/public/api',
+        'development' => 'http://localhost/SOURCE_CODE/Employee/public/api'
     ];
     
-    // CORS allowed origins
+    // Update allowed origins
     public static $allowedOrigins = [
-        'http://localhost',
         'http://127.0.0.1:5501',
-        'http://localhost:5501'
+        'http://localhost:5501',
+        'http://localhost',
+        'http://127.0.0.1:5500',
+        'http://localhost:5500'
     ];
     
-    // Database config
+    // Update database config to match database.php
     public static $dbConfig = [
         'host' => 'localhost',
         'dbname' => 'employee_db',
@@ -32,3 +34,4 @@ class Config {
         return in_array($origin, self::$allowedOrigins);
     }
 }
+?>

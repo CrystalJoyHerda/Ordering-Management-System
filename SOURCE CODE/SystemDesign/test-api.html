@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    
+    <div>
+        <button id="testBtn">Test API Connection</button>
+        <button id="productsBtn">Get Products</button>
+    </div>
+    
+    <h2>Response:</h2>
+    <pre id="response">Click a button to test...</pre>
+    
+    <script>
+        // API base URL - IMPORTANT: This should match your actual API path
+        const API_BASE_URL = 'http://localhost/SOURCE_CODE_SYSTEM/Employee/public/api';
+        
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/test-connection.php`);
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('productsBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products.php`);
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

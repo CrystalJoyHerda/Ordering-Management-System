@@ -13,7 +13,7 @@ app.use('/api', createProxyMiddleware({
     target: 'http://localhost',
     changeOrigin: true,
     pathRewrite: {
-        '^/api': '/SOURCE_CODE_SYSTEM/Employee/public/api'
+        '^/api': '/SOURCE CODE/Employee/public/api'  // Changed to use space instead of %20
     }
 }));
 
