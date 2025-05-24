@@ -18,8 +18,8 @@
     <h1>API Test</h1>
     <div id="result"></div>
     <script>
-        // API endpoints - using direct PHP server path
-        const API_BASE = 'http://localhost:8000';
+        // API endpoints - using correct path that matches the application
+        const API_BASE = 'http://127.0.0.1/SOURCE_CODE/Employee/public/api';
         
         // Function to test the products API
         async function testAPI() {
@@ -31,24 +31,22 @@
                     <div class="debug-info">
                         <p>Testing API connection...</p>
                         <p>Current URL: ${window.location.href}</p>
-                        <p>API URL: ${API_BASE}/api/products.php</p>
+                        <p>API URL: ${API_BASE}/products.php</p>
                         <p>Token available: ${token ? 'Yes' : 'No'}</p>
                     </div>
                 `;
 
-                console.log('Attempting fetch to:', `${API_BASE}/api/products.php`);
+                console.log('Attempting fetch to:', `${API_BASE}/products.php`);
                 
-                // Test the connection
-                const response = await fetch(`${API_BASE}/api/products.php`, {
+                // Test the connection with simple CORS settings
+                const response = await fetch(`${API_BASE}/products.php`, {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'Authorization': token ? `Bearer ${token}` : '',
-                        'Origin': 'http://127.0.0.1:5501'
+                        'Content-Type': 'application/json'
                     },
-                    credentials: 'include',
-                    mode: 'cors'
+                    mode: 'cors',
+                    credentials: 'same-origin'
                 });
 
                 console.log('Response received:', response.status, response.statusText);
@@ -82,7 +80,7 @@
                         <ul>
                             <li>Is PHP server running on port 8000? Command: php -S localhost:8000</li>
                             <li>Check the Network tab in browser dev tools for the exact error</li>
-                            <li>Try accessing the API directly in browser: ${API_BASE}/api/products.php</li>
+                            <li>Try accessing the API directly in browser: ${API_BASE}/products.php</li>
                             <li>Check console for detailed error messages</li>
                         </ul>
                     </div>
@@ -97,19 +95,18 @@
                 console.log('Starting login test...');
                 resultDiv.innerHTML = '<div class="debug-info">Testing login...</div>';
                 
-                const response = await fetch(`${API_BASE}/api/auth.php`, {
+                const response = await fetch(`${API_BASE}/auth.php`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'Origin': 'http://127.0.0.1:5501'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         username: 'Crystal',
-                        password: 'admin123'
+                        password: '1123'
                     }),
                     mode: 'cors',
-                    credentials: 'include'
+                    credentials: 'same-origin'
                 });
                 
                 const responseText = await response.text();
@@ -137,7 +134,7 @@
             <div style="margin-bottom: 20px;">
                 <button onclick="testLogin()">Test Login</button>
                 <button onclick="testAPI()">Test Products API</button>
-                <button onclick="window.open('${API_BASE}/api/products.php', '_blank')">Open API Directly</button>
+                <button onclick="window.open('${API_BASE}/products.php', '_blank')">Open API Directly</button>
             </div>
         `);
 

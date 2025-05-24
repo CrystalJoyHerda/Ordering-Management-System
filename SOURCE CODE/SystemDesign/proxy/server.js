@@ -11,9 +11,8 @@ app.use(cors());
 // Proxy API requests
 app.use('/api', createProxyMiddleware({
     target: 'http://localhost',
-    changeOrigin: true,
-    pathRewrite: {
-        '^/api': '/SOURCE CODE/Employee/public/api'  // Changed to use space instead of %20
+    changeOrigin: true,    pathRewrite: {
+        '^/api': '/SOURCE_CODE/Employee/public/api'  // Using underscore for correct path
     }
 }));
 

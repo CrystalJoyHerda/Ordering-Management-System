@@ -7,42 +7,21 @@ while (ob_get_level()) {
     @ob_end_clean();
 }
 
-// Start fresh output buffer
-ob_start();
-
-// Set content type first
-header('Content-Type: application/json; charset=utf-8');
-
-// CORS headers - Must be set after content type
-$allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:5501',
-    'http://127.0.0.1:5501'
-];
-
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
-    header("Access-Control-Allow-Origin: $origin");
-} else {
-    header('Access-Control-Allow-Origin: http://127.0.0.1:5501');
-}
-
-// Set remaining CORS headers
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
+// Set CORS and security headers
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-Request-With');
 header('Access-Control-Allow-Credentials: true');
+header('Content-Type: application/json; charset=UTF-8');
 
-// Handle preflight OPTIONS request first
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
-    @ob_end_clean();
     exit();
 }
+
+// Start fresh output buffer
+ob_start();
 
 // Check if file exists before including
 $docRoot = $_SERVER['DOCUMENT_ROOT'];

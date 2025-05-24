@@ -8,9 +8,29 @@ let filteredProducts = [];
 let currentModalMode = 'add'; // 'add' or 'edit'
 let selectedImageFile = null;
 
-// API configuration - integrated directly in inventory.js
+// API Configuration
+const API_CONFIG_PARAMS = {
+    FRONTEND_PORT: '5501',  // Live Server default port
+    BACKEND_PORT: '80',    // Apache default port
+    API_PATH: '/SOURCE_CODE/Employee/public/api'  // Updated path with underscore
+};
+
+// Live Server ports
+const LIVE_SERVER_PORTS = ['5500', '5501'];
+
+// Check if running under Live Server or other development server
+const isLiveServer = LIVE_SERVER_PORTS.includes(window.location.port);
+const isCustomFrontend = window.location.port === API_CONFIG_PARAMS.FRONTEND_PORT;
+const isDevServer = isLiveServer || isCustomFrontend;
+
+// Simplified API URL construction for Live Server vs Production
+const API_FULL_URL = isLiveServer 
+    ? `http://localhost${API_CONFIG_PARAMS.API_PATH}`  // Use localhost for Live Server
+    : `http://127.0.0.1${API_CONFIG_PARAMS.API_PATH}`; // Use IP for production
+
+// API configuration
 const API_CONFIG = {
-    baseUrl: 'http://localhost:3000/SOURCE_CODE/Employee/public/api',
+    baseUrl: API_FULL_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -18,88 +38,92 @@ const API_CONFIG = {
     getAuthToken: () => localStorage.getItem('auth_token')
 };
 
-// Simple API client methods integrated directly
-const productApi = {
-    // Basic fetch wrapper with error handling
-    async fetch(url, options = {}) {
-        console.log(`Sending request to: ${url}`);
+// Log configuration on startup
+console.log('Environment:', isLiveServer ? 'Live Server' : (isCustomFrontend ? 'Custom Frontend' : 'Production'));
+console.log('API endpoint:', API_FULL_URL);
+
+// Simple API client methods
+const productApi = {    async fetch(url, options = {}) {
         try {
-            // Set default headers
-            const headers = {
-                ...API_CONFIG.headers,
-                ...options?.headers
+            // Set up proper CORS headers and credentials
+            const fetchOptions = {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                },
+                mode: 'cors',
+                credentials: 'include',
+                cache: 'no-cache'
             };
-            
+
             // Add auth token if available
             const token = API_CONFIG.getAuthToken();
             if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+                fetchOptions.headers['Authorization'] = `Bearer ${token}`;
             }
-            
-            const response = await fetch(url, {
-                ...options,
-                headers,
-                credentials: 'include',
-                mode: 'cors'
-            });
 
-            // Handle HTTP errors
+            const response = await fetch(url, fetchOptions);
+
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('API response error:', errorText);
+                console.error('Error Response:', errorText);
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            // Parse JSON response
-            const responseText = await response.text();
-            if (!responseText.trim()) {
-                return { status: 'success', data: [] };
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                const text = await response.text();
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    return {
+                        status: response.ok ? 'success' : 'error',
+                        data: text
+                    };
+                }
             }
-            return JSON.parse(responseText);
         } catch (error) {
-            console.error('API fetch error:', error);
-            
-            // Provide more specific error for connection issues
-            if (error.message.includes('Failed to fetch')) {
-                throw new Error('Cannot connect to the server. Please ensure the server is running and accessible.');
-            }
+            console.error('API request failed:', error);
             throw error;
         }
     },
-
+    
     // API methods
     async getProducts() {
         return this.fetch(`${API_CONFIG.baseUrl}/products.php`);
     },
-
+    
     async getProduct(id) {
-        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${id}`);
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${encodeURIComponent(id)}`);
     },
-
+    
     async searchProducts(keyword, category) {
-        let url = `${API_CONFIG.baseUrl}/products.php?search=${encodeURIComponent(keyword || '')}`;
-        if (category) {
-            url += `&category=${encodeURIComponent(category)}`;
-        }
-        return this.fetch(url);
+        const params = new URLSearchParams();
+        if (keyword) params.append('search', keyword);
+        if (category) params.append('category', category);
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?${params.toString()}`);
     },
-
+    
     async addProduct(productData) {
         return this.fetch(`${API_CONFIG.baseUrl}/products.php`, {
             method: 'POST',
             body: JSON.stringify(productData)
         });
     },
-
+    
     async updateProduct(productData) {
-        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${productData.id}`, {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${encodeURIComponent(productData.id)}`, {
             method: 'PUT',
             body: JSON.stringify(productData)
         });
     },
-
+    
     async deleteProduct(id) {
-        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${id}`, {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
     }

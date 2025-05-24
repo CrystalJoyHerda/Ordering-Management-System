@@ -1,6 +1,5 @@
 <?php
-class Config {
-    // Update API URLs to use direct paths
+class Config {    // Update API URLs to use direct paths with URL-encoded values
     public static $apiUrls = [
         'localhost' => 'http://localhost/SOURCE_CODE/Employee/public/api',
         'development' => 'http://localhost/SOURCE_CODE/Employee/public/api'

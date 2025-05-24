@@ -14,17 +14,25 @@ class BaseModel {
         $database = new Database();
         $this->conn = $database->getConnection();
     }
-    
-    // Get all records
+      // Get all records
     public function getAll() {
         try {
             $query = "SELECT * FROM {$this->table}";
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'status' => 'success',
+                'data' => $results
+            ];
         } catch (PDOException $e) {
-            return [];
+            error_log("Database error in getAll: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to fetch records'
+            ];
         }
     }
     

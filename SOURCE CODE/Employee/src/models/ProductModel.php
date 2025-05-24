@@ -7,6 +7,16 @@ class ProductModel extends BaseModel {
     public function __construct() {
         parent::__construct();
         $this->table = 'products';
+        
+        // Verify table exists
+        try {
+            $query = "DESCRIBE {$this->table}";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Products table verification failed: " . $e->getMessage());
+            throw new Exception("Products table not found or inaccessible");
+        }
     }
       public function createProduct($data) {
         try {
@@ -187,23 +197,47 @@ class ProductModel extends BaseModel {
     }
 
     // Add method to get all products for dashboard
+    public function getById($id) {
+        return $this->getProduct($id);
+    }
+
+    // Get all products for dashboard
     public function getAllProducts() {
         try {
+            $this->conn->beginTransaction();
+            
+            // First check if table is accessible
+            try {
+                $checkQuery = "SELECT 1 FROM {$this->table} LIMIT 1";
+                $this->conn->query($checkQuery);
+            } catch (PDOException $e) {
+                throw new Exception("Products table is not accessible: " . $e->getMessage());
+            }
+            
+            // Get products with error handling
             $query = "SELECT * FROM {$this->table} ORDER BY id DESC";
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            $this->conn->commit();
+            
+            if ($results === false) {
+                throw new Exception("Failed to fetch products data");
+            }
+            
             return [
                 'status' => 'success',
+                'count' => count($results),
                 'data' => $results
             ];
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
+            $this->conn->rollBack();
             error_log("Error getting products: " . $e->getMessage());
             return [
                 'status' => 'error',
-                'message' => 'Failed to load products'
+                'message' => 'Failed to load products: ' . $e->getMessage()
             ];
         }
     }

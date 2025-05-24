@@ -102,6 +102,9 @@ docs\Employee\test_products.html -->
     </table>
     
     <script>
+        // API Base URL constant
+        const API_BASE = 'http://localhost/SOURCE_CODE/Employee/pu  blic/api';
+        
         // Helper function to set status
         function setStatus(message, isError = false) {
             const status = document.getElementById('status');
@@ -147,9 +150,14 @@ docs\Employee\test_products.html -->
                     role: 'admin'
                 }));
                 
-                // Test the session endpoint
-                const response = await fetch('http://localhost/Employee/public/api/test.php', {
+                // Test the session endpoint with correct path
+                const response = await fetch(`${API_BASE}/test.php`, {
                     method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
                     credentials: 'include'
                 });
                 
@@ -174,11 +182,13 @@ docs\Employee\test_products.html -->
             try {
                 setStatus('Loading products from API...');
                 
-                const response = await fetch('http://localhost/Employee/public/api/products.php', {
+                const response = await fetch(`${API_BASE}/products.php`, {
                     method: 'GET',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     },
+                    mode: 'cors',
                     credentials: 'include'
                 });
                 
@@ -216,13 +226,14 @@ docs\Employee\test_products.html -->
                     category: 'Test'
                 };
                 
-                const response = await fetch('http://localhost/Employee/public/api/products.php', {
+                const response = await fetch(`${API_BASE}/products.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify(testProduct),
+                    mode: 'cors',
                     credentials: 'include'
                 });
                 
@@ -255,8 +266,7 @@ docs\Employee\test_products.html -->
             try {
                 setStatus('Loading products directly from database...');
                 
-                // This endpoint will be created in the next step
-                const response = await fetch('http://localhost/Employee/direct_products.php');
+                const response = await fetch(`${API_BASE}/direct_products.php`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
