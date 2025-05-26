@@ -23,9 +23,8 @@
                     <li><a href="saleshistoryinter.html" class="active">Sales History</a></li>
                 </ul>
             </nav>
-            
-            <div class="logout-section">
-                <button class="logout-btn" onclick="handleLogout()">Log Out</button>
+              <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
             </div>
         </div>
 
@@ -72,17 +71,13 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
-        // Back button functionality
-        document.querySelector('.back-btn').addEventListener('click', () => {
-            window.history.back();
-        });        // Logout button functionality
-        document.querySelector('.logout-btn').addEventListener('click', () => {
+    </div>    <script>
+        // Function to handle logout
+        function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 // Clear JWT token and user data
                 localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_data');
                 sessionStorage.removeItem('user');
                 
                 // Attempt to call server-side logout
@@ -102,6 +97,15 @@
                         window.location.href = 'pages/loginInterface.html';
                     }
                 });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Logout button functionality
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
             }
         });
 

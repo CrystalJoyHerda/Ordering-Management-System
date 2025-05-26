@@ -86,17 +86,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
       // Load dashboard data
-    loadDashboardData();
-
-    // Add event listeners
-    document.querySelector('.logout-btn').addEventListener('click', function() {
-        // Use shared logout helper if available, otherwise fall back to local implementation
-        if (typeof window.handleLogout === 'function') {
-            window.handleLogout();
-        } else {
-            handleLogoutFallback();
-        }
-    });
+    loadDashboardData();    // Add event listeners
+    const logoutBtn = document.querySelector('.logout-btn');
+    console.log('Logout button found:', logoutBtn);
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            console.log('Logout button clicked');
+            e.preventDefault(); // Prevent any default behavior
+            e.stopPropagation(); // Stop event bubbling
+            showLogoutModal();
+        });
+    } else {
+        console.error('Logout button not found!');
+    }
+    
+    // Initialize logout modal
+    initializeLogoutModal();
     
     // Make sidebar links highlight on click
     document.querySelectorAll('.sidebar-nav a').forEach(link => {
@@ -157,56 +163,127 @@ function updateDashboardUI(data) {
     // Additional UI updates can be added here
 }
 
-// Logout function
+// Initialize logout modal functionality
+function initializeLogoutModal() {
+    console.log('Initializing logout modal');
+    const logoutModal = document.getElementById('logout-modal');
+    const confirmLogoutBtn = document.getElementById('confirm-logout');
+    const cancelLogoutBtn = document.getElementById('cancel-logout');
+    
+    console.log('Modal elements:', { logoutModal, confirmLogoutBtn, cancelLogoutBtn });
+
+    // Check if modal elements exist
+    if (!logoutModal || !confirmLogoutBtn || !cancelLogoutBtn) {
+        console.error('Logout modal elements not found');
+        return;
+    }
+    
+    // Confirm logout
+    confirmLogoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideLogoutModal();
+        // Use shared logout helper if available, otherwise fall back to local implementation
+        if (typeof window.handleLogout === 'function') {
+            window.handleLogout();
+        } else {
+            handleLogoutFallback();
+        }
+    });
+    
+    // Cancel logout
+    cancelLogoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideLogoutModal();
+    });
+    
+    // Close modal when clicking outside
+    logoutModal.addEventListener('click', function(e) {
+        if (e.target === logoutModal) {
+            hideLogoutModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal.classList.contains('show')) {
+            hideLogoutModal();
+        }
+    });
+}
+
+// Show logout modal
+function showLogoutModal() {
+    console.log('showLogoutModal called');
+    const logoutModal = document.getElementById('logout-modal');
+    console.log('Logout modal element:', logoutModal);
+    if (logoutModal) {
+        logoutModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        console.log('Modal should now be visible');
+    } else {
+        console.error('Logout modal element not found!');
+    }
+}
+
+// Hide logout modal
+function hideLogoutModal() {
+    const logoutModal = document.getElementById('logout-modal');
+    if (logoutModal) {
+        logoutModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+// Logout function - Uses shared logout helper
 function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Clear JWT token and user data
+    // Use shared logout function if available
+    if (typeof window.performLogout === 'function') {
+        window.performLogout();
+    } else {
+        // Fallback implementation
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
         sessionStorage.removeItem('user');
         
-        // Attempt to call server-side logout
         fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
             method: 'GET'
         }).catch(error => {
             console.error('Logout API error:', error);
-            // Continue with logout regardless of API result
         }).finally(() => {
-            // Redirect to login page
             const pathname = window.location.pathname.toLowerCase();
             
             if (pathname.includes('/pages/')) {
-                // We're in the pages directory
                 window.location.href = 'loginInterface.html';
             } else {
-                // We're in the root directory
                 window.location.href = 'pages/loginInterface.html';
             }
         });
     }
 }
 
-// Fallback logout function if the shared handler is not available
+// Fallback logout function - Uses shared logout helper
 function handleLogoutFallback() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Clear JWT token and user data
+    // Use shared logout function if available
+    if (typeof window.performLogout === 'function') {
+        window.performLogout();
+    } else {
+        // Fallback implementation
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
         sessionStorage.removeItem('user');
         
-        // Attempt to call server-side logout
         fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
             method: 'GET'
         }).catch(error => {
             console.error('Logout API error:', error);
-            // Continue with logout regardless of API result
         }).finally(() => {
-            // Redirect to login page using path detection
             const pathname = window.location.pathname.toLowerCase();
             
             if (pathname.includes('/pages/')) {
-                // We're in the pages directory
                 window.location.href = 'loginInterface.html';
             } else {
-                // We're in the root directory
                 window.location.href = 'pages/loginInterface.html';
             }
         });
