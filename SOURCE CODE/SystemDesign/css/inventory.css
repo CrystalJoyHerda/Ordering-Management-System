@@ -418,36 +418,273 @@ table img {
     background-color: #4a3422;
 }
 
-/* Pagination */
+/* Admin Profile Image */
+.admin-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c69c6d;
+    margin-left: 10px;
+    flex-shrink: 0; /* Prevent image from shrinking */
+}
+
+/* Header Layout Styling */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #67503b;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.admin-info-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-info-left img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c69c6d;
+    flex-shrink: 0;
+}
+
+.admin-info-left span {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+/* Pagination - Enhanced Coffee Shop Theme */
 .pagination {
     display: flex;
     justify-content: center;
-    margin-top: 20px;
-    gap: 5px;
+    align-items: center;
+    margin-top: 25px;
+    gap: 8px;
+    padding: 20px 0;
+    background: linear-gradient(135deg, #faf8f5 0%, #f5ede3 50%, #faf8f5 100%);
+    border-radius: 16px;
+    box-shadow: inset 0 2px 8px rgba(74, 44, 27, 0.08);
 }
 
 .page-item {
-    width: 35px;
-    height: 35px;
-    border-radius: 6px;
+    min-width: 44px;
+    height: 44px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background-color: white;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(135deg, #faf8f5 0%, #f5ede3 100%);
     color: #3b2a1f;
-    border: 1px solid #e6dfd7;
+    border: 2px solid #e8dcc6;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 
+        0 4px 12px rgba(74, 44, 27, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Coffee Bean Pattern Background */
+.page-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg, 
+        transparent, 
+        rgba(198, 156, 109, 0.3), 
+        transparent
+    );
+    transition: left 0.6s ease;
+}
+
+/* Coffee Aroma Animation */
+.page-item::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    width: 3px;
+    height: 3px;
+    background: radial-gradient(circle, rgba(198, 156, 109, 0.6) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.page-item:hover::before {
+    left: 100%;
+}
+
+.page-item:hover::after {
+    opacity: 1;
+    animation: coffeeAroma 1.5s ease-in-out infinite;
+}
+
+@keyframes coffeeAroma {
+    0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.6; }
+    50% { transform: translateX(-50%) translateY(-8px) scale(1.2); opacity: 0.8; }
+    100% { transform: translateX(-50%) translateY(-16px) scale(1.5); opacity: 0; }
 }
 
 .page-item:hover {
-    background-color: #f9f5f1;
+    background: linear-gradient(135deg, #c69c6d 0%, #a67c52 100%);
+    color: #faf8f5;
+    border-color: #8b5a2b;
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 
+        0 8px 20px rgba(74, 44, 27, 0.25),
+        0 4px 8px rgba(139, 90, 43, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .page-item.active {
-    background-color: #67503b;
-    color: white;
-    border-color: #67503b;
+    background: linear-gradient(135deg, #67503b 0%, #4a3422 100%);
+    color: #faf8f5;
+    border-color: #3b2a1f;
+    box-shadow: 
+        0 8px 24px rgba(74, 44, 27, 0.4),
+        0 4px 12px rgba(59, 42, 31, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    transform: scale(1.12);
+    position: relative;
+}
+
+/* Active Coffee Bean Indicator */
+.page-item.active::after {
+    content: '☕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 10px;
+    opacity: 0.6;
+    transform: translate(-50%, 150%);
+    animation: activeGlow 2s ease-in-out infinite;
+}
+
+@keyframes activeGlow {
+    0%, 100% { opacity: 0.4; transform: translate(-50%, 150%) scale(0.8); }
+    50% { opacity: 0.8; transform: translate(-50%, 150%) scale(1.1); }
+}
+
+.page-item.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    color: #bbb;
+    border-color: #e0e0e0;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(74, 44, 27, 0.08);
+}
+
+.page-item.disabled:hover {
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    color: #bbb;
+    transform: none;
+    box-shadow: 0 2px 6px rgba(74, 44, 27, 0.08);
+}
+
+/* Premium Coffee Shop Styling for Previous/Next Buttons */
+.page-item[data-page="prev"],
+.page-item[data-page="next"] {
+    padding: 0 18px;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #8b5a2b 0%, #67503b 50%, #4a3422 100%);
+    color: #faf8f5;
+    border: 2px solid #67503b;
+    box-shadow: 
+        0 6px 16px rgba(74, 44, 27, 0.3),
+        0 2px 6px rgba(139, 90, 43, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+/* Coffee Steam Effect */
+.page-item[data-page="prev"]::before,
+.page-item[data-page="next"]::before {
+    background: linear-gradient(
+        90deg, 
+        transparent 20%, 
+        rgba(255, 255, 255, 0.25) 40%,
+        rgba(255, 255, 255, 0.35) 60%,
+        transparent 80%
+    );
+}
+
+.page-item[data-page="prev"]:hover,
+.page-item[data-page="next"]:hover {
+    background: linear-gradient(135deg, #4a3422 0%, #3b2a1f 50%, #2d1f14 100%);
+    border-color: #3b2a1f;
+    transform: translateY(-4px) scale(1.12);
+    box-shadow: 
+        0 12px 28px rgba(74, 44, 27, 0.45),
+        0 6px 12px rgba(59, 42, 31, 0.5),
+        inset 0 3px 6px rgba(255, 255, 255, 0.25);
+    animation: premiumPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes premiumPulse {
+    0%, 100% { box-shadow: 
+        0 12px 28px rgba(74, 44, 27, 0.45),
+        0 6px 12px rgba(59, 42, 31, 0.5),
+        inset 0 3px 6px rgba(255, 255, 255, 0.25); }
+    50% { box-shadow: 
+        0 16px 32px rgba(74, 44, 27, 0.55),
+        0 8px 16px rgba(59, 42, 31, 0.6),
+        inset 0 4px 8px rgba(255, 255, 255, 0.3); }
+}
+
+/* Espresso Shot Loading Animation for Disabled State */
+.page-item[data-page="prev"].disabled,
+.page-item[data-page="next"].disabled {
+    background: linear-gradient(135deg, #d0d0d0 0%, #c0c0c0 100%);
+    color: #888;
+    border-color: #b0b0b0;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-item[data-page="prev"].disabled::after,
+.page-item[data-page="next"].disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(200, 200, 200, 0.3), transparent);
+    animation: disabledFlow 2s linear infinite;
+}
+
+@keyframes disabledFlow {
+    0% { left: -100%; }
+    100% { left: 100%; }
 }
 
 /* Empty state */

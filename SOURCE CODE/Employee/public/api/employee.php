@@ -1,17 +1,32 @@
 <?php
 // filepath: c:\xampp\htdocs\Employee\public\api\employees.php
 
-// Enhanced CORS Headers for Live Server compatibility
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Requested-With');
-header('Content-Type: application/json; charset=utf-8');
+// Clean any output buffers at start
+while (ob_get_level()) ob_end_clean();
 
-// Handle OPTIONS preflight requests
+// Enable error reporting but log instead of display
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
+// Set CORS and security headers
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Max-Age: 86400');    // cache for 1 day
+header('Content-Type: application/json; charset=UTF-8');
+
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
-    exit();
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    }
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+        header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+    }
+    exit(0);
 }
 
 // Include employee model

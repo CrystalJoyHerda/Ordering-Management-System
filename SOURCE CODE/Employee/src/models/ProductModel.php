@@ -326,15 +326,24 @@ class ProductModel extends BaseModel {    public function __construct() {
                     'message' => 'Product not found'
                 ];
             }
-            
-            $oldQuantity = $currentProduct['stock_quantity'] ?? 0;
-            $quantityChange = $stockQuantity - $oldQuantity;            // Determine appropriate status based on stock quantity
+              $oldQuantity = $currentProduct['stock_quantity'] ?? 0;
+            $lowStockThreshold = $currentProduct['low_stock_threshold'] ?? 5; // Get the product's low stock threshold
+            $quantityChange = $stockQuantity - $oldQuantity;            // Determine appropriate status based on stock quantity and low stock threshold
             $newStatus = null;
+            
+            // Get current product status to check if it needs updating
+            $currentQuery = "SELECT status FROM {$this->table} WHERE id = :id";
+            $currentStmt = $this->conn->prepare($currentQuery);
+            $currentStmt->bindValue(':id', $id);
+            $currentStmt->execute();
+            $currentStatus = $currentStmt->fetchColumn();
+            
             if ($stockQuantity === 0) {
                 $newStatus = 'inactive';
-            } elseif ($stockQuantity <= 3) {
-                $newStatus = 'low stock';
-            } else if (isset($data['reset_status']) && $data['reset_status']) {
+            } elseif ($stockQuantity <= $lowStockThreshold) {
+                $newStatus = 'low';
+            } elseif ($stockQuantity > $lowStockThreshold && ($currentStatus === 'inactive' || $currentStatus === 'low')) {
+                // Reset to active when stock is replenished above threshold
                 $newStatus = 'active';
             }
             

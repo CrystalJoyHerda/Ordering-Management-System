@@ -68,7 +68,7 @@ function handleLogout() {
 async function loadEmployees() {
     try {
         // Use simple XAMPP htdocs path to avoid CORS issues
-        const response = await fetch('http://localhost/Employee/public/api/employee.php');
+        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/employee.php');
         const result = await response.json();
         
         if (result.status === 'success') {
@@ -128,7 +128,7 @@ function filterEmployees(searchTerm) {
 async function editEmployee(empId) {
     try {
         // Get employee data via simple XAMPP path
-        const response = await fetch(`http://localhost/Employee/public/api/employee.php?id=${empId}`);
+        const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/employee.php?id=${empId}`);
         const result = await response.json();
         
         if (result.status === 'success') {
@@ -148,7 +148,7 @@ async function deleteEmployee(empId) {
     }
     
     try {
-        const response = await fetch(`http://localhost/Employee/public/api/employee.php?id=${empId}`, {
+        const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/employee.php?id=${empId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -237,7 +237,7 @@ async function handleEmployeeSubmit(event, empId) {
         delete data.password;
     }
       try {
-        let url = 'http://localhost/Employee/public/api/employee.php';
+        let url = 'http://localhost/SOURCE_CODE/Employee/public/api/employee.php';
         let method = 'POST';
         
         if (empId) {

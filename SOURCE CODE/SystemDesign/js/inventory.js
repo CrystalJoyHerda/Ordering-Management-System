@@ -260,11 +260,12 @@ async function loadProducts() {
                 status: product.status || 'active',
                 description: product.description || '',
                 image: product.image || '../assets/images/logo.png'
-            }));
-
-            console.log('Processed products:', products);
+            }));            console.log('Processed products:', products);
               // Initialize filteredProducts with all products
             filteredProducts = [...products];
+            
+            // Automatically check and update product statuses based on stock levels
+            await updateProductStatuses();
             
             // Reset to first page and display products
             currentPage = 1;
@@ -453,10 +454,9 @@ function displayProducts(productsToShow) {
     const startIndex = (currentPage - 1) * productsPerPage;    // Display each product
     productsToShow.forEach((product, index) => {
         const row = document.createElement('tr');
-        
-        // Determine stock status and color
+          // Determine stock status and color
         const stockQuantity = product.stock_quantity || 0;
-        const lowStockThreshold = product.low_stock_threshold || 10;
+        const lowStockThreshold = product.low_stock_threshold || 5;
         let stockClass = 'stock-normal';
         let stockIcon = 'fas fa-check-circle';
         
@@ -467,6 +467,10 @@ function displayProducts(productsToShow) {
             stockClass = 'stock-low';
             stockIcon = 'fas fa-exclamation-triangle';
         }
+        
+        // Determine what the status should be based on stock levels
+        const autoStatus = determineAutoStatus(stockQuantity, lowStockThreshold);
+        const displayStatus = autoStatus; // Use the automatically determined status for display
         
         row.innerHTML = `
             <td>${startIndex + index + 1}</td>
@@ -487,9 +491,8 @@ function displayProducts(productsToShow) {
                     <button onclick="openStockModal(${product.id})" class="btn-stock-update" title="Update Stock">
                         <i class="fas fa-edit"></i>
                     </button>
-                </div>
-            </td>
-            <td><span class="status-badge ${product.status}">${product.status}</span></td>
+                </div>            </td>
+            <td><span class="status-badge ${displayStatus}">${displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}</span></td>
             <td>
                 <button onclick="editProduct(${product.id})" class="btn-action btn-edit" title="Edit">
                     <i class="fas fa-edit"></i>
@@ -540,9 +543,26 @@ function openModal(mode, productId = null) {
     // Reset form and image upload
     form.reset();
     resetImageUpload();
-      if (mode === 'add') {
+      // Get stock field row elements (now separated)
+    const stockQuantityRow = document.getElementById('stock-quantity-row');
+    const lowStockThresholdRow = document.getElementById('low-stock-threshold-row');
+    const stockQuantityInput = document.getElementById('product-stock-quantity');
+    const lowStockThresholdInput = document.getElementById('product-low-stock-threshold');
+    
+    if (mode === 'add') {
         modalTitle.textContent = 'Add New Product';
         document.getElementById('product-id').value = '';
+          // Show both stock fields for add mode
+        if (stockQuantityRow) {
+            stockQuantityRow.style.display = 'flex';
+        }
+        if (lowStockThresholdRow) {
+            lowStockThresholdRow.style.display = 'flex';
+        }
+        
+        // Make stock fields required for add mode
+        if (stockQuantityInput) stockQuantityInput.setAttribute('required', 'required');
+        if (lowStockThresholdInput) lowStockThresholdInput.setAttribute('required', 'required');
         
         // Clear any autocomplete suggestions for add mode
         const productNameInput = document.getElementById('product-name');
@@ -552,6 +572,17 @@ function openModal(mode, productId = null) {
         }
     } else if (mode === 'edit') {
         modalTitle.textContent = 'Edit Product';
+          // Hide stock quantity field but show low stock threshold field for edit mode
+        if (stockQuantityRow) {
+            stockQuantityRow.style.display = 'none';
+        }
+        if (lowStockThresholdRow) {
+            lowStockThresholdRow.style.display = 'flex';
+        }
+        
+        // Remove required attribute from stock quantity but keep it for low stock threshold
+        if (stockQuantityInput) stockQuantityInput.removeAttribute('required');
+        if (lowStockThresholdInput) lowStockThresholdInput.setAttribute('required', 'required');
           // Find the product by ID
         const product = products.find(p => p.id === productId);        if (product) {
             // Fill form with product data
@@ -561,6 +592,9 @@ function openModal(mode, productId = null) {
             document.getElementById('product-category').value = product.category;
             document.getElementById('product-status').value = product.status || 'active';
             document.getElementById('product-description').value = product.description || '';
+              // Populate stock fields (stock quantity hidden, low stock threshold visible)
+            document.getElementById('product-stock-quantity').value = product.stock_quantity || 0;
+            document.getElementById('product-low-stock-threshold').value = product.low_stock_threshold || 5;
               // If product has an image, show it in the upload container
             if (product.image) {
                 const uploadContainer = document.getElementById('image-upload-container');
@@ -608,10 +642,6 @@ async function handleProductSubmit(e) {
     e.preventDefault();
     
     const productId = document.getElementById('product-id').value;
-    
-    // Default values since we removed the fields
-    const stockQuantity = 0;
-    const lowStockThreshold = 10;
       
     // Set status based on form selection
     let autoStatus = document.getElementById('product-status').value;
@@ -621,10 +651,21 @@ async function handleProductSubmit(e) {
         price: parseFloat(document.getElementById('product-price').value),
         category: document.getElementById('product-category').value,
         status: autoStatus, // Use the status from the dropdown
-        description: document.getElementById('product-description').value,
-        stock_quantity: stockQuantity,
-        low_stock_threshold: lowStockThreshold
+        description: document.getElementById('product-description').value
     };
+      // Include stock data based on mode
+    if (currentModalMode === 'add') {
+        // Get stock values from form fields for add mode
+        const stockQuantity = parseInt(document.getElementById('product-stock-quantity').value) || 20;
+        const lowStockThreshold = parseInt(document.getElementById('product-low-stock-threshold').value) || 5;
+        
+        productData.stock_quantity = stockQuantity;
+        productData.low_stock_threshold = lowStockThreshold;
+    } else if (currentModalMode === 'edit') {
+        // For edit mode, include only low stock threshold (stock quantity remains unchanged)
+        const lowStockThreshold = parseInt(document.getElementById('product-low-stock-threshold').value) || 5;
+        productData.low_stock_threshold = lowStockThreshold;
+    }
     
     // Validate required fields
     if (!productData.name || !productData.price || !productData.category) {
@@ -1017,17 +1058,16 @@ async function handleStockSubmit(e) {
         
         // Automatically determine the new status based on stock quantity
         let newStatus = currentProduct.status;
-        
-        // If stock is 0, set status to inactive
+          // If stock is 0, set status to inactive
         if (newQuantity === 0) {
             newStatus = 'inactive';
         } 
-        // If stock is <= 3, set status to low
-        else if (newQuantity <= 3) {
+        // If stock is <= 5, set status to low
+        else if (newQuantity <= 5) {
             newStatus = 'low';
         }
-        // If stock is > 3 and status was previously inactive or low because of stock
-        else if (newQuantity > 3 && (currentProduct.status === 'inactive' || currentProduct.status === 'low')) {
+        // If stock is > 5 and status was previously inactive or low because of stock
+        else if (newQuantity > 5 && (currentProduct.status === 'inactive' || currentProduct.status === 'low')) {
             newStatus = 'active'; // Reset to active when stock is replenished
         }
         
@@ -1074,6 +1114,94 @@ async function handleStockSubmit(e) {
         console.error('Error updating stock:', error);
         showToast('Error updating stock: ' + error.message, 'error');
     }
+}
+
+// Function to determine automatic status based on stock levels
+function determineAutoStatus(stockQuantity, lowStockThreshold) {
+    stockQuantity = parseInt(stockQuantity) || 0;
+    lowStockThreshold = parseInt(lowStockThreshold) || 5;
+    
+    if (stockQuantity === 0) {
+        return 'inactive';
+    } else if (stockQuantity <= lowStockThreshold) {
+        return 'low';
+    } else {
+        return 'active';
+    }
+}
+
+// Function to check and update product statuses automatically
+async function updateProductStatuses() {
+    console.log('Checking and updating product statuses...');
+    
+    let statusUpdatesNeeded = [];
+    
+    // Check each product for status updates needed
+    products.forEach(product => {
+        const currentStatus = product.status;
+        const autoStatus = determineAutoStatus(product.stock_quantity, product.low_stock_threshold);
+        
+        // Only update if status needs to change
+        if (currentStatus !== autoStatus) {
+            statusUpdatesNeeded.push({
+                id: product.id,
+                name: product.name,
+                currentStatus: currentStatus,
+                newStatus: autoStatus,
+                stockQuantity: product.stock_quantity,
+                lowStockThreshold: product.low_stock_threshold
+            });
+        }
+    });
+    
+    if (statusUpdatesNeeded.length === 0) {
+        console.log('No status updates needed - all products have correct status');
+        return;
+    }
+    
+    console.log(`Found ${statusUpdatesNeeded.length} products that need status updates:`, statusUpdatesNeeded);
+    
+    // Update statuses in batches
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const update of statusUpdatesNeeded) {
+        try {
+            const result = await productApi.updateProduct({
+                id: update.id,
+                status: update.newStatus
+            });
+            
+            if (result.status === 'success') {
+                // Update local product data
+                const productIndex = products.findIndex(p => p.id === update.id);
+                if (productIndex !== -1) {
+                    products[productIndex].status = update.newStatus;
+                }
+                successCount++;
+                console.log(`✅ Updated ${update.name}: ${update.currentStatus} → ${update.newStatus}`);
+            } else {
+                errorCount++;
+                console.error(`❌ Failed to update ${update.name}:`, result.message);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error(`❌ Error updating ${update.name}:`, error);
+        }
+    }
+    
+    // Show summary notification
+    if (successCount > 0) {
+        const message = errorCount > 0 
+            ? `Status updated for ${successCount} products (${errorCount} failed)`
+            : `Status automatically updated for ${successCount} products`;
+        
+        showToast(message, errorCount > 0 ? 'warning' : 'success');
+    }
+    
+    // Update filtered products and refresh display
+    filteredProducts = [...products];
+    filterProducts(false);
 }
 
 // Add this line at the end of the file to expose the test function globally

@@ -42,13 +42,12 @@
             </div>
         </div>
           <!-- Main Content Area -->
-        <div class="main-content">
-            <div class="header">
-                <h1>Inventory Management</h1>
-                <div class="admin-info">
-                    <span id="admin-name">Admin</span>
+        <div class="main-content">            <div class="header">
+                <div class="admin-info-left">
                     <img src="../assets/images/default-profile.png" alt="Admin Profile">
+                    <span id="admin-name">Admin</span>
                 </div>
+                <h1>Inventory Management</h1>
             </div>
             
             <div class="inventory-content">
@@ -174,9 +173,24 @@
                                         <option value="low">Low Stock</option>
                                     </select>
                                 </div>
+                            </div>                        </div>                            <!-- Stock Management Row -->
+                        <div class="form-row" id="stock-quantity-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-stock-quantity">Stock Quantity</label>
+                                    <input type="number" id="product-stock-quantity" class="form-control" min="0" value="20" required>
+                                </div>
                             </div>
                         </div>
-                          <!-- Removed Stock Management Row -->
+                        
+                        <div class="form-row" id="low-stock-threshold-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="product-low-stock-threshold">Low Stock Threshold</label>
+                                    <input type="number" id="product-low-stock-threshold" class="form-control" min="1" value="5" required>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="form-group">
                             <label for="product-description">Description</label>
