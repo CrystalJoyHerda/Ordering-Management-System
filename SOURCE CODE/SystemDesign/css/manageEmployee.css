@@ -61,6 +61,7 @@ body {
 .admin-text {
     font-weight: bold;
     letter-spacing: 1px;
+    font-size: 18px;
 }
 
 .sidebar-nav {
@@ -81,7 +82,7 @@ body {
 .sidebar-nav ul li a {
     color: white;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 15px;
     display: block;
     width: 100%;
     transition: 0.3s;
@@ -107,7 +108,7 @@ body {
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     margin-top: auto;
     transition: 0.3s;
 }

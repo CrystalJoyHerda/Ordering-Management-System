@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Sales Dashboard</title>
+    <link rel="stylesheet" href="../css/admindashboard1.css">
+    <link rel="stylesheet" href="../css/sales.css">
+    <link rel="icon" href="../assets/images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Auth check script -->
+    <script src="../js/auth-check.js"></script>
+    <!-- RBAC service -->
+    <script src="../js/rbac.js"></script>
+    <!-- Logout helper -->
+    <script src="../js/logout-helper.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="../assets/images/logo.png" alt="Coffee Logo">
+                </div>
+                <div class="admin-text">ADMIN</div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="admindashboard.html">Dashboard</a></li>
+                    <li><a href="manageEmployee.html" data-role-access="admin">Manage Employees</a></li>
+                    <li class="active"><a href="sales.html" data-role-access="admin">Sales</a></li>
+                    <li><a href="inventory.html" data-role-access="admin">Inventory</a></li>
+                </ul>
+            </nav>
+            <div class="logout-section">
+                <button class="logout-btn">Log Out</button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Sales Dashboard</h1>
+            </div>
+            
+            <div class="controls">
+                <div class="search-container">
+                    <div class="date-picker">
+                        <input type="date" id="start-date">
+                        <span>to</span>
+                        <input type="date" id="end-date">
+                        <button class="apply-btn">Apply</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="overview-cards">
+                    <div class="card">
+                        <h3>Today's Sales</h3>
+                        <p class="amount">₱1,250</p>
+                        <span class="trend positive">+15% <i class="fas fa-arrow-up"></i></span>
+                    </div>
+                    <div class="card">
+                        <h3>Weekly Sales</h3>
+                        <p class="amount">₱8,940</p>
+                        <span class="trend positive">+8% <i class="fas fa-arrow-up"></i></span>
+                    </div>
+                    <div class="card">
+                        <h3>Monthly Sales</h3>
+                        <p class="amount">₱32,460</p>
+                        <span class="trend negative">-3% <i class="fas fa-arrow-down"></i></span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2>Sales Trends</h2>
+                        <div class="chart-filters">
+                            <button class="active">Daily</button>
+                            <button>Weekly</button>
+                            <button>Monthly</button>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <div class="chart-placeholder">
+                            <div class="chart-labels">
+                                <div class="y-axis">
+                                    <span>₱50,000</span>
+                                    <span>₱40,000</span>
+                                    <span>₱30,000</span>
+                                    <span>₱20,000</span>
+                                    <span>₱10,000</span>
+                                    <span>₱0</span>
+                                </div>
+                                <div class="x-axis">
+                                    <span>Mon</span>
+                                    <span>Tue</span>
+                                    <span>Wed</span>
+                                    <span>Thu</span>
+                                    <span>Fri</span>
+                                    <span>Sat</span>
+                                    <span>Sun</span>
+                                </div>
+                            </div>
+                            <div class="bar-graph">
+                                <div class="bar" style="height: 60%"></div>
+                                <div class="bar" style="height: 80%"></div>
+                                <div class="bar" style="height: 40%"></div>
+                                <div class="bar" style="height: 70%"></div>
+                                <div class="bar" style="height: 90%"></div>
+                                <div class="bar" style="height: 55%"></div>
+                                <div class="bar" style="height: 75%"></div>
+                            </div>
+                        </div>
+                        <div class="chart-description">
+                            <p>Daily revenue trends for the current week</p>
+                            <div class="chart-legend">
+                                <span class="legend-item"><i class="fas fa-square"></i> Revenue</span>
+                                <span class="legend-avg">Average: ₱25,340</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-table">
+                    <h2>Top Selling Products</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Cappuccino</td>
+                                <td>245</td>
+                                <td>₱980</td>
+                                <td><span class="trend positive">+12%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Latte</td>
+                                <td>189</td>
+                                <td>₱756</td>
+                                <td><span class="trend positive">+8%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Espresso</td>
+                                <td>156</td>
+                                <td>₱468</td>
+                                <td><span class="trend negative">-3%</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script references -->
+    <script src="../js/auth.js"></script>
+    <script src="../js/rbac.js"></script>
+    <script src="../js/sales.js"></script>
+</body>
+</html>
