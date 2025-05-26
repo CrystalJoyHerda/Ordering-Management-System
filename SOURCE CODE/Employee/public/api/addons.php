@@ -27,18 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
 // Simple response function
 function sendResponse($data, $statusCode = 200) {
-    // Set the status code
     http_response_code($statusCode);
-    
-    // Send the response
     echo json_encode($data);
     exit;
 }
@@ -46,30 +37,21 @@ function sendResponse($data, $statusCode = 200) {
 try {
     // Include required files
     require_once '../../src/config/database.php';
-    require_once '../../src/models/ProductModel.php';
+    require_once '../../src/models/AddonModel.php';
 
-    // Initialize product object
-    $product = new ProductModel();    // Handle request based on HTTP method
+    // Initialize addon object
+    $addon = new AddonModel();
+
+    // Handle request based on HTTP method
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
-            // Check for stock history action
-            if (isset($_GET['action']) && $_GET['action'] === 'stock_history' && isset($_GET['id'])) {
-                $result = $product->getStockHistory($_GET['id']);
-                sendResponse($result);
-            } else if (isset($_GET['id'])) {
-                $result = $product->getById($_GET['id']);
-                sendResponse($result);
-            } else if (isset($_GET['search'])) {
-                $keyword = $_GET['search'] ?? '';
-                $category = $_GET['category'] ?? null;
-                $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
-                $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
-                
-                $result = $product->searchProducts($keyword, $category, $limit, $offset);
+            if (isset($_GET['id'])) {
+                $result = $addon->getById($_GET['id']);
                 sendResponse($result);
             } else {
-                // Get all products
-                $result = $product->getAllProducts();
+                // Get all addons with optional category filter
+                $category = $_GET['category'] ?? null;
+                $result = $addon->getAllAddons($category);
                 sendResponse($result);
             }
             break;
@@ -84,56 +66,43 @@ try {
                 $data = $_POST;
             }
             
-            $result = $product->createProduct($data);
+            $result = $addon->createAddon($data);
             sendResponse($result);
-            break;        case 'PUT':
+            break;
+
+        case 'PUT':
             if (!isset($_GET['id'])) {
                 sendResponse([
                     'status' => 'error',
-                    'message' => 'Product ID is required'
+                    'message' => 'Addon ID is required'
                 ], 400);
             }
 
             // Get raw input
             $rawInput = file_get_contents('php://input');
-            error_log("PUT request received for product ID: " . $_GET['id']);
-            error_log("Raw input data: " . $rawInput);
-            
             $data = json_decode($rawInput, true);
             
             // If JSON parsing failed, throw error
             if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log("JSON parsing failed: " . json_last_error_msg());
                 sendResponse([
                     'status' => 'error',
                     'message' => 'Invalid JSON data: ' . json_last_error_msg()
                 ], 400);
             }
             
-            error_log("Parsed data: " . print_r($data, true));
-            
-            // Check if this is a stock update request
-            if (isset($_GET['action']) && $_GET['action'] === 'update_stock') {
-                $result = $product->updateStock($_GET['id'], $data);
-                error_log("Stock update result: " . print_r($result, true));
-                sendResponse($result);
-            } else {
-                // Regular product update
-                $result = $product->updateProduct($_GET['id'], $data);
-                error_log("Update result: " . print_r($result, true));
-                sendResponse($result);
-            }
+            $result = $addon->updateAddon($_GET['id'], $data);
+            sendResponse($result);
             break;
 
         case 'DELETE':
             if (!isset($_GET['id'])) {
                 sendResponse([
                     'status' => 'error',
-                    'message' => 'Product ID is required'
+                    'message' => 'Addon ID is required'
                 ], 400);
             }
 
-            $result = $product->deleteProduct($_GET['id']);
+            $result = $addon->deleteAddon($_GET['id']);
             sendResponse($result);
             break;
 
@@ -145,12 +114,11 @@ try {
     }
 } catch (Exception $e) {
     // Log the error
-    error_log("Products API Error: " . $e->getMessage());
+    error_log("Addons API Error: " . $e->getMessage());
     
     sendResponse([
         'status' => 'error',
-        'message' => 'Server error: ' . $e->getMessage(),
-        'debug' => $e->getTrace()
+        'message' => 'Server error: ' . $e->getMessage()
     ], 500);
 }
 ?>

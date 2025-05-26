@@ -147,12 +147,23 @@ tbody tr:hover {
 }
 
 /* Product image in table */
-.product-img {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
+.product-img,
+.product-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
     object-fit: cover;
     border: 1px solid #e0d5c5;
+    max-width: 50px;
+    max-height: 50px;
+}
+
+/* Ensure all table images are constrained */
+table img {
+    max-width: 50px;
+    max-height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 
 /* Product name styling */
@@ -540,8 +551,215 @@ tbody tr:hover {
     .table-container {
         overflow-x: auto;
     }
-    
-    table {
+      table {
         min-width: 600px;
+    }
+}
+
+/* Stock Management Styles */
+.stock-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.stock-info i {
+    font-size: 14px;
+}
+
+.stock-number {
+    font-weight: 600;
+    min-width: 25px;
+    text-align: center;
+}
+
+.btn-stock-update {
+    background: transparent;
+    border: none;
+    color: #8b5a2b;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.stock-info:hover .btn-stock-update {
+    opacity: 1;
+}
+
+.btn-stock-update:hover {
+    background-color: #f0f0f0;
+    color: #67503b;
+}
+
+/* Stock Status Colors */
+.stock-normal {
+    color: #28a745;
+    background-color: #d4edda;
+}
+
+.stock-low {
+    color: #ffc107;
+    background-color: #fff3cd;
+}
+
+.stock-empty {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+/* Stock Modal Additional Styles */
+#stock-modal .modal-content {
+    max-width: 500px;
+}
+
+#stock-modal .form-row {
+    display: flex;
+    gap: 15px;
+}
+
+#stock-modal .form-col {
+    flex: 1;
+}
+
+/* Category badges for better visual distinction */
+.category-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.category-badge.Hot.Coffee,
+.category-badge[data-category="Hot Coffee"] {
+    background-color: #8B4513;
+    color: white;
+}
+
+.category-badge.Cold.Coffee,
+.category-badge[data-category="Cold Coffee"] {
+    background-color: #4682B4;
+    color: white;
+}
+
+.category-badge.Non.Coffee,
+.category-badge[data-category="Non Coffee"] {
+    background-color: #32CD32;
+    color: white;
+}
+
+.category-badge.Pastry,
+.category-badge[data-category="Pastry"] {
+    background-color: #FFD700;
+    color: #333;
+}
+
+.category-badge.Sandwich,
+.category-badge[data-category="Sandwich"] {
+    background-color: #FF6347;
+    color: white;
+}
+
+.category-badge.Cake,
+.category-badge[data-category="Cake"] {
+    background-color: #FF1493;
+    color: white;
+}
+
+/* Enhanced action buttons */
+.btn-action {
+    margin: 0 2px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.btn-edit {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Toast notification improvements */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: white;
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #007bff;
+    min-width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.success {
+    border-left-color: #28a745;
+}
+
+.toast.error {
+    border-left-color: #dc3545;
+}
+
+.toast.info {
+    border-left-color: #17a2b8;
+}
+
+/* Responsive improvements for stock display */
+@media (max-width: 768px) {
+    .stock-info {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+    
+    .btn-stock-update {
+        opacity: 1;
+        margin-top: 4px;
     }
 }

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Cashier Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        input, button { padding: 10px; margin: 5px; }
+        .result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border: 1px solid #ccc; 
+            background: #f9f9f9;
+            min-height: 100px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 2fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .column-header {
+            font-weight: bold;
+            padding: 10px;
+            background: #e0e0e0;
+            text-align: center;
+        }
+        .grid-box {
+            min-height: 50px;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+        .item-style {
+            padding: 8px;
+            margin: 5px;
+            background-color: #fff;
+            border-radius: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Cashier Test</h1>
+        
+        <div>
+            <label for="orderNumber">Order Number:</label>
+            <input type="text" id="orderNumber" placeholder="Enter Order #" value="575" maxlength="4">
+            <button onclick="lookupOrder()">Look Up Order</button>
+        </div>
+
+        <div class="grid-container">
+            <div class="column-header">Quantity</div>
+            <div class="column-header">Product Name</div>
+            <div class="column-header">Add-ons</div>
+            <div class="column-header">Price</div>
+
+            <div id="items-container" class="grid-box"></div>
+            <div id="names-container" class="grid-box"></div>
+            <div id="addons-container" class="grid-box"></div>
+            <div id="prices-container" class="grid-box"></div>
+        </div>
+
+        <div id="total" style="font-size: 1.2em; font-weight: bold; text-align: right; margin: 20px 0;">
+            Total Amount: ₱0.00
+        </div>
+
+        <div class="result" id="resultLog">
+            <strong>Result Log:</strong><br>
+            Ready to test order lookup...
+        </div>
+    </div>
+
+    <script>
+        // Log function to display results
+        function log(message) {
+            const resultLog = document.getElementById('resultLog');
+            const timestamp = new Date().toLocaleTimeString();
+            resultLog.innerHTML += `<br>[${timestamp}] ${message}`;
+            resultLog.scrollTop = resultLog.scrollHeight;
+        }
+
+        // Clear containers
+        function clearContainers() {
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('names-container').innerHTML = '';
+            document.getElementById('addons-container').innerHTML = '';
+            document.getElementById('prices-container').innerHTML = '';
+            document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+            log('Containers cleared');
+        }
+
+        // Add order item
+        function addOrderItem(quantity, name, price, addons) {
+            log(`Adding item: ${quantity}x ${name} - ₱${price}`);
+            
+            const itemsContainer = document.getElementById('items-container');
+            const namesContainer = document.getElementById('names-container');
+            const addonsContainer = document.getElementById('addons-container');
+            const pricesContainer = document.getElementById('prices-container');
+
+            // Create item elements
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-style';
+            itemDiv.textContent = quantity;
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'item-style';
+            nameDiv.textContent = name;
+            
+            const addonsDiv = document.createElement('div');
+            addonsDiv.className = 'item-style';
+            if (addons && Array.isArray(addons) && addons.length > 0) {
+                addonsDiv.textContent = addons.map(a => a.name).join(', ');
+            } else {
+                addonsDiv.textContent = '-';
+            }
+
+            const priceDiv = document.createElement('div');
+            priceDiv.className = 'item-style';
+            priceDiv.textContent = `₱${parseFloat(price).toFixed(2)}`;
+
+            // Append to containers
+            itemsContainer.appendChild(itemDiv);
+            namesContainer.appendChild(nameDiv);
+            addonsContainer.appendChild(addonsDiv);
+            pricesContainer.appendChild(priceDiv);
+        }
+
+        // Main lookup function
+        async function lookupOrder() {
+            const orderNum = document.getElementById('orderNumber').value.trim();
+            
+            log(`Starting lookup for order: ${orderNum}`);
+            
+            if (!orderNum) {
+                alert('Please enter an order number');
+                log('ERROR: No order number entered');
+                return;
+            }
+            
+            try {
+                const url = `http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNum}`;
+                log(`Fetching from: ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                log(`Response status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                log(`API Response: ${JSON.stringify(result, null, 2)}`);
+                
+                if (result.status === 'success' && result.order) {
+                    const order = result.order;
+                    
+                    if (order.items && order.items.length > 0) {
+                        clearContainers();
+                        log(`Order found with ${order.items.length} items`);
+                        
+                        // Add each item to the display
+                        order.items.forEach((item, index) => {
+                            log(`Processing item ${index + 1}: ${item.product_name}`);
+                            const addons = item.addons || [];
+                            addOrderItem(item.quantity, item.product_name, item.total_price, addons);
+                        });
+                        
+                        // Update total
+                        document.getElementById('total').textContent = `Total Amount: ₱${order.total_amount}`;
+                        
+                        const orderTypeDisplay = order.order_type || 'Not specified';
+                        log(`SUCCESS: Order ${orderNum} loaded - Type: ${orderTypeDisplay}, Total: ₱${order.total_amount}`);
+                        alert(`Order ${orderNum} loaded successfully!\nOrder Type: ${orderTypeDisplay}\nTotal: ₱${order.total_amount}`);
+                    } else {
+                        log('ERROR: Order found but no items available');
+                        alert('Order found but no items available');
+                    }
+                } else {
+                    log(`ERROR: ${result.message || 'Order not found'}`);
+                    alert(result.message || 'Order not found');
+                }
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+                console.error('Error looking up order:', error);
+                alert('Error looking up order: ' + error.message);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded and ready');
+        });
+
+        // Allow Enter key to trigger lookup
+        document.getElementById('orderNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookupOrder();
+            }
+        });
+    </script>
+</body>
+</html>

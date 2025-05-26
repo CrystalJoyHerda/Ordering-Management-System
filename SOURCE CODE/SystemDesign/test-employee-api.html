@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Employee API Test</h1>
+    
+    <div class="test-section">
+        <h2>API Connection Test</h2>
+        <button onclick="testGetEmployees()">Test GET All Employees</button>
+        <button onclick="testGetEmployee(1)">Test GET Employee by ID</button>
+        <button onclick="testCreateEmployee()">Test CREATE Employee</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Employee Management Interface Test</h2>
+        <p>Use this to test if your employee management interface is working:</p>
+        <a href="pages/manageEmployee.html" target="_blank">Open Employee Management Interface</a>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost/Ordering-Management-System/SOURCE%20CODE/Employee/public/api/employee.php';
+        
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function testGetEmployees() {
+            logResult('Testing GET all employees...', 'info');
+            try {
+                const response = await fetch(API_BASE_URL);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    logResult(`✓ GET Success: Found ${result.data.length} employees`, 'success');
+                    logResult('Sample data: ' + JSON.stringify(result.data[0] || 'No employees', null, 2), 'info');
+                } else {
+                    logResult(`✗ GET Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logResult(`✗ GET Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetEmployee(id) {
+            logResult(`Testing GET employee by ID: ${id}...`, 'info');
+            try {
+                const response = await fetch(`${API_BASE_URL}?id=${id}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    logResult(`✓ GET by ID Success: ${result.data.name}`, 'success');
+                    logResult('Employee data: ' + JSON.stringify(result.data, null, 2), 'info');
+                } else {
+                    logResult(`✗ GET by ID Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logResult(`✗ GET by ID Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateEmployee() {
+            logResult('Testing CREATE employee...', 'info');
+            
+            const testEmployee = {
+                name: 'Test Employee ' + Math.floor(Math.random() * 1000),
+                email: 'test' + Math.floor(Math.random() * 1000) + '@example.com',
+                role: 'cashier',
+                password: 'testpass123'
+            };
+            
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testEmployee)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    logResult(`✓ CREATE Success: Employee created with ID ${result.emp_id}`, 'success');
+                    logResult('Created employee: ' + testEmployee.name, 'info');
+                } else {
+                    logResult(`✗ CREATE Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logResult(`✗ CREATE Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run the GET test when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testGetEmployees, 1000);
+        });
+    </script>
+</body>
+</html>

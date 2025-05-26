@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Proxy Setup</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        code { background: #eee; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 CORS Issue Fix for Employee Management</h1>
+    
+    <div class="step">
+        <h2>📋 Issue Explanation</h2>
+        <p>The CORS error occurs because:</p>
+        <ul>
+            <li><strong>Live Server:</strong> Running on <code>http://127.0.0.1:5501</code></li>
+            <li><strong>XAMPP API:</strong> Running on <code>http://localhost:80</code></li>
+            <li><strong>Browser blocks:</strong> Cross-origin requests for security</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h2>🚀 Quick Solution - Copy Employee API to htdocs</h2>
+        <p>Copy the entire Employee folder to your XAMPP htdocs directory:</p>
+        <ol>
+            <li>Copy: <code>c:\Ordering-Management-System\SOURCE CODE\Employee\</code></li>
+            <li>Paste to: <code>c:\xampp\htdocs\Employee\</code></li>
+            <li>The API will be accessible at: <code>http://localhost/Employee/public/api/employee.php</code></li>
+        </ol>
+        <button onclick="testSimpleAPI()">Test Simple API</button>
+        <div id="simple-test-result"></div>
+    </div>
+
+    <div class="step">
+        <h2>🔄 Alternative - Update API URLs</h2>
+        <p>Update the JavaScript to use the simpler path:</p>
+        <button onclick="updateToSimplePath()">Use Simple Path</button>
+        <div id="path-update-result"></div>
+    </div>
+
+    <div class="step">
+        <h2>🧪 Test Current Setup</h2>
+        <button onclick="testCurrentSetup()">Test Employee API</button>
+        <div id="test-result"></div>
+    </div>
+
+    <script>
+        async function testSimpleAPI() {
+            const resultDiv = document.getElementById('simple-test-result');
+            resultDiv.innerHTML = '<p class="info">Testing simple API path...</p>';
+            
+            try {
+                const response = await fetch('http://localhost/Employee/public/api/employee.php');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    resultDiv.innerHTML = `<p class="success">✅ Simple API works! Found ${result.data.length} employees</p>`;
+                    return true;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ API Error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Connection failed: ${error.message}</p>`;
+                resultDiv.innerHTML += `<p class="info">💡 Try copying the Employee folder to c:\\xampp\\htdocs\\</p>`;
+            }
+            return false;
+        }
+
+        async function updateToSimplePath() {
+            const resultDiv = document.getElementById('path-update-result');
+            
+            // Test if simple API works first
+            const apiWorks = await testSimpleAPI();
+            
+            if (apiWorks) {
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API is accessible at simple path!</p>
+                    <p class="info">The manageEmployee.js file needs to be updated to use:</p>
+                    <code>http://localhost/Employee/public/api/employee.php</code>
+                    <p><a href="../pages/manageEmployee.html" target="_blank">Test Employee Management</a></p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Simple path not working.</p>
+                    <p class="info">Please copy the Employee folder to c:\\xampp\\htdocs\\ first</p>
+                `;
+            }
+        }
+
+        async function testCurrentSetup() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '<p class="info">Testing current setup...</p>';
+            
+            try {
+                // Test the original complex path
+                const response = await fetch('http://localhost/Ordering-Management-System/SOURCE%20CODE/Employee/public/api/employee.php');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    resultDiv.innerHTML = `<p class="success">✅ Current setup works! Found ${result.data.length} employees</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Current setup error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Current setup failed: ${error.message}</p>`;
+                resultDiv.innerHTML += `<p class="info">This is the CORS error you're experiencing.</p>`;
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testCurrentSetup, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -114,18 +114,29 @@ const productApi = {    async fetch(url, options = {}) {
             body: JSON.stringify(productData)
         });
     },
-    
-    async updateProduct(productData) {
+      async updateProduct(productData) {
+        console.log('Sending update request for product:', productData);
         return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${encodeURIComponent(productData.id)}`, {
             method: 'PUT',
             body: JSON.stringify(productData)
         });
     },
-    
-    async deleteProduct(id) {
+      async deleteProduct(id) {
         return this.fetch(`${API_CONFIG.baseUrl}/products.php?id=${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
+    },
+    
+    // Stock management methods
+    async updateStock(productId, stockData) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?action=update_stock&id=${encodeURIComponent(productId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(stockData)
+        });
+    },
+    
+    async getStockHistory(productId) {
+        return this.fetch(`${API_CONFIG.baseUrl}/products.php?action=stock_history&id=${encodeURIComponent(productId)}`);
     }
 };
 
@@ -139,17 +150,32 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     
     // Load products automatically
-    loadProducts();
-
-    // Set up event listeners
+    loadProducts();    // Set up event listeners
     document.getElementById('add-product').addEventListener('click', () => openModal('add'));
     document.querySelector('.logout-btn').addEventListener('click', handleLogout);
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
-    
-    // Search and filter functionality
+    document.getElementById('stock-form').addEventListener('submit', handleStockSubmit);
+      // Search and filter functionality
     document.getElementById('product-search').addEventListener('input', filterProducts);
     document.getElementById('category-filter').addEventListener('change', filterProducts);
     document.getElementById('status-filter').addEventListener('change', filterProducts);
+    
+    // Product name input - clear any autocomplete suggestions
+    const productNameInput = document.getElementById('product-name');
+    if (productNameInput) {
+        productNameInput.addEventListener('input', function() {
+            // Clear any browser autocomplete suggestions
+            this.setAttribute('autocomplete', 'off');
+            // Remove any potential suggestion dropdowns
+            const suggestions = document.querySelectorAll('[id*="suggestion"], [class*="suggestion"], [class*="autocomplete"]');
+            suggestions.forEach(el => el.remove());
+        });
+        
+        productNameInput.addEventListener('focus', function() {
+            // Ensure autocomplete is off when focused
+            this.setAttribute('autocomplete', 'off');
+        });
+    }
     
     // Image upload preview
     setupImageUpload();
@@ -237,14 +263,12 @@ async function loadProducts() {
             }));
 
             console.log('Processed products:', products);
-            
-            // Initialize filteredProducts with all products
+              // Initialize filteredProducts with all products
             filteredProducts = [...products];
             
-            // Display products and update pagination
-            const productsToShow = filteredProducts.slice(0, productsPerPage);
-            displayProducts(productsToShow);
-            updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
+            // Reset to first page and display products
+            currentPage = 1;
+            filterProducts(false);
         } else {
             throw new Error('Invalid response format from server');
         }
@@ -336,32 +360,71 @@ function testApiConnection() {
 }
 
 // Function to filter products based on search and filter options
-function filterProducts() {
+function filterProducts(resetPage = true) {
     const searchTerm = document.getElementById('product-search').value.toLowerCase();
     const categoryFilter = document.getElementById('category-filter').value.toLowerCase();
     const statusFilter = document.getElementById('status-filter').value.toLowerCase();
     
-    // Filter products based on search term and filters
+    // Debug: Log current filter and available categories
+    if (categoryFilter && categoryFilter !== 'all') {
+        console.log('Filtering by category:', categoryFilter);
+        console.log('Available product categories:', [...new Set(products.map(p => p.category))]);
+    }
+      // Filter products based on search term and filters
     filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
                             (product.description && product.description.toLowerCase().includes(searchTerm));
-        const matchesCategory = categoryFilter === 'all' || product.category.toLowerCase() === categoryFilter;
-        const matchesStatus = statusFilter === 'all' || product.status.toLowerCase() === statusFilter;
+          // Enhanced category matching - handle exact matches only
+        let matchesCategory = false;
+        if (categoryFilter === '' || categoryFilter === 'all') {
+            matchesCategory = true;
+        } else {
+            // Exact match (case insensitive)
+            const productCategory = (product.category || '').toLowerCase().trim();
+            const filterCategory = categoryFilter.toLowerCase().trim();
+            
+            if (productCategory === filterCategory) {
+                matchesCategory = true;
+            } else {
+                // Handle only specific legacy mappings for exact categories
+                if (filterCategory === 'non coffee' && (productCategory === 'non-coffee' || productCategory === 'beverage')) {
+                    matchesCategory = true;
+                } else if (filterCategory === 'pastry' && productCategory === 'pastries') {
+                    matchesCategory = true;
+                } else if (filterCategory === 'sandwich' && productCategory === 'sandwiches') {
+                    matchesCategory = true;
+                } else if (filterCategory === 'cake' && productCategory === 'cakes') {
+                    matchesCategory = true;
+                }
+            }
+        }
+        
+        const matchesStatus = statusFilter === '' || statusFilter === 'all' || product.status.toLowerCase() === statusFilter;
         
         return matchesSearch && matchesCategory && matchesStatus;
     });
     
-    // Reset to first page
-    currentPage = 1;
+    // Reset to first page only when filters change, not during pagination
+    if (resetPage) {
+        currentPage = 1;
+    }
     
-    // Get products for current page
-    const start = 0;
-    const end = productsPerPage;
+    // Calculate total pages
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+    
+    // Ensure current page is within valid range
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+    }
+    
+    // Get products for current page with proper pagination calculation
+    const start = (currentPage - 1) * productsPerPage;
+    const end = start + productsPerPage;
     const productsToShow = filteredProducts.slice(start, end);
     
     // Display products and update pagination
     displayProducts(productsToShow);
-    updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
+    updatePagination(totalPages);
 }
 
 // Function to display products with pagination
@@ -373,12 +436,10 @@ function displayProducts(productsToShow) {
     }
 
     // Clear existing content
-    tableBody.innerHTML = '';
-
-    if (!productsToShow || productsToShow.length === 0) {
+    tableBody.innerHTML = '';    if (!productsToShow || productsToShow.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center">
+                <td colspan="8" class="text-center">
                     <div class="no-products">
                         <i class="fas fa-coffee"></i>
                         <p>No products found</p>
@@ -389,11 +450,24 @@ function displayProducts(productsToShow) {
     }
 
     // Start index for current page
-    const startIndex = (currentPage - 1) * productsPerPage;
-
-    // Display each product
+    const startIndex = (currentPage - 1) * productsPerPage;    // Display each product
     productsToShow.forEach((product, index) => {
         const row = document.createElement('tr');
+        
+        // Determine stock status and color
+        const stockQuantity = product.stock_quantity || 0;
+        const lowStockThreshold = product.low_stock_threshold || 10;
+        let stockClass = 'stock-normal';
+        let stockIcon = 'fas fa-check-circle';
+        
+        if (stockQuantity === 0) {
+            stockClass = 'stock-empty';
+            stockIcon = 'fas fa-times-circle';
+        } else if (stockQuantity <= lowStockThreshold) {
+            stockClass = 'stock-low';
+            stockIcon = 'fas fa-exclamation-triangle';
+        }
+        
         row.innerHTML = `
             <td>${startIndex + index + 1}</td>
             <td>
@@ -406,12 +480,21 @@ function displayProducts(productsToShow) {
             </td>
             <td>₱${parseFloat(product.price).toFixed(2)}</td>
             <td><span class="category-badge ${product.category}">${product.category}</span></td>
+            <td>
+                <div class="stock-info ${stockClass}">
+                    <i class="${stockIcon}"></i>
+                    <span class="stock-number">${stockQuantity}</span>
+                    <button onclick="openStockModal(${product.id})" class="btn-stock-update" title="Update Stock">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </td>
             <td><span class="status-badge ${product.status}">${product.status}</span></td>
             <td>
-                <button onclick="editProduct(${product.id})" class="edit-btn" title="Edit">
+                <button onclick="editProduct(${product.id})" class="btn-action btn-edit" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteProduct(${product.id})" class="delete-btn" title="Delete">
+                <button onclick="deleteProduct(${product.id})" class="btn-action btn-delete" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -440,9 +523,11 @@ function updatePagination(totalPages) {
 
 // Function to handle page changes
 function changePage(newPage) {
-    if (newPage < 1 || newPage > Math.ceil(filteredProducts.length / productsPerPage)) return;
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+    if (newPage < 1 || newPage > totalPages) return;
+    
     currentPage = newPage;
-    filterProducts();
+    filterProducts(false); // Don't reset page when navigating
 }
 
 // Function to open the product modal in add or edit mode
@@ -455,16 +540,20 @@ function openModal(mode, productId = null) {
     // Reset form and image upload
     form.reset();
     resetImageUpload();
-    
-    if (mode === 'add') {
+      if (mode === 'add') {
         modalTitle.textContent = 'Add New Product';
         document.getElementById('product-id').value = '';
+        
+        // Clear any autocomplete suggestions for add mode
+        const productNameInput = document.getElementById('product-name');
+        if (productNameInput) {
+            productNameInput.setAttribute('autocomplete', 'off');
+            productNameInput.value = '';
+        }
     } else if (mode === 'edit') {
         modalTitle.textContent = 'Edit Product';
-        
-        // Find the product by ID
-        const product = products.find(p => p.id === productId);
-        if (product) {
+          // Find the product by ID
+        const product = products.find(p => p.id === productId);        if (product) {
             // Fill form with product data
             document.getElementById('product-id').value = product.id;
             document.getElementById('product-name').value = product.name;
@@ -472,25 +561,32 @@ function openModal(mode, productId = null) {
             document.getElementById('product-category').value = product.category;
             document.getElementById('product-status').value = product.status || 'active';
             document.getElementById('product-description').value = product.description || '';
-            
-            // If product has an image, show it in the upload container
+              // If product has an image, show it in the upload container
             if (product.image) {
                 const uploadContainer = document.getElementById('image-upload-container');
                 uploadContainer.style.border = 'none';
                 uploadContainer.innerHTML = `
                     <div class="image-preview" style="width:100%;height:100%;position:relative;">
                         <img src="${product.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <div class="image-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;align-items:center;justify-content:center;border-radius:8px;">
+                            <div style="color:white;text-align:center;">
+                                <i class="fas fa-edit" style="font-size:24px;margin-bottom:5px;"></i>
+                                <div>Click to change image</div>
+                            </div>
+                        </div>
+                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(255,0,0,0.7);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Remove image">
                             <i class="fas fa-times"></i>
                         </div>
                     </div>
                 `;
-                
-                // Add event listener to remove button
+                  // Add event listener to remove button
                 uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
                     e.stopPropagation();
                     resetImageUpload();
                 });
+                
+                // Add hover effect and click functionality using helper function
+                addImagePreviewEvents(uploadContainer);
             }
         }
     }
@@ -503,81 +599,65 @@ function openModal(mode, productId = null) {
 function closeModal() {
     const modal = document.getElementById('product-modal');
     modal.classList.remove('show');
+    // Reset the selected image file when closing modal
+    selectedImageFile = null;
 }
 
 // Function to handle form submission
 async function handleProductSubmit(e) {
     e.preventDefault();
     
-    // Get form data
     const productId = document.getElementById('product-id').value;
-    const productName = document.getElementById('product-name').value;
-    const productPrice = document.getElementById('product-price').value;
-    const productCategory = document.getElementById('product-category').value;
-    const productStatus = document.getElementById('product-status').value;
-    const productDescription = document.getElementById('product-description').value;
+    
+    // Default values since we removed the fields
+    const stockQuantity = 0;
+    const lowStockThreshold = 10;
+      
+    // Set status based on form selection
+    let autoStatus = document.getElementById('product-status').value;
+
+    const productData = {
+        name: document.getElementById('product-name').value,
+        price: parseFloat(document.getElementById('product-price').value),
+        category: document.getElementById('product-category').value,
+        status: autoStatus, // Use the status from the dropdown
+        description: document.getElementById('product-description').value,
+        stock_quantity: stockQuantity,
+        low_stock_threshold: lowStockThreshold
+    };
     
     // Validate required fields
-    if (!productName || !productPrice || !productCategory) {
+    if (!productData.name || !productData.price || !productData.category) {
         showToast('Please fill in all required fields', 'error');
         return;
     }
     
-    // Prepare product data object
-    const productData = {
-        name: productName,
-        price: parseFloat(productPrice),
-        category: productCategory,
-        status: productStatus || 'active',
-        description: productDescription || '',
-        image: '../assets/images/logo.png' // Default image
-    };
+    // Add product ID for edit mode
+    if (currentModalMode === 'edit' && productId) {
+        productData.id = productId;
+    }
     
     try {
-        let response;
+        let result;
         
         if (currentModalMode === 'add') {
-            // Add new product
-            response = await productApi.addProduct(productData);
-            
-            if (response.status === 'success') {
-                // Add to local array with new ID
-                productData.id = response.id;
-                products.unshift(productData);
-                showToast('Product added successfully!', 'success');
-            } else {
-                throw new Error(response.message || 'Failed to add product');
-            }
+            showToast('Adding product...', 'info');
+            result = await productApi.addProduct(productData);
         } else {
-            // Update existing product
-            productData.id = parseInt(productId);
-            response = await productApi.updateProduct(productData);
-            
-            if (response.status === 'success') {
-                // Update in local array
-                const index = products.findIndex(p => p.id === productData.id);
-                if (index !== -1) {
-                    products[index] = {...products[index], ...productData};
-                }
-                showToast('Product updated successfully!', 'success');
-            } else {
-                throw new Error(response.message || 'Failed to update product');
-            }
+            showToast('Updating product...', 'info');
+            result = await productApi.updateProduct(productData);
         }
         
-        // Close modal and refresh product list
-        closeModal();
-        filteredProducts = [...products];
-        
-        // Reset to page 1
-        currentPage = 1;
-        const productsToShow = filteredProducts.slice(0, productsPerPage);
-        displayProducts(productsToShow);
-        updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
-        
+        if (result.status === 'success') {
+            showToast(`Product ${currentModalMode === 'add' ? 'added' : 'updated'} successfully!`, 'success');
+            closeModal();
+            await loadProducts();
+        } else {
+            showToast(result.message || `Failed to ${currentModalMode} product`, 'error');
+        }
     } catch (error) {
-        console.error('Error saving product:', error);
-        showToast(`Error: ${error.message}`, 'error');
+        console.error(`Error ${currentModalMode}ing product:`, error);
+        showToast(`Error ${currentModalMode}ing product: ` + error.message, 'error');
     }
 }
 
@@ -680,14 +760,8 @@ async function deleteProduct(productId) {
                 // Remove product from local state
                 products = products.filter(p => p.id !== productId);
                 filteredProducts = filteredProducts.filter(p => p.id !== productId);
-                
-                // Refresh display
-                const start = (currentPage - 1) * productsPerPage;
-                const end = start + productsPerPage;
-                const productsToShow = filteredProducts.slice(start, end);
-                
-                displayProducts(productsToShow);
-                updatePagination(Math.ceil(filteredProducts.length / productsPerPage));
+                  // Refresh display using current page (don't reset filters)
+                filterProducts(false);
                 
                 // Show success message
                 showToast('Product deleted successfully!', 'success');
@@ -770,6 +844,27 @@ function handleLogoutFallback() {
 }
 
 // Function to setup image upload preview
+// Function to add image preview events (hover and click)
+function addImagePreviewEvents(uploadContainer) {
+    const imagePreview = uploadContainer.querySelector('.image-preview');
+    const overlay = uploadContainer.querySelector('.image-overlay');
+    
+    if (imagePreview && overlay) {
+        imagePreview.addEventListener('mouseenter', function() {
+            overlay.style.display = 'flex';
+        });
+        
+        imagePreview.addEventListener('mouseleave', function() {
+            overlay.style.display = 'none';
+        });
+        
+        // Make the entire preview clickable to change image
+        imagePreview.addEventListener('click', function() {
+            document.getElementById('product-image').click();
+        });
+    }
+}
+
 function setupImageUpload() {
     const imageInput = document.getElementById('product-image');
     const uploadContainer = document.getElementById('image-upload-container');
@@ -794,31 +889,38 @@ function setupImageUpload() {
                 if (oldPreview) {
                     oldPreview.remove();
                 }
-                
-                // Create new preview
+                  // Create new preview
                 uploadContainer.style.border = 'none';
                 uploadContainer.innerHTML = `
                     <div class="image-preview" style="width:100%;height:100%;position:relative;">
                         <img src="${event.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <div class="image-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;align-items:center;justify-content:center;border-radius:8px;">
+                            <div style="color:white;text-align:center;">
+                                <i class="fas fa-edit" style="font-size:24px;margin-bottom:5px;"></i>
+                                <div>Click to change image</div>
+                            </div>
+                        </div>
+                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(255,0,0,0.7);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Remove image">
                             <i class="fas fa-times"></i>
                         </div>
-                    </div>
-                `;
+                    </div>                `;
                 
                 // Add event listener to remove button
                 uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
                     e.stopPropagation();
                     resetImageUpload();
                 });
+                
+                // Add hover effect and click functionality using helper function
+                addImagePreviewEvents(uploadContainer);
             };
             reader.readAsDataURL(file);
         }
     });
-    
-    // Make sure clicking the container triggers file input
-    uploadContainer.addEventListener('click', function() {
-        if (!uploadContainer.querySelector('.image-preview')) {
+      // Make sure clicking the container triggers file input
+    uploadContainer.addEventListener('click', function(e) {
+        // Only trigger file input if we're not clicking on the remove button
+        if (!e.target.closest('.remove-image')) {
             imageInput.click();
         }
     });
@@ -840,21 +942,146 @@ function resetImageUpload() {
     uploadContainer.innerHTML = `
         <div class="upload-icon">
             <i class="fas fa-cloud-upload-alt"></i>
-            <p>Click to upload image</p>
         </div>
+        <div class="upload-text">Click to upload product image</div>
     `;
 }
 
 // Add event listener for clicking outside modal to close
 window.addEventListener('click', (event) => {
-    const modal = document.getElementById('product-modal');
-    if (event.target === modal) {
+    const productModal = document.getElementById('product-modal');
+    const stockModal = document.getElementById('stock-modal');
+    
+    if (event.target === productModal) {
         closeModal();
     }
+    
+    if (event.target === stockModal) {
+        closeStockModal();
+    }
 });
+
+// Stock Management Functions
+function openStockModal(productId) {
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        showToast('Product not found', 'error');
+        return;
+    }
+    
+    // Populate stock modal with current product data
+    document.getElementById('stock-product-id').value = product.id;
+    document.getElementById('stock-product-name').value = product.name;
+    document.getElementById('current-stock-display').value = product.stock_quantity || 0;
+    document.getElementById('new-stock-quantity').value = product.stock_quantity || 0;
+    document.getElementById('stock-reason').value = '';
+    document.getElementById('stock-notes').value = '';
+    
+    // Show modal
+    const modal = document.getElementById('stock-modal');
+    modal.classList.add('show');
+}
+
+function closeStockModal() {
+    const modal = document.getElementById('stock-modal');
+    modal.classList.remove('show');
+    
+    // Reset form
+    document.getElementById('stock-form').reset();
+}
+
+async function handleStockSubmit(e) {
+    e.preventDefault();
+    
+    const productId = document.getElementById('stock-product-id').value;
+    const newQuantity = parseInt(document.getElementById('new-stock-quantity').value);
+    const reason = document.getElementById('stock-reason').value;
+    const notes = document.getElementById('stock-notes').value;
+    
+    if (!productId || isNaN(newQuantity) || newQuantity < 0) {
+        showToast('Please enter a valid stock quantity', 'error');
+        return;
+    }
+    
+    if (!reason) {
+        showToast('Please select a reason for the stock change', 'error');
+        return;
+    }
+      try {
+        // Find the current product to get its details
+        const currentProduct = products.find(p => p.id == productId);
+        if (!currentProduct) {
+            showToast('Product not found', 'error');
+            return;
+        }
+        
+        // Automatically determine the new status based on stock quantity
+        let newStatus = currentProduct.status;
+        
+        // If stock is 0, set status to inactive
+        if (newQuantity === 0) {
+            newStatus = 'inactive';
+        } 
+        // If stock is <= 3, set status to low
+        else if (newQuantity <= 3) {
+            newStatus = 'low';
+        }
+        // If stock is > 3 and status was previously inactive or low because of stock
+        else if (newQuantity > 3 && (currentProduct.status === 'inactive' || currentProduct.status === 'low')) {
+            newStatus = 'active'; // Reset to active when stock is replenished
+        }
+        
+        // Include status update in stock data
+        const stockData = {
+            stock_quantity: newQuantity,
+            reason: reason,
+            notes: notes,
+            updated_by: 1, // You might want to get this from the current user session
+            status: newStatus // Add status update
+        };
+        
+        showToast('Updating stock...', 'info');
+        
+        // First update the stock
+        const result = await productApi.updateStock(productId, stockData);
+        
+        if (result.status === 'success') {
+            // If status changed, also update the product status in the database
+            if (newStatus !== currentProduct.status) {
+                // Update product with new status
+                const productUpdateResult = await productApi.updateProduct({
+                    id: productId,
+                    status: newStatus
+                });
+                
+                if (productUpdateResult.status === 'success') {
+                    showToast(`Stock updated and status changed to ${newStatus}!`, 'success');
+                } else {
+                    showToast('Stock updated but status update failed!', 'warning');
+                }
+            } else {
+                showToast('Stock updated successfully!', 'success');
+            }
+            
+            closeStockModal();
+            
+            // Reload products to reflect the changes
+            await loadProducts();
+        } else {
+            showToast(result.message || 'Failed to update stock', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating stock:', error);
+        showToast('Error updating stock: ' + error.message, 'error');
+    }
+}
 
 // Add this line at the end of the file to expose the test function globally
 window.testApiConnection = testApiConnection;
 
 // Add this to make loadProducts accessible globally for the retry button
 window.loadProducts = loadProducts;
+
+// Make stock functions globally accessible
+window.openStockModal = openStockModal;
+window.closeStockModal = closeStockModal;

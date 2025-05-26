@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee API POST Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee API CRUD Test - Fixed Version</h1>
+        
+        <h2>Test POST (Create Employee)</h2>
+        <div>
+            <input type="text" id="testName" placeholder="Employee Name" value="Test Employee API">
+            <input type="email" id="testEmail" placeholder="Email" value="test.api@example.com">
+            <select id="testRole">
+                <option value="cashier">Cashier</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+            </select>
+            <button onclick="testCreateEmployee()">Test CREATE</button>
+        </div>
+        <div id="createResult" class="result"></div>
+
+        <h2>Test GET (Read Employees)</h2>
+        <button onclick="testGetEmployees()">Test READ ALL</button>
+        <div id="readResult" class="result"></div>
+
+        <h2>Test PUT (Update Employee)</h2>
+        <div>
+            <input type="number" id="updateId" placeholder="Employee ID" value="1">
+            <input type="text" id="updateName" placeholder="New Name" value="Updated Employee">
+            <input type="email" id="updateEmail" placeholder="New Email" value="updated@example.com">
+            <button onclick="testUpdateEmployee()">Test UPDATE</button>
+        </div>
+        <div id="updateResult" class="result"></div>
+
+        <h2>Test DELETE (Remove Employee)</h2>
+        <div>
+            <input type="number" id="deleteId" placeholder="Employee ID to Delete">
+            <button onclick="testDeleteEmployee()" style="background-color: #dc3545;">Test DELETE</button>
+        </div>
+        <div id="deleteResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost/Employee/public/api/employee.php';
+
+        function displayResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testCreateEmployee() {
+            try {
+                const name = document.getElementById('testName').value;
+                const email = document.getElementById('testEmail').value;
+                const role = document.getElementById('testRole').value;
+
+                displayResult('createResult', 'Testing CREATE operation...', 'info');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        role: role
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.status === 'success') {
+                    displayResult('createResult', 
+                        `✅ CREATE SUCCESS!\nEmployee created with ID: ${result.data?.emp_id || 'Unknown'}\nResponse: ${JSON.stringify(result, null, 2)}`, 
+                        'success');
+                } else {
+                    displayResult('createResult', 
+                        `❌ CREATE FAILED\nError: ${result.message}\nFull response: ${JSON.stringify(result, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                console.error('Create error:', error);
+                displayResult('createResult', 
+                    `❌ CREATE ERROR\n${error.message}\nStack: ${error.stack}`, 
+                    'error');
+            }
+        }
+
+        async function testGetEmployees() {
+            try {
+                displayResult('readResult', 'Testing READ operation...', 'info');
+
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    displayResult('readResult', 
+                        `✅ READ SUCCESS!\nFound ${result.data.length} employees\nFirst employee: ${JSON.stringify(result.data[0], null, 2)}`, 
+                        'success');
+                } else {
+                    displayResult('readResult', 
+                        `❌ READ FAILED\nError: ${result.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                displayResult('readResult', 
+                    `❌ READ ERROR\n${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testUpdateEmployee() {
+            try {
+                const id = document.getElementById('updateId').value;
+                const name = document.getElementById('updateName').value;
+                const email = document.getElementById('updateEmail').value;
+
+                if (!id) {
+                    displayResult('updateResult', '❌ Please enter an employee ID', 'error');
+                    return;
+                }
+
+                displayResult('updateResult', `Testing UPDATE operation for ID ${id}...`, 'info');
+
+                const response = await fetch(`${API_URL}?id=${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        role: 'cashier'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    displayResult('updateResult', 
+                        `✅ UPDATE SUCCESS!\nEmployee ID ${id} updated\nResponse: ${JSON.stringify(result, null, 2)}`, 
+                        'success');
+                } else {
+                    displayResult('updateResult', 
+                        `❌ UPDATE FAILED\nError: ${result.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                displayResult('updateResult', 
+                    `❌ UPDATE ERROR\n${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testDeleteEmployee() {
+            const id = document.getElementById('deleteId').value;
+
+            if (!id) {
+                displayResult('deleteResult', '❌ Please enter an employee ID', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete employee ID ${id}?`)) {
+                return;
+            }
+
+            try {
+                displayResult('deleteResult', `Testing DELETE operation for ID ${id}...`, 'info');
+
+                const response = await fetch(`${API_URL}?id=${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    displayResult('deleteResult', 
+                        `✅ DELETE SUCCESS!\nEmployee ID ${id} deleted\nResponse: ${JSON.stringify(result, null, 2)}`, 
+                        'success');
+                } else {
+                    displayResult('deleteResult', 
+                        `❌ DELETE FAILED\nError: ${result.message}`, 
+                        'error');
+                }
+            } catch (error) {
+                displayResult('deleteResult', 
+                    `❌ DELETE ERROR\n${error.message}`, 
+                    'error');
+            }
+        }
+
+        // Auto-test GET on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            testGetEmployees();
+        });
+    </script>
+</body>
+</html>

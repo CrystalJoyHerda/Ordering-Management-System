@@ -57,16 +57,15 @@
                     <div class="search-box">
                         <i class="fas fa-search"></i>
                         <input type="text" id="product-search" placeholder="Search products...">
-                    </div>
-                    
-                    <div class="filter-options">
+                    </div>                      <div class="filter-options">
                         <select class="filter-select" id="category-filter">
                             <option value="">All Categories</option>
-                            <option value="Coffee">Coffee</option>
-                            <option value="Tea">Tea</option>
+                            <option value="Hot Coffee">Hot Coffee</option>
+                            <option value="Cold Coffee">Cold Coffee</option>
+                            <option value="Non Coffee">Non Coffee</option>
                             <option value="Pastry">Pastry</option>
-                            <option value="Beverage">Beverage</option>
-                            <option value="Other">Other</option>
+                            <option value="Sandwich">Sandwich</option>
+                            <option value="Cake">Cake</option>
                         </select>
                         
                         <select class="filter-select" id="status-filter">
@@ -88,22 +87,21 @@
                     </div>
                     
                     <div class="table-container">
-                        <table>
-                            <thead>
+                        <table>                            <thead>
                                 <tr>
-                                    <th width="5%">#</th>
-                                    <th width="15%">Image</th>
-                                    <th width="25%">Product Name</th>
-                                    <th width="15%">Price</th>
-                                    <th width="15%">Category</th>
+                                    <th width="4%">#</th>
+                                    <th width="12%">Image</th>
+                                    <th width="20%">Product Name</th>
+                                    <th width="12%">Price</th>
+                                    <th width="12%">Category</th>
+                                    <th width="10%">Stock</th>
                                     <th width="10%">Status</th>
-                                    <th width="15%">Actions</th>
+                                    <th width="20%">Actions</th>
                                 </tr>
-                            </thead>
-                            <tbody id="products-list">
+                            </thead>                            <tbody id="products-list">
                                 <!-- Products will be loaded here dynamically -->
                                 <tr>
-                                    <td colspan="7" class="text-center">Loading products...</td>
+                                    <td colspan="8" class="text-center">Loading products...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -138,11 +136,10 @@
                             <div class="upload-text">Click to upload product image</div>
                         </div>
                         
-                        <div class="form-row">
-                            <div class="form-col">
+                        <div class="form-row">                            <div class="form-col">
                                 <div class="form-group">
                                     <label for="product-name">Product Name</label>
-                                    <input type="text" id="product-name" class="form-control" required>
+                                    <input type="text" id="product-name" class="form-control" autocomplete="off" required>
                                 </div>
                             </div>
                             
@@ -153,18 +150,17 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="form-row">
+                          <div class="form-row">
                             <div class="form-col">
                                 <div class="form-group">
-                                    <label for="product-category">Category</label>
-                                    <select id="product-category" class="form-control" required>
+                                    <label for="product-category">Category</label>                                    <select id="product-category" class="form-control" required>
                                         <option value="">-- Select Category --</option>
-                                        <option value="Coffee">Coffee</option>
-                                        <option value="Tea">Tea</option>
+                                        <option value="Hot Coffee">Hot Coffee</option>
+                                        <option value="Cold Coffee">Cold Coffee</option>
+                                        <option value="Non Coffee">Non Coffee</option>
                                         <option value="Pastry">Pastry</option>
-                                        <option value="Beverage">Beverage</option>
-                                        <option value="Other">Other</option>
+                                        <option value="Sandwich">Sandwich</option>
+                                        <option value="Cake">Cake</option>
                                     </select>
                                 </div>
                             </div>
@@ -180,6 +176,7 @@
                                 </div>
                             </div>
                         </div>
+                          <!-- Removed Stock Management Row -->
                         
                         <div class="form-group">
                             <label for="product-description">Description</label>
@@ -189,6 +186,64 @@
                         <div class="form-actions">
                             <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
                             <button type="submit" class="btn-save">Save Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>        </div>
+        
+        <!-- Stock Update Modal -->
+        <div id="stock-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div id="stock-modal-title">Update Stock</div>
+                    <button class="close-modal" onclick="closeStockModal()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="stock-form">
+                        <input type="hidden" id="stock-product-id">
+                        
+                        <div class="form-group">
+                            <label id="stock-product-name-label">Product Name</label>
+                            <input type="text" id="stock-product-name" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="current-stock-display">Current Stock</label>
+                                    <input type="number" id="current-stock-display" class="form-control" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="new-stock-quantity">New Stock Quantity</label>
+                                    <input type="number" id="new-stock-quantity" class="form-control" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stock-reason">Reason for Stock Change</label>
+                            <select id="stock-reason" class="form-control" required>
+                                <option value="">-- Select Reason --</option>
+                                <option value="RESTOCK">Restock/Delivery</option>
+                                <option value="SOLD">Sold Items</option>
+                                <option value="DAMAGED">Damaged/Expired</option>
+                                <option value="ADJUSTMENT">Inventory Adjustment</option>
+                                <option value="RETURN">Customer Return</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stock-notes">Additional Notes (Optional)</label>
+                            <textarea id="stock-notes" class="form-control" rows="3" placeholder="Enter any additional details..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="closeStockModal()">Cancel</button>
+                            <button type="submit" class="btn-save">Update Stock</button>
                         </div>
                     </form>
                 </div>

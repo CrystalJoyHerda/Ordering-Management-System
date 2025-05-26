@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>POS System - Debug Version</title>
+    <link rel="stylesheet" href="../css/cashiering.css">
+    <style>
+        #debug-log {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            overflow-y: scroll;
+            z-index: 10000;
+        }
+        .debug-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 10001;
+        }
+    </style>
+</head>
+<body>
+    <button class="debug-toggle" onclick="toggleDebug()">Toggle Debug</button>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="../assets/images/logo.png" alt="Coffee Logo" />
+            </div>
+            <div class="header-center">
+                <div class="datetime-row">
+                    <div class="back-btn" onclick="window.location.href='cashierdashboard.html'">← Back</div>
+                    <div id="datetime" class="datetime"></div>
+                </div>
+                <div class="number-inputs">
+                    <div class="input-box">
+                        Queue Number: <input type="text" id="queueNumber" readonly>
+                    </div>
+                    <div class="input-box">
+                        Order Number: 
+                        <input type="text" 
+                               id="orderNumber" 
+                               placeholder="Enter Order #" 
+                               onkeypress="return onlyNumbers(event)"
+                               maxlength="4">
+                        <button onclick="lookupOrder()">Look Up</button>
+                    </div>
+                </div>
+                <div class="order-type-selector">
+                    <button class="type-button" data-type="dine-in">Dine In</button>
+                    <button class="type-button" data-type="takeout">Take Out</button>
+                </div>
+            </div>
+            <div class="header-buttons">
+                <div class="employee" onclick="window.location.href='employee.html'">Employee</div>
+            </div>
+        </header>
+
+        <div class="order-title">ORDER</div>
+
+        <div class="order-grid">
+            <div class="column-header">Quantity</div>
+            <div class="column-header">Product Name</div>
+            <div class="column-header">Add-ons</div>
+            <div class="column-header">Price</div>
+
+            <div id="items-container" class="grid-box"></div>
+            <div id="names-container" class="grid-box"></div>
+            <div id="addons-container" class="grid-box"></div>
+            <div id="prices-container" class="grid-box"></div>
+        </div>
+
+        <div class="total-amount-box" id="total">Total Amount: ₱0.00</div>
+
+        <div class="add-item-form">
+            <button onclick="goToMenu()" class="menu-button">
+                + Add Item
+            </button>
+        </div>
+
+        <div class="button-container">
+            <button class="action-button cancel-button" onclick="cancelOrder()">Cancel Order</button>
+            <button class="action-button confirm-button" onclick="handleConfirm()">Confirm Order</button>
+        </div>
+    </div>
+
+    <div id="debug-log" style="display: none;">
+        Debug Log:<br>
+    </div>
+
+    <script src="../js/cashiering.js" defer></script>
+    
+    <script>
+        // Debug logging
+        let debugVisible = false;
+        const debugLog = document.getElementById('debug-log');
+        
+        function debugPrint(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        function toggleDebug() {
+            debugVisible = !debugVisible;
+            debugLog.style.display = debugVisible ? 'block' : 'none';
+        }
+        
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            debugPrint('LOG: ' + args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            debugPrint('ERROR: ' + args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            debugPrint('WARN: ' + args.join(' '));
+        };
+        
+        // Capture JavaScript errors
+        window.addEventListener('error', function(e) {
+            debugPrint(`JS ERROR: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`);
+        });
+        
+        // Page initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            debugPrint('DOM loaded, initializing page...');
+            
+            // Check if functions exist
+            const functions = ['lookupOrder', 'updateDateTime', 'initializeQueueNumber', 'cancelOrder', 'onlyNumbers'];
+            functions.forEach(func => {
+                debugPrint(`Function ${func}: ${typeof window[func] === 'function' ? 'EXISTS' : 'MISSING'}`);
+            });
+            
+            // Initialize functions if they exist
+            if (typeof initializeQueueNumber === 'function') {
+                debugPrint('Calling initializeQueueNumber...');
+                try {
+                    initializeQueueNumber();
+                    debugPrint('initializeQueueNumber completed');
+                } catch (e) {
+                    debugPrint('initializeQueueNumber ERROR: ' + e.message);
+                }
+            }
+            
+            if (typeof updateDateTime === 'function') {
+                debugPrint('Setting up updateDateTime...');
+                try {
+                    updateDateTime();
+                    setInterval(updateDateTime, 1000);
+                    debugPrint('updateDateTime setup completed');
+                } catch (e) {
+                    debugPrint('updateDateTime ERROR: ' + e.message);
+                }
+            }
+            
+            debugPrint('Page initialization completed');
+        });
+        
+        // Test the lookup function when page loads
+        setTimeout(() => {
+            debugPrint('Testing if lookupOrder function is callable...');
+            if (typeof lookupOrder === 'function') {
+                debugPrint('lookupOrder function is available');
+            } else {
+                debugPrint('ERROR: lookupOrder function is NOT available');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

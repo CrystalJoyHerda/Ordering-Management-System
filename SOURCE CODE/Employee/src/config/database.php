@@ -10,8 +10,8 @@ class Database {
     private static $conn = null;
     private $host = "localhost";
     private $dbname = "employee_db";
-    private $username = "emp";
-    private $password = "emp";
+    private $username = "root";    // XAMPP default MySQL username
+    private $password = "";        // XAMPP default MySQL password (empty)
 
     /**
      * Get database connection

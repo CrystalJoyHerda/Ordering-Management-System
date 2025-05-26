@@ -594,10 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update order summary and repopulate the modal
         updateOrderSummary();
         populateOrderModal();
-    }
-
-    // Modal control buttons - Fix the order confirmation flow
-    document.querySelector('.confirm-modal-btn').addEventListener('click', () => {
+    }    // Modal control buttons - Fix the order confirmation flow
+    document.querySelector('.confirm-modal-btn').addEventListener('click', async () => {
         console.log("Confirm order button clicked");
         
         // Get the order items
@@ -617,20 +615,39 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Save order type to localStorage
-        localStorage.setItem('orderType', orderType.textContent);
-
-        // Generate random order number and save to localStorage
-        const orderNumber = Math.floor(Math.random() * 999) + 1;
-        const formattedOrderNumber = orderNumber.toString().padStart(3, '0');
-        localStorage.setItem('lastOrderNumber', formattedOrderNumber);
+        // Disable confirm button to prevent double submission
+        const confirmBtn = document.querySelector('.confirm-modal-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
         
-        // Update order number in Thank You Modal
-        document.getElementById('orderNumber').textContent = formattedOrderNumber;
-        
-        // Close the view order modal and show the thank you modal
-        document.getElementById('viewOrderModal').style.display = 'none';
-        document.getElementById('thankYouModal').style.display = 'flex';
+        try {
+            // Submit order to database
+            const orderData = await submitOrderToDatabase(orderItems, orderType.textContent.trim());
+            
+            if (orderData.success) {
+                // Save order data to localStorage
+                localStorage.setItem('orderType', orderType.textContent);
+                localStorage.setItem('lastOrderNumber', orderData.order_number);
+                
+                // Update order number in Thank You Modal
+                document.getElementById('orderNumber').textContent = orderData.order_number;
+                
+                // Close the view order modal and show the thank you modal
+                document.getElementById('viewOrderModal').style.display = 'none';
+                document.getElementById('thankYouModal').style.display = 'flex';
+                
+                console.log('Order submitted successfully:', orderData);
+            } else {
+                throw new Error(orderData.message || 'Failed to submit order');
+            }
+        } catch (error) {
+            console.error('Error submitting order:', error);
+            alert('Failed to submit order: ' + error.message + '\nPlease try again.');
+        } finally {
+            // Re-enable confirm button
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Order';
+        }
     });
 
     // Handle Thank You Modal close button - Update to go back to welcome screen
@@ -830,4 +847,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     console.log("Menu interface initialization complete");
+
+    // Function to submit order to database
+    async function submitOrderToDatabase(orderItems, orderType) {
+        try {
+            // Prepare order data for backend
+            const orderData = {
+                order_type: orderType.toLowerCase(),
+                customer_name: null, // Can be extended later to capture customer name
+                items: orderItems.map(item => ({
+                    product_name: item.name,
+                    product_id: null, // Will be resolved by backend
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                    total_price: item.total,
+                    addons: item.addons || []
+                }))
+            };
+              console.log('Submitting order to database:', orderData);
+            // Submit to backend API (XAMPP htdocs path)
+            const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('Backend response:', result);
+            
+            if (result.status === 'success') {
+                return {
+                    success: true,
+                    order_number: result.data.order_number,
+                    order_id: result.data.id,
+                    total_amount: result.data.total_amount
+                };
+            } else {
+                throw new Error(result.message || 'Unknown error occurred');
+            }
+            
+        } catch (error) {
+            console.error('Error submitting order to database:', error);
+            throw error;
+        }
+    }
 });

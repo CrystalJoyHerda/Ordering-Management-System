@@ -1,17 +1,73 @@
+// Test to verify JS file is loading
+console.log('cashiering.js file loaded successfully');
+
+// Debug: Make functions globally accessible
+window.lookupOrder = function() {
+    console.log('🎯 Global lookupOrder called!');
+    return lookupOrderInternal();
+};
+
+// Make sure functions are in global scope
+window.onlyNumbers = function(e) {
+    return onlyNumbers(e);
+};
+
 // DateTime update function
 function updateDateTime() {
     const now = new Date();
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dateString = now.toLocaleDateString();
+    const timeString = now.toLocaleTimeString();
+    document.getElementById('datetime').textContent = `${dateString} ${timeString}`;
     
-    let hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
+    // Check if date has changed since last stored date
+    checkForDateChange(now);
+}
 
-    const dateTimeString = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()} ${hours}:${minutes}${ampm}`;
-    document.getElementById('datetime').innerHTML = dateTimeString;
+// Check for date change to reset queue numbers
+function checkForDateChange(currentDate) {
+    const currentDateStr = currentDate.toLocaleDateString();
+    const lastDateStr = localStorage.getItem('lastDate');
+    
+    if (lastDateStr && lastDateStr !== currentDateStr) {
+        // Reset queue number to 1 if the date has changed
+        localStorage.setItem('queueNumber', '1');
+        document.getElementById('queueNumber').value = '1';
+    }
+    
+    // Update stored date
+    localStorage.setItem('lastDate', currentDateStr);
+}
+
+// Initialize queue number
+function initializeQueueNumber() {
+    // Check if queue number exists in localStorage
+    let queueNumber = localStorage.getItem('queueNumber');
+    if (!queueNumber) {
+        queueNumber = '1';
+        localStorage.setItem('queueNumber', queueNumber);
+    }
+    
+    // Display queue number
+    document.getElementById('queueNumber').value = queueNumber;
+    
+    // Initialize last date if not set
+    if (!localStorage.getItem('lastDate')) {
+        localStorage.setItem('lastDate', new Date().toLocaleDateString());
+    }
+}
+
+// Cancel order function
+function cancelOrder() {
+    // Reset form or navigate away
+    if (confirm('Are you sure you want to cancel this order?')) {
+        // Clear fields and reset
+        document.getElementById('orderNumber').value = '';
+        document.getElementById('items-container').innerHTML = '';
+        document.getElementById('names-container').innerHTML = '';
+        document.getElementById('addons-container').innerHTML = '';
+        document.getElementById('prices-container').innerHTML = '';
+        document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+    }
 }
 
 // Queue number generator
@@ -41,17 +97,111 @@ const itemStyle = `
 `;
 
 // Main functions
-function lookupOrder() {
-    const orderNum = document.getElementById('orderNumber').value;
-    const order = sampleOrders[orderNum];
+async function lookupOrderInternal() {
+    console.log('🔍 lookupOrder() function called!');
     
-    if (!order) {
-        alert('Order not found');
+    const orderNum = document.getElementById('orderNumber').value.trim();
+    
+    console.log('Looking up order number:', orderNum);
+    
+    if (!orderNum) {
+        alert('Please enter an order number');
         return;
     }
+    
+    try {
+        // Show loading state
+        const lookupButton = document.querySelector('button[onclick="lookupOrder()"]');
+        const originalText = lookupButton.textContent;
+        lookupButton.textContent = 'Looking up...';        lookupButton.disabled = true;
+        
+        const apiUrl = `http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNum}`;
+        console.log('🌐 Fetching from URL:', apiUrl);
+        
+        // Fetch order from database (XAMPP htdocs path)
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        console.log('📡 Response received, status:', response.status, 'ok:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('📋 Order lookup result:', result);        if (result.status === 'success' && result.order) {
+            console.log('✅ Order found successfully!');
+            const order = result.order;
+            console.log('📦 Order details:', order);
+            
+            // The order already includes items, no need for second API call
+            if (order.items && order.items.length > 0) {
+                console.log('🍽️ Processing order items:', order.items.length, 'items');
+                clearContainers();
+                
+                // Display order information
+                displayOrderInfo(order);                // Add each item to the display
+                order.items.forEach(item => {
+                    console.log('➕ Adding item:', item);
+                    const addons = item.addons || [];
+                    // Use unit_price for display, total_price is for internal calculation
+                    const displayPrice = item.unit_price;
+                    addOrderItemFromDB(item.quantity, item.product_name, displayPrice, item.total_price, addons);
+                });
+                
+                // Set the correct total from the order
+                const totalElement = document.getElementById('total');
+                totalElement.textContent = `Total Amount: ₱${parseFloat(order.total_amount).toFixed(2)}`;
+                
+                const orderTypeDisplay = order.order_type || 'Not specified';
+                console.log('🎉 Order processing complete!');
+                console.log(`Order ${orderNum} displayed in cashier interface!`);
+                // Remove the alert and just log success
+                console.log('Order lookup completed successfully');
+            } else {
+                console.log('⚠️ Order found but no items available');
+                console.log('Items array:', order.items);
+                throw new Error('Order found but no items available');
+            }
+        } else {
+            console.log('❌ Order lookup failed:', result);
+            alert(result.message || 'Order not found');
+        }
+    } catch (error) {
+        console.error('🚨 Error looking up order:', error);
+        alert('Error looking up order: ' + error.message);
+    } finally {
+        // Restore button state
+        console.log('🔄 Restoring button state');
+        const lookupButton = document.querySelector('button[onclick="lookupOrder()"]');
+        if (lookupButton) {
+            lookupButton.textContent = 'Look Up';
+            lookupButton.disabled = false;
+        }
+    }
+}
 
-    clearContainers();
-    order.forEach(item => addOrderItem(item.quantity, item.name, item.price));
+// Function to display order information
+function displayOrderInfo(order) {
+    // Set order type buttons based on the order
+    const typeButtons = document.querySelectorAll('.type-button');
+    typeButtons.forEach(btn => {
+        btn.classList.remove('active');
+        
+        // Handle empty order_type by defaulting to dine-in
+        const orderType = order.order_type || 'dine_in';
+        
+        // Convert button data-type to match database format
+        const buttonType = btn.dataset.type.replace('-', '_');
+        
+        if (buttonType === orderType) {
+            btn.classList.add('active');
+        }
+    });
 }
 
 function handleAddItem() {
@@ -101,8 +251,50 @@ function addOrderItem(quantity, name, price, addons) {
     namesContainer.appendChild(nameDiv);
     addonsContainer.appendChild(addonsDiv);
     pricesContainer.appendChild(priceDiv);
+      updateTotal();
+}
+
+// Function specifically for adding items retrieved from database
+function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
+    console.log(`📋 Adding DB item: ${quantity}x ${name} @ ₱${displayPrice} (total: ₱${totalPrice})`);
     
-    updateTotal();
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+
+    const itemDiv = document.createElement('div');
+    itemDiv.style.cssText = itemStyle;
+    itemDiv.innerHTML = `${quantity} 
+        <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = itemStyle;
+    nameDiv.textContent = name;
+    
+    // Add-ons display
+    const addonsDiv = document.createElement('div');
+    addonsDiv.style.cssText = itemStyle;
+    if (addons && Array.isArray(addons) && addons.length > 0) {
+        addonsDiv.textContent = addons.map(a => a.name).join(', ');
+    } else {
+        addonsDiv.textContent = '-';
+    }
+
+    // Show the unit price, but store total price for calculation
+    const priceDiv = document.createElement('div');
+    priceDiv.style.cssText = itemStyle;
+    priceDiv.textContent = `₱${parseFloat(displayPrice).toFixed(2)}`;
+    // Store the actual total price as a data attribute for accurate calculation
+    priceDiv.setAttribute('data-total-price', totalPrice);
+
+    itemsContainer.appendChild(itemDiv);
+    namesContainer.appendChild(nameDiv);
+    addonsContainer.appendChild(addonsDiv);
+    pricesContainer.appendChild(priceDiv);
+    
+    // Don't call updateTotal() here - we'll set the total manually from the order
 }
 
 function updateTotal() {

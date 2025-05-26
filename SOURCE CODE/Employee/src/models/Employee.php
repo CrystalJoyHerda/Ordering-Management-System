@@ -63,8 +63,7 @@ class Employee {
             ];
         }
     }
-    
-    // Create new employee
+      // Create new employee
     public function create($data) {
         try {
             $this->conn->beginTransaction();
@@ -77,8 +76,21 @@ class Employee {
                 ];
             }
             
-            // Hash password
-            $password_hash = password_hash($data['password'], PASSWORD_DEFAULT);
+            // Reset AUTO_INCREMENT if needed to ensure sequential IDs
+            $maxIdQuery = "SELECT MAX(emp_id) as max_id FROM " . $this->table;
+            $maxIdStmt = $this->conn->prepare($maxIdQuery);
+            $maxIdStmt->execute();
+            $maxIdResult = $maxIdStmt->fetch(PDO::FETCH_ASSOC);
+            $maxId = $maxIdResult['max_id'];
+            
+            // If the highest ID is less than 100, make sure AUTO_INCREMENT continues from there
+            if ($maxId < 100) {
+                $resetAutoIncrement = "ALTER TABLE " . $this->table . " AUTO_INCREMENT = " . ($maxId + 1);
+                $this->conn->exec($resetAutoIncrement);
+            }
+              
+            // Hash password using SHA256 to match authentication method
+            $password_hash = hash('sha256', $data['password']);
             
             // Create query
             $query = "INSERT INTO " . $this->table . " (name, role, password_hash, email) VALUES 
@@ -142,10 +154,9 @@ class Employee {
                 $updateFields[] = "email = :email";
                 $params[':email'] = htmlspecialchars(strip_tags($data['email']));
             }
-            
-            if (isset($data['password'])) {
+              if (isset($data['password'])) {
                 $updateFields[] = "password_hash = :password_hash";
-                $params[':password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
+                $params[':password_hash'] = hash('sha256', $data['password']);
             }
             
             if (empty($updateFields)) {

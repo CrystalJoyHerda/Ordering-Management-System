@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Lookup Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px; margin: 5px; }
+        input { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Step-by-Step Lookup Debug</h2>
+    
+    <div class="debug">
+        <h3>Step 1: Test if button click works</h3>
+        <button onclick="testButtonClick()">Test Button Click</button>
+        <div id="buttonResult"></div>
+    </div>
+
+    <div class="debug">
+        <h3>Step 2: Test if DOM elements exist</h3>
+        <input type="text" id="orderNumber" value="575" placeholder="Order Number">
+        <button onclick="testDOMAccess()">Test DOM Access</button>
+        <div id="domResult"></div>
+    </div>
+
+    <div class="debug">
+        <h3>Step 3: Test API call manually</h3>
+        <button onclick="testAPIManually()">Test API Manually</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="debug">
+        <h3>Step 4: Test the actual lookup function</h3>
+        <button onclick="testActualLookup()">Test Actual lookupOrder()</button>
+        <div id="lookupResult"></div>
+    </div>
+
+    <!-- Hidden elements that the lookup function expects -->
+    <div id="items-container" style="display: none;"></div>
+    <div id="names-container" style="display: none;"></div>
+    <div id="addons-container" style="display: none;"></div>
+    <div id="prices-container" style="display: none;"></div>
+    <div id="total" style="display: none;">Total Amount: ₱0.00</div>
+
+    <script>
+        function testButtonClick() {
+            document.getElementById('buttonResult').innerHTML = '✅ Button click works!';
+        }
+
+        function testDOMAccess() {
+            const orderNumber = document.getElementById('orderNumber');
+            const result = document.getElementById('domResult');
+            
+            if (orderNumber) {
+                result.innerHTML = `✅ DOM access works! Order number: ${orderNumber.value}`;
+            } else {
+                result.innerHTML = '❌ Cannot access orderNumber element';
+            }
+        }
+
+        async function testAPIManually() {
+            const result = document.getElementById('apiResult');
+            const orderNum = document.getElementById('orderNumber').value;
+            
+            try {
+                result.innerHTML = 'Testing API...';
+                
+                const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNum}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    result.innerHTML = `✅ API works! Order total: ₱${data.order.total_amount}`;
+                } else {
+                    result.innerHTML = `❌ API error: ${data.message}`;
+                }
+            } catch (error) {
+                result.innerHTML = `❌ API failed: ${error.message}`;
+            }
+        }
+
+        async function testActualLookup() {
+            const result = document.getElementById('lookupResult');
+            
+            try {
+                result.innerHTML = 'Testing lookupOrder function...';
+                
+                // Check if function exists
+                if (typeof lookupOrder !== 'function') {
+                    result.innerHTML = '❌ lookupOrder function not found!';
+                    return;
+                }
+                
+                // Call the function
+                await lookupOrder();
+                result.innerHTML = '✅ lookupOrder function executed (check console for details)';
+                
+            } catch (error) {
+                result.innerHTML = `❌ lookupOrder failed: ${error.message}`;
+            }
+        }
+
+        // Override console.log to show in page
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const logDiv = document.createElement('div');
+            logDiv.textContent = '[LOG] ' + args.join(' ');
+            logDiv.style.cssText = 'background: #e0e0e0; padding: 5px; margin: 2px; font-size: 12px;';
+            document.body.appendChild(logDiv);
+        };
+
+        // Include a simple version of the lookup function for testing
+        async function lookupOrder() {
+            const orderNum = document.getElementById('orderNumber').value.trim();
+            console.log('lookupOrder called with:', orderNum);
+            
+            if (!orderNum) {
+                alert('Please enter an order number');
+                return;
+            }
+            
+            try {
+                console.log('Fetching order data...');
+                
+                const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNum}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Response received, status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Order data:', result);
+                
+                if (result.status === 'success' && result.order) {
+                    console.log('Order found successfully');
+                    alert(`Order ${orderNum} found! Total: ₱${result.order.total_amount}`);
+                } else {
+                    console.log('Order not found');
+                    alert(result.message || 'Order not found');
+                }
+            } catch (error) {
+                console.error('Error in lookup:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
