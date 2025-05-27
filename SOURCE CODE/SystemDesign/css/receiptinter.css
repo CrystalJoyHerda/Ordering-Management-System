@@ -76,40 +76,46 @@ h1 {
 }
 
 .item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    font-size: 0.9em;
     margin-bottom: 12px;
     padding: 8px 0;
     border-bottom: 1px dotted #ddd;
-    line-height: 1.4;
 }
 
 .item:last-child {
     border-bottom: none;
 }
 
-.item span:first-child {
-    flex: 1;
-    margin-right: 10px;
-    font-weight: 500;
+.item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
-.item span:last-child {
+.item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.item-main {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.addon-text {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+    margin-left: 12px;
+    display: block;
+}
+
+.price {
     font-weight: bold;
     color: #333;
     white-space: nowrap;
-}
-
-/* Add-ons styling within items */
-.item .addon-text {
-    font-size: 0.8em;
-    color: #666;
-    font-style: italic;
-    margin-left: 8px;
-    display: block;
-    margin-top: 2px;
+    font-size: 14px;
 }
 
 /* Totals section styles */

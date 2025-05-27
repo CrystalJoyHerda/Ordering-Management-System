@@ -383,7 +383,10 @@ function handleConfirm() {
         return;
     }
 
-    // Proceed with order confirmation if both validations pass
+    // Get order type text
+    const orderTypeText = selectedOrderType.textContent.trim();
+
+    // Collect order items
     const orderItems = [];
     const quantities = document.getElementById('items-container').children;
     const names = document.getElementById('names-container').children;
@@ -391,32 +394,35 @@ function handleConfirm() {
     const prices = document.getElementById('prices-container').children;
 
     for (let i = 0; i < quantities.length; i++) {
-        const qty = parseInt(quantities[i].childNodes[0].textContent.trim());
-        const price = parseFloat(prices[i].textContent.replace('₱', ''));
+        // Extract quantity (first text node before the buttons)
+        const qtyText = quantities[i].childNodes[0].textContent.trim();
+        const qty = parseInt(qtyText);
         
-        // Get add-ons for this item
-        const itemAddons = [];
-        if (addons[i] && addons[i].textContent !== '-') {
-            const addonNames = addons[i].textContent.split(', ').filter(name => name.trim());
-            itemAddons.push(...addonNames);
-        }
+        const name = names[i].textContent.trim();
+        const addonText = addons[i].textContent.trim();
+        const priceText = prices[i].textContent.replace('₱', '').trim();
+        const totalPrice = parseFloat(priceText);
         
         orderItems.push({
             quantity: qty,
-            name: names[i].textContent,
-            addons: itemAddons,
-            price: price,
-            subtotal: qty * price
+            name: name,
+            addons: addonText !== '-' ? addonText.split(', ') : [],
+            price: totalPrice / qty, // Unit price
+            totalPrice: totalPrice   // Total price for this line
         });
     }
 
+    // Create complete order data object
     const orderData = {
         items: orderItems,
-        total: total,
+        total: total.replace('Total Amount: ₱', ''),
         queueNumber: queueNum,
-        datetime: document.getElementById('datetime').textContent
+        orderType: orderTypeText,
+        datetime: document.getElementById('datetime').textContent,
+        itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0)
     };
 
+    console.log('Sending order data to confirmation:', orderData);
     localStorage.setItem('currentOrder', JSON.stringify(orderData));
     window.location.href = 'orderconfirm.html';
 }

@@ -9,7 +9,7 @@ function updateDateTime() {
     document.getElementById('queue-datetime').textContent = dateTimeString;
 }
 
-function
+function formatTime(date) {
     let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'pm' : 'am';
@@ -19,8 +19,13 @@ function
 }
 
 function formatMoney(value) {
-    const num = parseFloat(value);
-    return isNaN(num) ? '₱0.00' : `₱${num.toFixed(2)}`;
+    if (typeof value === 'string') {
+        if (value.startsWith('₱')) {
+            value = value.substring(1);
+        }
+        value = parseFloat(value);
+    }
+    return isNaN(value) ? '₱0.00' : `₱${value.toFixed(2)}`;
 }
 
 window.onload = function() {
@@ -34,51 +39,56 @@ window.onload = function() {
         return;
     }
 
-    // Update order type from cashiering
-    const orderType = receiptData.orderType || localStorage.getItem('orderType') || '---';
-    document.getElementById('order-type').textContent = orderType;
-
-    displayReceiptData(receiptData);
-};
-
-function displayReceiptData(receiptData) {
-    // Update queue numbers
+    // Update order details
+    document.getElementById('order-type').textContent = receiptData.orderType || 'Not specified';
     document.querySelector('.queue-number').textContent = receiptData.queueNumber;
     document.querySelector('.queue-slip .number').textContent = receiptData.queueNumber;
 
-    // Display order items with complete details
-    const orderItems = document.getElementById('orderItemsList');
-    orderItems.innerHTML = '';
-    
-    receiptData.items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        
-        // Format item name with add-ons
-        let itemDisplay = `${item.name} x${item.quantity}`;
-        
-        // Add add-ons if they exist
-        if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
-            const addonsText = item.addons.join(', ');
-            itemDisplay += `\n  + ${addonsText}`;
-        } else if (item.addons && typeof item.addons === 'string' && item.addons !== '-' && item.addons.trim()) {
-            itemDisplay += `\n  + ${item.addons}`;
-        }
-        
-        const subtotal = item.quantity * item.price;
-        
-        div.innerHTML = `
-            <span style="white-space: pre-line; line-height: 1.4;">${itemDisplay}</span>
-            <span style="align-self: flex-start;">${formatMoney(subtotal)}</span>
-        `;
-        div.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px dotted #ddd;';
-        
-        orderItems.appendChild(div);
-    });
+    // Display order items
+    displayOrderItems(receiptData.items);
 
-    // Update totals
+    // Display payment details
     const totals = document.querySelectorAll('.total-line .amount');
-    totals[0].textContent = receiptData.total;
-    totals[1].textContent = receiptData.cash;
-    totals[2].textContent = receiptData.change;
+    totals[0].textContent = formatMoney(receiptData.total);
+    totals[1].textContent = formatMoney(receiptData.cash);
+    totals[2].textContent = formatMoney(receiptData.change);
+};
+
+function displayOrderItems(items) {
+    const container = document.getElementById('orderItemsList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'item';
+        
+        // Format the main item line with quantity and name
+        const mainLine = `<span class="item-main">${item.name} x${item.quantity}</span>`;
+        
+        // Format add-ons with smaller font if they exist
+        const addonsLine = item.addons && item.addons.length > 0 
+            ? `<span class="addon-text">+ ${Array.isArray(item.addons) ? item.addons.join(', ') : item.addons}</span>` 
+            : '';
+        
+        // Format price
+        const priceLine = `<span class="price">₱${item.totalPrice.toFixed(2)}</span>`;
+        
+        row.innerHTML = `
+            <div class="item-content">
+                <div class="item-details">
+                    ${mainLine}
+                    ${addonsLine}
+                </div>
+                ${priceLine}
+            </div>
+        `;
+        
+        container.appendChild(row);
+    });
 }
+
+document.getElementById('printBtn').addEventListener('click', function() {
+    window.location.href = 'cashiering.html';
+});
