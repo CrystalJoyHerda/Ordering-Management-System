@@ -19,7 +19,6 @@ async function syncOrderToDatabase() {
         const quantities = document.getElementById('items-container').children;
         const names = document.getElementById('names-container').children;
         const addons = document.getElementById('addons-container').children;
-        const prices = document.getElementById('prices-container').children;
         
         for (let i = 0; i < quantities.length; i++) {
             const qtyText = quantities[i].childNodes[0].textContent.trim();
@@ -27,21 +26,33 @@ async function syncOrderToDatabase() {
             const name = names[i].textContent.trim();
             const addonText = addons[i].textContent.trim();
             
-            // Get the unit price (price per item including add-ons)
-            const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price')) || 
-                             parseFloat(prices[i].textContent.replace('₱', ''));
-            const totalPrice = unitPrice * qty;
+            // Step 1: Get original price
+            const originalPrice = getBasePrice(name);
+            
+            // Step 2: Calculate total add-ons price
+            let totalAddOnsPrice = 0;
+            let addonsList = [];
+            
+            if (addonText !== '-' && addonText) {
+                addonsList = addonText.split(', ').map(a => a.trim());
+                totalAddOnsPrice = addonsList.reduce((sum, addonName) => {
+                    return sum + getAddonPrice(addonName);
+                }, 0);
+            }
+            
+            // Step 3: Calculate unit price = original + total add-ons
+            const unitPrice = originalPrice + totalAddOnsPrice;
             
             orderItems.push({
                 product_name: name,
                 quantity: qty,
                 unit_price: unitPrice,
-                total_price: totalPrice,
-                addons: addonText !== '-' && addonText ? addonText.split(', ').map(a => a.trim()) : []
+                total_price: unitPrice * qty,
+                addons: addonsList
             });
         }
         
-        // Calculate new total
+        // Calculate new total using the latest unit prices
         const totalAmount = orderItems.reduce((sum, item) => sum + item.total_price, 0);
         
         // Get order type
@@ -374,16 +385,6 @@ function addOrderItem(quantity, name, price, addons) {
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
 
-    // Calculate unit price including add-ons
-    let unitPrice = parseFloat(price);
-    if (addons && Array.isArray(addons) && addons.length > 0) {
-        addons.forEach(addon => {
-            if (addon.price) {
-                unitPrice += parseFloat(addon.price);
-            }
-        });
-    }
-
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = itemStyle;
     itemDiv.innerHTML = `${quantity} 
@@ -403,12 +404,9 @@ function addOrderItem(quantity, name, price, addons) {
         addonsDiv.textContent = '-';
     }
 
-    // Price should show unit price (including add-ons)
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
-    // Store the calculated unit price as data attribute
-    priceDiv.setAttribute('data-unit-price', unitPrice);
+    priceDiv.textContent = `₱${parseFloat(price).toFixed(2)}`;
 
     itemsContainer.appendChild(itemDiv);
     namesContainer.appendChild(nameDiv);
@@ -446,13 +444,12 @@ function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
         addonsDiv.textContent = '-';
     }
 
-    // Calculate unit price from total price and quantity
-    const unitPrice = totalPrice / quantity;
+    // Show the unit price, but store total price for calculation
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
-    // Store the calculated unit price for accurate calculation
-    priceDiv.setAttribute('data-unit-price', unitPrice);
+    priceDiv.textContent = `₱${parseFloat(displayPrice).toFixed(2)}`;
+    // Store the actual total price as a data attribute for accurate calculation
+    priceDiv.setAttribute('data-total-price', totalPrice);
 
     itemsContainer.appendChild(itemDiv);
     namesContainer.appendChild(nameDiv);
@@ -464,18 +461,39 @@ function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
 
 function updateTotal() {
     const quantities = document.getElementById('items-container').children;
+    const names = document.getElementById('names-container').children;
+    const addons = document.getElementById('addons-container').children;
     const prices = document.getElementById('prices-container').children;
     let total = 0;
 
     for (let i = 0; i < quantities.length; i++) {
         const quantity = parseInt(quantities[i].childNodes[0].textContent.trim());
-        // Always use the stored unit price for accurate calculation
-        const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price'));
+        const itemName = names[i].textContent.trim();
+        const addonsText = addons[i].textContent.trim();
         
-        // Ensure we have valid values
-        if (!isNaN(quantity) && !isNaN(unitPrice)) {
-            total += quantity * unitPrice;
+        // Step 1: Calculate the updated unit price (original + add-ons)
+        const originalPrice = getBasePrice(itemName);
+        let totalAddOnsPrice = 0;
+        
+        // Calculate total add-ons price if there are any
+        if (addonsText !== '-' && addonsText) {
+            const addonsList = addonsText.split(', ').map(a => a.trim());
+            totalAddOnsPrice = addonsList.reduce((sum, addonName) => {
+                return sum + getAddonPrice(addonName);
+            }, 0);
         }
+        
+        // Step 2: Update unit price = original + total add-ons
+        const unitPrice = originalPrice + totalAddOnsPrice;
+        
+        // Step 3: Calculate total amount = unit price × quantity
+        const lineTotal = unitPrice * quantity;
+        
+        // Update the displayed price to reflect the correct line total
+        prices[i].textContent = `₱${lineTotal.toFixed(2)}`;
+        
+        // Add to grand total
+        total += lineTotal;
     }
     
     document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
@@ -515,17 +533,14 @@ function handleConfirm() {
         
         const name = names[i].textContent.trim();
         const addonText = addons[i].textContent.trim();
-        
-        // Get the unit price including add-ons
-        const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price')) || 
-                         parseFloat(prices[i].textContent.replace('₱', ''));
-        const totalPrice = unitPrice * qty;
+        const priceText = prices[i].textContent.replace('₱', '').trim();
+        const totalPrice = parseFloat(priceText);
         
         orderItems.push({
             quantity: qty,
             name: name,
             addons: addonText !== '-' ? addonText.split(', ') : [],
-            price: unitPrice, // Unit price including add-ons
+            price: totalPrice / qty, // Unit price
             totalPrice: totalPrice   // Total price for this line
         });
     }
@@ -897,6 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let selectedCoffeeItem = null;
 let modalOrderItems = {};
 let modalInitialized = false;
+let currentActiveCoffee = null; // Add the missing currentActiveCoffee variable declaration
 
 // Show the add item modal
 function showAddItemModal() {
@@ -1026,10 +1042,14 @@ function showCategory(category) {
         coffeeGrid.classList.add('active');
         snacksGrid.classList.remove('active');
         addonsSection.style.display = 'block';
+        // Enable add-on functionality for coffee
+        enableAddons();
     } else {
         snacksGrid.classList.add('active');
         coffeeGrid.classList.remove('active');
-        addonsSection.style.display = 'none';
+        addonsSection.style.display = 'block'; // Keep visible
+        // Disable add-on functionality for non-coffee items
+        disableAddons();
     }
     
     // Reset selections when switching categories
@@ -1037,17 +1057,11 @@ function showCategory(category) {
         item.classList.remove('selected');
     });
     selectedCoffeeItem = null;
+    currentActiveCoffee = null;
     
     // Reset selected item display
-    const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
-    if (selectedItemName) {
-        selectedItemName.textContent = 'Select a coffee item first';
-        selectedItemName.classList.add('none-selected');
-    }
+    updateAddonDisplay();
 }
-
-// Track the most recently selected coffee item for add-ons
-let currentActiveCoffee = null;
 
 // Select food item
 function selectFoodItem(item) {
@@ -1056,8 +1070,11 @@ function selectFoodItem(item) {
     const minusBtn = item.querySelector('.quantity-btn.minus');
     const currentQuantity = parseInt(quantityValue.textContent);
     
-    // Check if this is a coffee item
-    const isCoffeeItem = item.closest('.coffee-grid') !== null;    if (isCoffeeItem) {
+    // Check if this is a coffee item and specifically hot/cold coffee
+    const isCoffeeItem = item.closest('.coffee-grid') !== null;
+    const isHotOrColdCoffee = isCoffeeItem && isHotOrColdCoffeeItem(item);
+    
+    if (isCoffeeItem) {
         // For coffee items, implement individual toggle behavior
         if (currentQuantity === 0) {
             // Select this coffee item and set quantity to 1
@@ -1065,8 +1082,12 @@ function selectFoodItem(item) {
             quantityValue.textContent = '1';
             minusBtn.disabled = false;
             
-            // Set this as the current active coffee for add-ons
-            currentActiveCoffee = item;
+            // Set this as the current active coffee for add-ons (only if hot/cold coffee)
+            if (isHotOrColdCoffee) {
+                currentActiveCoffee = item;
+            } else {
+                currentActiveCoffee = null;
+            }
             
             updateModalOrderItem(item);
             
@@ -1080,18 +1101,20 @@ function selectFoodItem(item) {
             
             const foodName = item.querySelector('.food-name').textContent;
             
-            // Clear any add-ons associated with this item
-            document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
-                if (addon.getAttribute('data-for-item') === foodName) {
-                    addon.classList.remove('selected');
-                    addon.removeAttribute('data-for-item');
-                }
-            });
+            // Clear any add-ons associated with this item (only for hot/cold coffee)
+            if (isHotOrColdCoffee) {
+                document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+                    if (addon.getAttribute('data-for-item') === foodName) {
+                        addon.classList.remove('selected');
+                        addon.removeAttribute('data-for-item');
+                    }
+                });
+            }
             
-            // If this was the active coffee, find another selected coffee or clear
+            // If this was the active coffee, find another selected hot/cold coffee or clear
             if (currentActiveCoffee === item) {
                 const otherSelectedCoffee = document.querySelector('#addItemModal .coffee-grid .food-item.selected');
-                currentActiveCoffee = otherSelectedCoffee || null;
+                currentActiveCoffee = (otherSelectedCoffee && isHotOrColdCoffeeItem(otherSelectedCoffee)) ? otherSelectedCoffee : null;
             }
             
             removeModalOrderItem(item);
@@ -1099,8 +1122,9 @@ function selectFoodItem(item) {
             // Update the add-on display
             updateAddonDisplay();
         }
-    }else {
+    } else {
         // For non-coffee items (snacks), implement individual toggle behavior
+        // No add-ons functionality for snacks
         if (currentQuantity === 0) {
             // Select and set quantity to 1
             item.classList.add('selected');
@@ -1114,7 +1138,20 @@ function selectFoodItem(item) {
             minusBtn.disabled = true;
             removeModalOrderItem(item);
         }
+        
+        // Ensure currentActiveCoffee is null for non-coffee items
+        currentActiveCoffee = null;
+        updateAddonDisplay();
     }
+}
+
+// Helper function to check if item is Hot Coffee or Cold Coffee
+function isHotOrColdCoffeeItem(item) {
+    const itemName = item.querySelector('.food-name').textContent;
+    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Macha'];
+    const coldCoffeeItems = ['Iced Latte', 'Iced Americano', 'Cold Brew', 'Frappuccino', 'Affogato'];
+    
+    return hotCoffeeItems.includes(itemName) || coldCoffeeItems.includes(itemName);
 }
 
 // Increase quantity
@@ -1125,10 +1162,14 @@ function increaseQuantity(item, valueSpan, minusBtn) {
     minusBtn.disabled = false;
     item.classList.add('selected');
     
-    // If this is a coffee item, set it as the current active coffee
+    // If this is a hot/cold coffee item, set it as the current active coffee
     const isCoffeeItem = item.closest('.coffee-grid') !== null;
-    if (isCoffeeItem) {
+    if (isCoffeeItem && isHotOrColdCoffeeItem(item)) {
         currentActiveCoffee = item;
+        updateAddonDisplay();
+    } else {
+        // For non-hot/cold coffee items, ensure currentActiveCoffee is null
+        currentActiveCoffee = null;
         updateAddonDisplay();
     }
     
@@ -1146,11 +1187,15 @@ function decreaseQuantity(item, valueSpan, minusBtn) {
         if (value === 0) {
             item.classList.remove('selected');
             
-            // If this was the active coffee, find another selected coffee or clear
+            // If this was the active coffee, find another selected hot/cold coffee or clear
             const isCoffeeItem = item.closest('.coffee-grid') !== null;
-            if (isCoffeeItem && currentActiveCoffee === item) {
+            if (isCoffeeItem && isHotOrColdCoffeeItem(item) && currentActiveCoffee === item) {
                 const otherSelectedCoffee = document.querySelector('#addItemModal .coffee-grid .food-item.selected');
-                currentActiveCoffee = otherSelectedCoffee || null;
+                currentActiveCoffee = (otherSelectedCoffee && isHotOrColdCoffeeItem(otherSelectedCoffee)) ? otherSelectedCoffee : null;
+                updateAddonDisplay();
+            } else if (!isCoffeeItem || !isHotOrColdCoffeeItem(item)) {
+                // For non-hot/cold coffee items, ensure currentActiveCoffee is null
+                currentActiveCoffee = null;
                 updateAddonDisplay();
             }
             
@@ -1163,8 +1208,15 @@ function decreaseQuantity(item, valueSpan, minusBtn) {
 
 // Toggle add-on selection
 function toggleAddon(addon) {
-    // Check if there's an active coffee item
-    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected')) {
+    // Check if we're in coffee category and have an active hot/cold coffee item
+    const currentCategory = document.querySelector('#addItemModal .category-button.active')?.dataset.category;
+    
+    if (currentCategory !== 'coffee') {
+        // Should not happen since add-ons are disabled for non-coffee, but just in case
+        return;
+    }
+    
+    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected') || !isHotOrColdCoffeeItem(currentActiveCoffee)) {
         // Flash the "Select an item first" text
         const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
         selectedItemName.style.animation = 'none';
@@ -1277,9 +1329,30 @@ function showCoffeeSelectionForAddon(addon, selectedCoffeeItems) {
 // Update the add-on display to show current associations
 function updateAddonDisplay() {
     const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
+    const currentCategory = document.querySelector('#addItemModal .category-button.active')?.dataset.category;
     
-    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected')) {
-        selectedItemName.textContent = 'Select a coffee item first';
+    // Only show add-on functionality for coffee category
+    if (currentCategory !== 'coffee') {
+        selectedItemName.textContent = 'Add-ons not available for snacks';
+        selectedItemName.classList.add('none-selected');
+        
+        // Clear all add-on visual selections
+        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+            addon.classList.remove('selected');
+        });
+        return;
+    }
+    
+    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected') || !isHotOrColdCoffeeItem(currentActiveCoffee)) {
+        // Check if we have any hot/cold coffee selected
+        const hasHotColdCoffeeSelected = Array.from(document.querySelectorAll('#addItemModal .coffee-grid .food-item.selected'))
+            .some(item => isHotOrColdCoffeeItem(item));
+        
+        if (hasHotColdCoffeeSelected) {
+            selectedItemName.textContent = 'Select a hot or cold coffee item for add-ons';
+        } else {
+            selectedItemName.textContent = 'Add-ons only available for hot/cold coffee';
+        }
         selectedItemName.classList.add('none-selected');
         
         // Clear all add-on visual selections (but keep the data attributes)
@@ -1302,29 +1375,64 @@ function updateAddonDisplay() {
     }
 }
 
+// Disable add-ons functionality
+function disableAddons() {
+    // Clear any selected add-ons
+    document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+        addon.classList.remove('selected');
+        addon.removeAttribute('data-for-item');
+        addon.style.opacity = '0.5';
+        addon.style.pointerEvents = 'none';
+        addon.style.cursor = 'not-allowed';
+    });
+    
+    // Clear currentActiveCoffee since we're not in coffee section or with hot/cold coffee
+    currentActiveCoffee = null;
+}
+
+// Enable add-ons functionality
+function enableAddons() {
+    const addonsSection = document.querySelector('#addItemModal .addons-section');
+    if (addonsSection) {
+        addonsSection.style.opacity = '1';
+        addonsSection.style.pointerEvents = 'auto';
+        
+        // Enable all add-on circles
+        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+            addon.style.opacity = '1';
+            addon.style.pointerEvents = 'auto';
+            addon.style.cursor = 'pointer';
+        });
+    }
+}
+
 // Update modal order item with proper pricing
 function updateModalOrderItem(item) {
     const name = item.dataset.name;
-    const basePrice = parseFloat(item.dataset.price);
+    const originalPrice = parseFloat(item.dataset.price);
     const quantity = parseInt(item.querySelector('.quantity-value').textContent);
     
     if (quantity > 0) {
-        // Get associated add-ons and calculate total add-on price
+        // Get associated add-ons and calculate total add-on price (only for hot/cold coffee items)
         const addons = [];
-        let addonsTotal = 0;
-        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
-            if (addon.getAttribute('data-for-item') === name) {
-                const addonPrice = parseFloat(addon.dataset.price);
-                addons.push({
-                    name: addon.dataset.name,
-                    price: addonPrice
-                });
-                addonsTotal += addonPrice;
-            }
-        });
+        let totalAddOnsPrice = 0;
         
-        // Calculate unit price including add-ons
-        const unitPrice = basePrice + addonsTotal;
+        const isCoffeeItem = item.closest('.coffee-grid') !== null;
+        if (isCoffeeItem && isHotOrColdCoffeeItem(item)) {
+            document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+                if (addon.getAttribute('data-for-item') === name) {
+                    const addonPrice = parseFloat(addon.dataset.price);
+                    addons.push({
+                        name: addon.dataset.name,
+                        price: addonPrice
+                    });
+                    totalAddOnsPrice += addonPrice;
+                }
+            });
+        }
+        
+        // Step 1: Calculate unit price = original + total add-ons
+        const unitPrice = originalPrice + totalAddOnsPrice;
         
         modalOrderItems[name] = {
             name: name,
@@ -1337,7 +1445,21 @@ function updateModalOrderItem(item) {
     }
 }
 
-// Add selected items to the main order with correct pricing
+// Remove modal order item
+function removeModalOrderItem(item) {
+    const name = item.dataset.name;
+    delete modalOrderItems[name];
+    
+    // Remove associated add-ons
+    document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+        if (addon.getAttribute('data-for-item') === name) {
+            addon.classList.remove('selected');
+            addon.removeAttribute('data-for-item');
+        }
+    });
+}
+
+// Add selected items to the main order
 function addSelectedItems() {
     const itemsToAdd = Object.values(modalOrderItems);
     
@@ -1348,15 +1470,18 @@ function addSelectedItems() {
     
     // Add items to the main order
     itemsToAdd.forEach(item => {
-        // Calculate base price from the item data attributes
-        const basePrice = parseFloat(item.price) - (item.addons ? item.addons.reduce((sum, addon) => sum + addon.price, 0) : 0);
+        // Use the calculated price that already includes add-ons
+        const totalPrice = item.price;
         
-        // Add each quantity as individual items
+        // Add each quantity as a separate item (matching the database structure)
         for (let i = 0; i < item.quantity; i++) {
-            // Pass base price and let addItemToGrid calculate the unit price with add-ons
-            addItemToGrid(item.name, basePrice, item.addons);
+            // Add to grid with same structure as database items
+            addItemToGrid(item.name, totalPrice, item.addons);
         }
     });
+    
+    // Update total
+    updateTotal();
     
     // Sync changes to database if we have an order ID
     if (currentOrderId) {
@@ -1373,395 +1498,12 @@ function addSelectedItems() {
     closeAddItemModal();
 }
 
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('addItemModal');
-    if (e.target === modal) {
-        closeAddItemModal();
-    }
-});
-
-// Initialize modal when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // The modal functionality will be initialized when the modal is shown
-    console.log('Add item modal functionality ready');
-});
-
-// ============ EDIT AND DELETE ITEM FUNCTIONALITY ============
-
-// Function to edit an item in the grid
-function editItem(buttonElement) {
-    console.log('Edit button clicked');
-    
-    // Find the row index by looking at the button's parent container
-    const itemElement = buttonElement.parentElement;
-    const itemsContainer = document.getElementById('items-container');
-    const rowIndex = Array.from(itemsContainer.children).indexOf(itemElement);
-    
-    console.log('Row index:', rowIndex);
-    
-    // Get all containers
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    // Get current values from the row
-    const quantityElement = itemsContainer.children[rowIndex];
-    const nameElement = namesContainer.children[rowIndex];
-    const addonsElement = addonsContainer.children[rowIndex];
-    const priceElement = pricesContainer.children[rowIndex];
-    
-    // Extract quantity (get first word which should be the number)
-    const currentQuantity = quantityElement.textContent.trim().split(' ')[0];
-    const currentName = nameElement.textContent;
-    const currentAddons = addonsElement.textContent;
-    const currentUnitPrice = priceElement.getAttribute('data-unit-price');
-    
-    console.log('Current values:', { currentQuantity, currentName, currentUnitPrice });
-    
-    // Create a simple edit dialog
-    const newQuantity = prompt(`Edit quantity for "${currentName}":`, currentQuantity);
-    
-    if (newQuantity !== null && newQuantity !== '' && !isNaN(newQuantity) && parseInt(newQuantity) > 0) {
-        // Update the quantity display (keep the Edit/Delete buttons with consistent styling)
-        quantityElement.innerHTML = `${parseInt(newQuantity)} 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        // Update total using latest unit price
-        updateTotal();
-        
-        console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
-        
-        // Sync changes to database if we have an order ID
-        if (currentOrderId) {
-            syncOrderToDatabase().then(success => {
-                if (success) {
-                    console.log('✅ Edit changes synced to database');
-                } else {
-                    console.warn('⚠️ Failed to sync edit changes to database');
-                }
-            });
-        }
-    } else if (newQuantity !== null) {
-        showInvalidQuantityModal();
-    }
-}
-
-// Function to delete an item from the grid
-function deleteItem(buttonElement) {
-    console.log('Delete button clicked');
-    
-    // Find the row index by looking at the button's parent container
-    const itemElement = buttonElement.parentElement;
-    const itemsContainer = document.getElementById('items-container');
-    const rowIndex = Array.from(itemsContainer.children).indexOf(itemElement);
-    
-    console.log('Row index to delete:', rowIndex);
-    
-    // Get all containers
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    // Get item name for confirmation
-    const nameElement = namesContainer.children[rowIndex];
-    const itemName = nameElement.textContent;
-      // Show delete confirmation modal
-    showDeleteItemModal(itemName, () => {
-        // Remove the corresponding elements from all containers
-        itemsContainer.removeChild(itemsContainer.children[rowIndex]);
-        namesContainer.removeChild(namesContainer.children[rowIndex]);
-        addonsContainer.removeChild(addonsContainer.children[rowIndex]);
-        pricesContainer.removeChild(pricesContainer.children[rowIndex]);
-        
-        // Update total
-        updateTotal();
-        
-        console.log(`Item "${itemName}" removed from order`);
-        
-        // Sync changes to database if we have an order ID
-        if (currentOrderId) {
-            syncOrderToDatabase().then(success => {
-                if (success) {
-                    console.log('✅ Delete changes synced to database');
-                } else {
-                    console.warn('⚠️ Failed to sync delete changes to database');
-                }
-            });
-        }
-    });
-}
-
-// Show delete item confirmation modal
-function showDeleteItemModal(itemName, onConfirm) {
-    const modal = document.getElementById('deleteItemModal');
-    const messageElement = modal.querySelector('.delete-message');
-    messageElement.innerHTML = `Are you sure you want to remove <strong>"${itemName}"</strong> from the order?`;
-    
-    // Store the confirmation callback
-    modal.confirmCallback = onConfirm;
-    modal.classList.add('show');
-}
-
-// Close delete item modal
-function closeDeleteItemModal() {
-    const modal = document.getElementById('deleteItemModal');
-    modal.classList.remove('show');
-    delete modal.confirmCallback;
-}
-
-// Confirm delete item
-function confirmDeleteItem() {
-    const modal = document.getElementById('deleteItemModal');
-    if (modal.confirmCallback) {
-        modal.confirmCallback();
-    }
-    closeDeleteItemModal();
-}
-
-// Track the item being edited
-let editingItemIndex = -1;
-
-// Show edit modal with item details
-function showEditModal(itemDetails) {
-    const modal = document.getElementById('editItemModal');
-    const itemName = modal.querySelector('.edit-item-name');
-    const quantityValue = modal.querySelector('.quantity-value');
-    
-    // Store the row index for saving later
-    editingItemIndex = itemDetails.rowIndex;
-    
-    // Set item details
-    itemName.textContent = itemDetails.name || 'Item';
-    quantityValue.textContent = itemDetails.quantity || '1';
-    
-    // Set selected add-ons if any
-    const currentAddons = itemDetails.addons ? itemDetails.addons.split(', ') : [];
-    modal.querySelectorAll('.edit-addon-box').forEach(addon => {
-        const addonName = addon.querySelector('span').textContent;
-        addon.classList.toggle('selected', currentAddons.includes(addonName));
-    });
-    
-    // Show modal
-    modal.classList.add('show');
-    
-    // Setup event listeners
-    setupEditModalListeners();
-}
-
-function setupEditModalListeners() {
-    const modal = document.getElementById('editItemModal');
-    const closeBtn = modal.querySelector('.close-modal');
-    const cancelBtn = modal.querySelector('.cancel-btn');
-    const saveBtn = modal.querySelector('.save-btn');
-    const minusBtn = modal.querySelector('.edit-quantity-btn.minus-btn');
-    const plusBtn = modal.querySelector('.edit-quantity-btn.plus-btn');
-    const quantitySpan = modal.querySelector('.quantity-value');
-    const addons = modal.querySelectorAll('.edit-addon-box');
-
-    // Close modal events
-    closeBtn.onclick = cancelBtn.onclick = () => {
-        modal.classList.remove('show');
-        editingItemIndex = -1;
-    };
-
-    // Save changes
-    saveBtn.onclick = saveChanges;
-
-    // Quantity controls
-    minusBtn.onclick = () => {
-        let qty = parseInt(quantitySpan.textContent);
-        if (qty > 1) {
-            quantitySpan.textContent = qty - 1;
-            minusBtn.disabled = qty - 1 <= 1;
-        }
-    };
-
-    plusBtn.onclick = () => {
-        let qty = parseInt(quantitySpan.textContent);
-        quantitySpan.textContent = qty + 1;
-        minusBtn.disabled = false;
-    };
-
-    // Add-ons selection
-    addons.forEach(addon => {
-        addon.onclick = () => {
-            addon.classList.toggle('selected');
-        };
-    });
-}
-
-function saveChanges() {
-    if (editingItemIndex === -1) return;
-    
-    const modal = document.getElementById('editItemModal');
-    const quantity = parseInt(modal.querySelector('.quantity-value').textContent);
-    
-    // Get selected add-ons
-    const selectedAddons = Array.from(modal.querySelectorAll('.edit-addon-box.selected'))
-        .map(addon => addon.querySelector('span').textContent)
-        .filter(name => name);
-    
-    // Get current item info
-    const namesContainer = document.getElementById('names-container');
-    const pricesContainer = document.getElementById('prices-container');
-    const currentName = namesContainer.children[editingItemIndex].textContent;
-    
-    // Get base price (we need to calculate from current data or use a default)
-    // For now, we'll use the current unit price and subtract known add-ons
-    let currentUnitPrice = parseFloat(pricesContainer.children[editingItemIndex].getAttribute('data-unit-price'));
-    
-    // Calculate add-ons total
-    const addonsTotal = Array.from(modal.querySelectorAll('.edit-addon-box.selected'))
-        .reduce((sum, addon) => sum + parseFloat(addon.dataset.price || 0), 0);
-    
-    // For simplicity, we'll estimate base price by subtracting previous add-ons
-    // In a real system, you'd store the base price separately
-    let basePrice = currentUnitPrice; // This is an approximation
-    
-    // Calculate new unit price
-    const newUnitPrice = basePrice + addonsTotal;
-    
-    // Update the grid
-    const itemsContainer = document.getElementById('items-container');
-    const addonsContainer = document.getElementById('addons-container');
-    
-    // Update quantity
-    const itemDiv = itemsContainer.children[editingItemIndex];
-    itemDiv.innerHTML = `${quantity} 
-        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-    
-    // Update add-ons
-    const addonsDiv = addonsContainer.children[editingItemIndex];
-    addonsDiv.textContent = selectedAddons.length ? selectedAddons.join(', ') : '-';
-    
-    // Update price with new unit price
-    const priceDiv = pricesContainer.children[editingItemIndex];
-    priceDiv.textContent = `₱${newUnitPrice.toFixed(2)}`;
-    priceDiv.setAttribute('data-unit-price', newUnitPrice);
-    
-    // Update total using latest unit prices
-    updateTotal();
-    
-    // Sync changes to database if we have an order ID
-    if (currentOrderId) {
-        syncOrderToDatabase().then(success => {
-            if (success) {
-                console.log('✅ Edit modal changes synced to database');
-            } else {
-                console.warn('⚠️ Failed to sync edit modal changes to database');
-            }
-        });
-    }
-    
-    // Close modal
-    modal.classList.remove('show');
-    editingItemIndex = -1;
-}
-
-// Update editItem function to include row index
-function editItem(buttonElement) {
-    const itemElement = buttonElement.parentElement;
-    const itemsContainer = document.getElementById('items-container');
-    const rowIndex = Array.from(itemElement.parentElement.children).indexOf(itemElement);
-    
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    
-    const itemName = namesContainer.children[rowIndex].textContent;
-    const quantity = itemElement.textContent.trim().split(' ')[0];
-    const addons = addonsContainer.children[rowIndex].textContent;
-    
-    showEditModal({
-        name: itemName,
-        quantity: quantity,
-        addons: addons,
-        rowIndex: rowIndex
-    });
-}
-
-// Show order number required modal
-function showOrderNumberRequiredModal() {
-    const modal = document.getElementById('orderNumberRequiredModal');
-    modal.classList.add('show');
-}
-
-// Close order number required modal
-function closeOrderNumberRequiredModal() {
-    const modal = document.getElementById('orderNumberRequiredModal');
-    modal.classList.remove('show');
-}
-
-// Show order not found modal
-function showOrderNotFoundModal(message) {
-    const modal = document.getElementById('orderNotFoundModal');
-    const messageElement = modal.querySelector('.error-message');
-    messageElement.textContent = message;
-    modal.classList.add('show');
-}
-
-// Close order not found modal
-function closeOrderNotFoundModal() {
-    const modal = document.getElementById('orderNotFoundModal');
-    modal.classList.remove('show');
-}
-
-// Show lookup error modal
-function showLookupErrorModal(message) {
-    const modal = document.getElementById('lookupErrorModal');
-    const messageElement = modal.querySelector('.error-message');
-    messageElement.textContent = message;
-    modal.classList.add('show');
-}
-
-// Close lookup error modal
-function closeLookupErrorModal() {
-    const modal = document.getElementById('lookupErrorModal');
-    modal.classList.remove('show');
-}
-
-// Show no items selected modal
-function showNoItemsSelectedModal() {
-    const modal = document.getElementById('noItemsSelectedModal');
-    modal.classList.add('show');
-}
-
-// Close no items selected modal
-function closeNoItemsSelectedModal() {
-    const modal = document.getElementById('noItemsSelectedModal');
-    modal.classList.remove('show');
-}
-
-// Show invalid quantity modal
-function showInvalidQuantityModal() {
-    const modal = document.getElementById('invalidQuantityModal');
-    modal.classList.add('show');
-}
-
-// Close invalid quantity modal
-function closeInvalidQuantityModal() {
-    const modal = document.getElementById('invalidQuantityModal');
-    modal.classList.remove('show');
-}
-
 // Add item to the main cashiering grid
 function addItemToGrid(name, price, addons = []) {
     const itemsContainer = document.getElementById('items-container');
     const namesContainer = document.getElementById('names-container');
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
-    
-    // Calculate unit price including add-ons
-    let unitPrice = parseFloat(price);
-    if (addons && Array.isArray(addons) && addons.length > 0) {
-        addons.forEach(addon => {
-            if (addon.price) {
-                unitPrice += parseFloat(addon.price);
-            }
-        });
-    }
     
     // Format add-ons for comparison
     const addonsText = addons && Array.isArray(addons) && addons.length > 0 
@@ -1793,10 +1535,8 @@ function addItemToGrid(name, price, addons = []) {
             <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
             <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
         
-        // Update the data attribute with the latest unit price
-        const priceElement = pricesContainer.children[existingRowIndex];
-        priceElement.setAttribute('data-unit-price', unitPrice);
-        priceElement.textContent = `₱${unitPrice.toFixed(2)}`;
+        // Let updateTotal() recalculate with correct pricing logic
+        updateTotal();
     } else {
         // Create new row
         const itemDiv = document.createElement('div');
@@ -1815,16 +1555,491 @@ function addItemToGrid(name, price, addons = []) {
         
         const priceDiv = document.createElement('div');
         priceDiv.style.cssText = itemStyle;
+        
+        // Step 1: Get original price
+        const originalPrice = getBasePrice(name);
+        
+        // Step 2: Calculate total add-ons price
+        let totalAddOnsPrice = 0;
+        if (addons && Array.isArray(addons) && addons.length > 0) {
+            totalAddOnsPrice = addons.reduce((sum, addon) => {
+                const addonName = addon.name || addon;
+                return sum + getAddonPrice(addonName);
+            }, 0);
+        }
+        
+        // Step 3: Calculate unit price = original + total add-ons
+        const unitPrice = originalPrice + totalAddOnsPrice;
+        
+        // Step 4: Set price display (quantity is 1 for new items)
         priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
-        // Store calculated unit price for accurate calculation
-        priceDiv.setAttribute('data-unit-price', unitPrice);
         
         itemsContainer.appendChild(itemDiv);
         namesContainer.appendChild(nameDiv);
         addonsContainer.appendChild(addonsDiv);
         pricesContainer.appendChild(priceDiv);
+        
+        // Recalculate total using the updated calculation logic
+        updateTotal();
+    }
+}
+
+// Sample base prices for items
+function getBasePrice(itemName) {
+    // Return base prices for items - adjust these according to your actual prices
+    const prices = {
+        'Espresso': 120,
+        'Cappuccino': 150,
+        'Americano': 130,
+        'Latte': 140,
+        'Macha': 145,
+        'Iced Latte': 140,
+        'Iced Americano': 130,
+        'Cold Brew': 140,
+        'Frappuccino': 160,
+        'Affogato': 155,
+        'Strawberry Italian Soda': 110,
+        'Lemon-Lime Fizz': 110,
+        'Raspberry Spritzer': 115,
+        'Donut': 80,
+        'Apple Pie': 90,
+        'Cinnamon Roll': 70,
+        'Sugar Cookie': 60,
+        'Brownie': 75,
+        'BLT (Bacon, Lettuce, Tomato)': 180,
+        'Club Sandwich': 190,
+        'Ham and Cheese Sandwich': 160,
+        'Tuna Salad Sandwich': 170,
+        'Chocolate Cake': 200,
+        'Cheesecake': 220,
+        'Carrot Cake': 190,
+        'Black Forest Cake': 210,
+        'Red Velvet Cake': 215
+    };
+    return prices[itemName] || 100; // Default price if not found
+}
+
+// Get price of add-ons
+function getAddonPrice(addonName) {
+    // Return prices for add-ons
+    const addonPrices = {
+        'Extra Milk': 15,
+        'Extra Sugar': 10,
+        'Whipped Cream': 20,
+        'Caramel Syrup': 25
+    };
+    return addonPrices[addonName] || 0;
+}
+
+// ============ EDIT ITEM FUNCTIONALITY ============
+
+let currentEditingIndex = -1;
+
+function editItem(button) {
+    console.log('Edit item clicked');
+    
+    // Get the row index
+    const itemDiv = button.parentNode;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
+    
+    if (rowIndex === -1) {
+        console.error('Could not find row index');
+        return;
     }
     
-    // Always update total after adding items
+    currentEditingIndex = rowIndex;
+    
+    // Get item data from the grid
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    const quantity = parseInt(itemDiv.childNodes[0].textContent.trim());
+    const itemName = namesContainer.children[rowIndex].textContent;
+    const addonsText = addonsContainer.children[rowIndex].textContent;
+    const totalPrice = parseFloat(pricesContainer.children[rowIndex].textContent.replace('₱', ''));
+    
+    console.log(`Editing: ${itemName}, Qty: ${quantity}, Price: ${totalPrice}, Add-ons: ${addonsText}`);
+    
+    // Show edit modal and populate with current data
+    showEditModal(itemName, quantity, addonsText, totalPrice);
+}
+
+function showEditModal(itemName, quantity, addonsText, totalPrice) {
+    const modal = document.getElementById('editItemModal');
+    
+    // Populate modal with current item data
+    modal.querySelector('.edit-item-name').textContent = itemName;
+    modal.querySelector('.quantity-value').textContent = quantity;
+    
+    // Check if this item is a hot/cold coffee item
+    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
+    
+    // Handle add-ons section visibility and functionality
+    const addonsSection = modal.querySelector('.edit-addons-section');
+    const addonBoxes = modal.querySelectorAll('.edit-addon-box');
+    
+    if (isHotOrColdCoffee) {
+        // Enable add-ons for hot/cold coffee
+        addonsSection.style.opacity = '1';
+        addonBoxes.forEach(addon => {
+            addon.style.opacity = '1';
+            addon.style.pointerEvents = 'auto';
+            addon.style.cursor = 'pointer';
+        });
+        
+        // Handle add-ons selection for coffee items
+        const addonsArray = addonsText !== '-' ? addonsText.split(', ').map(a => a.trim()) : [];
+        
+        // Clear previous selections
+        addonBoxes.forEach(addon => {
+            addon.classList.remove('selected');
+        });
+        
+        // Select current add-ons
+        addonsArray.forEach(addonName => {
+            const addonBox = Array.from(addonBoxes).find(box => {
+                const spanText = box.querySelector('span').textContent;
+                return spanText === addonName;
+            });
+            if (addonBox) {
+                addonBox.classList.add('selected');
+            }
+        });
+    } else {
+        // Disable add-ons for non-coffee items
+        addonsSection.style.opacity = '0.5';
+        addonBoxes.forEach(addon => {
+            addon.classList.remove('selected');
+            addon.style.opacity = '0.3';
+            addon.style.pointerEvents = 'none';
+            addon.style.cursor = 'not-allowed';
+        });
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Set up event handlers if not already set
+    setupEditModalHandlers();
+}
+
+// Helper function to check if item name belongs to hot/cold coffee categories
+function isHotOrColdCoffeeItemByName(itemName) {
+    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Macha'];
+    const coldCoffeeItems = ['Iced Latte', 'Iced Americano', 'Cold Brew', 'Frappuccino', 'Affogato'];
+    
+    return hotCoffeeItems.includes(itemName) || coldCoffeeItems.includes(itemName);
+}
+
+function setupEditModalHandlers() {
+    const modal = document.getElementById('editItemModal');
+    
+    // Close button
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn && !closeBtn.hasAttribute('data-handler-set')) {
+        closeBtn.addEventListener('click', closeEditModal);
+        closeBtn.setAttribute('data-handler-set', 'true');
+    }
+    
+    // Quantity controls
+    const minusBtn = modal.querySelector('.minus-btn');
+    const plusBtn = modal.querySelector('.plus-btn');
+    const quantitySpan = modal.querySelector('.quantity-value');
+    
+    if (minusBtn && !minusBtn.hasAttribute('data-handler-set')) {
+        minusBtn.addEventListener('click', () => {
+            let qty = parseInt(quantitySpan.textContent);
+            if (qty > 1) {
+                qty--;
+                quantitySpan.textContent = qty;
+            }
+        });
+        minusBtn.setAttribute('data-handler-set', 'true');
+    }
+    
+    if (plusBtn && !plusBtn.hasAttribute('data-handler-set')) {
+        plusBtn.addEventListener('click', () => {
+            let qty = parseInt(quantitySpan.textContent);
+            qty++;
+            quantitySpan.textContent = qty;
+        });
+        plusBtn.setAttribute('data-handler-set', 'true');
+    }
+    
+    // Add-on selection - only set handlers if not already set
+    modal.querySelectorAll('.edit-addon-box').forEach(addon => {
+        if (!addon.hasAttribute('data-handler-set')) {
+            addon.addEventListener('click', () => {
+                // Only allow selection if the add-on is enabled (has pointer events)
+                const computedStyle = window.getComputedStyle(addon);
+                if (computedStyle.pointerEvents !== 'none') {
+                    addon.classList.toggle('selected');
+                }
+            });
+            addon.setAttribute('data-handler-set', 'true');
+        }
+    });
+    
+    // Save and cancel buttons
+    const saveBtn = modal.querySelector('.save-btn');
+    const cancelBtn = modal.querySelector('.cancel-btn');
+    
+    if (saveBtn && !saveBtn.hasAttribute('data-handler-set')) {
+        saveBtn.addEventListener('click', saveEditedItem);
+        saveBtn.setAttribute('data-handler-set', 'true');
+    }
+    
+    if (cancelBtn && !cancelBtn.hasAttribute('data-handler-set')) {
+        cancelBtn.addEventListener('click', closeEditModal);
+        cancelBtn.setAttribute('data-handler-set', 'true');
+    }
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editItemModal');
+    modal.classList.remove('show');
+    currentEditingIndex = -1;
+}
+
+function saveEditedItem() {
+    if (currentEditingIndex === -1) {
+        console.error('No item being edited');
+        return;
+    }
+    
+    const modal = document.getElementById('editItemModal');
+    const newQuantity = parseInt(modal.querySelector('.quantity-value').textContent);
+    const itemName = modal.querySelector('.edit-item-name').textContent;
+    
+    // Check if this is a hot/cold coffee item to determine if add-ons should be processed
+    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
+    
+    // Get selected add-ons only for hot/cold coffee items
+    const selectedAddons = [];
+    if (isHotOrColdCoffee) {
+        modal.querySelectorAll('.edit-addon-box.selected').forEach(addon => {
+            const addonName = addon.querySelector('span').textContent;
+            selectedAddons.push(addonName);
+        });
+    }
+    
+    // Update the grid
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    const itemDiv = itemsContainer.children[currentEditingIndex];
+    
+    // Step 1: Get original price
+    const originalPrice = getBasePrice(itemName);
+    
+    // Step 2: Calculate total add-ons price (only for hot/cold coffee)
+    let totalAddOnsPrice = 0;
+    if (isHotOrColdCoffee) {
+        totalAddOnsPrice = selectedAddons.reduce((sum, addonName) => {
+            return sum + getAddonPrice(addonName);
+        }, 0);
+    }
+    
+    // Step 3: Calculate updated unit price = original + total add-ons
+    const unitPrice = originalPrice + totalAddOnsPrice;
+    
+    // Step 4: Calculate total amount = unit price × quantity
+    const totalPrice = unitPrice * newQuantity;
+    
+    // Update quantity display
+    itemDiv.innerHTML = `${newQuantity} 
+        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+    
+    // Update add-ons display (only show add-ons for hot/cold coffee)
+    if (isHotOrColdCoffee) {
+        addonsContainer.children[currentEditingIndex].textContent = selectedAddons.length > 0 ? selectedAddons.join(', ') : '-';
+    } else {
+        addonsContainer.children[currentEditingIndex].textContent = '-';
+    }
+    
+    // Update price display with calculated total
+    pricesContainer.children[currentEditingIndex].textContent = `₱${totalPrice.toFixed(2)}`;
+    
+    // Recalculate total using the updated calculation logic
     updateTotal();
+    
+    // Sync to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Edit changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync edit changes to database');
+            }
+        });
+    }
+    
+    // Close modal
+    closeEditModal();
+}
+
+// ============ DELETE ITEM FUNCTIONALITY ============
+
+let deleteItemIndex = -1;
+
+function deleteItem(button) {
+    console.log('Delete item clicked');
+    
+    // Get the row index
+    const itemDiv = button.parentNode;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
+    
+    if (rowIndex === -1) {
+        console.error('Could not find row index');
+        return;
+    }
+    
+    deleteItemIndex = rowIndex;
+    
+    // Get item name for confirmation
+    const namesContainer = document.getElementById('names-container');
+    const itemName = namesContainer.children[rowIndex].textContent;
+    
+    // Show delete confirmation modal
+    showDeleteItemModal(itemName);
+}
+
+function showDeleteItemModal(itemName) {
+    const modal = document.getElementById('deleteItemModal');
+    const messageElement = modal.querySelector('.delete-message');
+    messageElement.textContent = `Are you sure you want to remove "${itemName}" from the order?`;
+    modal.classList.add('show');
+}
+
+function closeDeleteItemModal() {
+    const modal = document.getElementById('deleteItemModal');
+    modal.classList.remove('show');
+    deleteItemIndex = -1;
+}
+
+function confirmDeleteItem() {
+    if (deleteItemIndex === -1) {
+        console.error('No item selected for deletion');
+        return;
+    }
+    
+    // Remove item from all containers
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    itemsContainer.removeChild(itemsContainer.children[deleteItemIndex]);
+    namesContainer.removeChild(namesContainer.children[deleteItemIndex]);
+    addonsContainer.removeChild(addonsContainer.children[deleteItemIndex]);
+    pricesContainer.removeChild(pricesContainer.children[deleteItemIndex]);
+    
+    // Update total
+    updateTotal();
+    
+    // Sync to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Delete changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync delete changes to database');
+            }
+        });
+    }
+    
+    // Close modal
+    closeDeleteItemModal();
+    
+    console.log('Item deleted successfully');
+}
+
+// Make functions globally accessible
+window.editItem = editItem;
+window.deleteItem = deleteItem;
+window.addSelectedItems = addSelectedItems;
+window.closeAddItemModal = closeAddItemModal;
+window.showAddItemModal = showAddItemModal;
+window.closeOrderNumberRequiredModal = closeOrderNumberRequiredModal;
+window.closeOrderNotFoundModal = closeOrderNotFoundModal;
+window.closeLookupErrorModal = closeLookupErrorModal;
+window.closeNoItemsSelectedModal = closeNoItemsSelectedModal;
+window.closeInvalidQuantityModal = closeInvalidQuantityModal;
+window.closeDeleteItemModal = closeDeleteItemModal;
+window.confirmDeleteItem = confirmDeleteItem;
+window.lookupOrder = function() {
+    console.log('🎯 Global lookupOrder called!');
+    return lookupOrderInternal();
+};
+
+// ============ LOOKUP MODAL FUNCTIONS ============
+
+// Show order number required modal
+function showOrderNumberRequiredModal() {
+    const modal = document.getElementById('orderNumberRequiredModal');
+    modal.classList.add('show');
+}
+
+// Close order number required modal
+function closeOrderNumberRequiredModal() {
+    const modal = document.getElementById('orderNumberRequiredModal');
+    modal.classList.remove('show');
+}
+
+// Show order not found modal
+function showOrderNotFoundModal(message) {
+    const modal = document.getElementById('orderNotFoundModal');
+    const messageElement = modal.querySelector('.error-message');
+    messageElement.textContent = message || 'Order not found';
+    modal.classList.add('show');
+}
+
+// Close order not found modal
+function closeOrderNotFoundModal() {
+    const modal = document.getElementById('orderNotFoundModal');
+    modal.classList.remove('show');
+}
+
+// Show lookup error modal
+function showLookupErrorModal(message) {
+    const modal = document.getElementById('lookupErrorModal');
+    const messageElement = modal.querySelector('.error-message');
+    messageElement.textContent = message || 'An error occurred while looking up the order.';
+    modal.classList.add('show');
+}
+
+// Close lookup error modal
+function closeLookupErrorModal() {
+    const modal = document.getElementById('lookupErrorModal');
+    modal.classList.remove('show');
+}
+
+// Show no items selected modal
+function showNoItemsSelectedModal() {
+    const modal = document.getElementById('noItemsSelectedModal');
+    modal.classList.add('show');
+}
+
+// Close no items selected modal
+function closeNoItemsSelectedModal() {
+    const modal = document.getElementById('noItemsSelectedModal');
+    modal.classList.remove('show');
+}
+
+// Show invalid input modal
+function showInvalidQuantityModal() {
+    const modal = document.getElementById('invalidQuantityModal');
+    modal.classList.add('show');
+}
+
+// Close invalid quantity modal
+function closeInvalidQuantityModal() {
+    const modal = document.getElementById('invalidQuantityModal');
+    modal.classList.remove('show');
 }
