@@ -495,19 +495,10 @@ function handleCancel() {
     }
 }
 
-// Menu navigation function
+// Menu navigation function - now opens modal instead of redirecting
 function goToMenu() {
-    // Save current order state
-    const orderState = {
-        queueNumber: document.getElementById('queueNumber').value,
-        currentItems: getOrderItems(),
-        datetime: document.getElementById('datetime').textContent,
-        total: document.getElementById('total').textContent
-    };
-    // Save to localStorage for menuinterface to access
-    localStorage.setItem('pendingOrder', JSON.stringify(orderState));
-    // Navigate to menuinterface.html
-    window.location.href = 'menuinterface.html';
+    // Show the add item modal
+    showAddItemModal();
 }
 
 // Helper function to get current order items
@@ -684,3 +675,613 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('updatedOrderFromMenu');
     }
 });
+
+// ============ ADD ITEM MODAL FUNCTIONALITY ============
+
+let selectedCoffeeItem = null;
+let modalOrderItems = {};
+let modalInitialized = false;
+
+// Show the add item modal
+function showAddItemModal() {
+    const modal = document.getElementById('addItemModal');
+    modal.classList.add('show');
+    
+    // Reset modal state
+    resetModalState();
+    
+    // Initialize modal functionality only once
+    if (!modalInitialized) {
+        initializeModalFunctionality();
+        modalInitialized = true;
+    }
+}
+
+// Close the add item modal
+function closeAddItemModal() {
+    const modal = document.getElementById('addItemModal');
+    modal.classList.remove('show');
+    
+    // Reset all selections and quantities
+    resetModalState();
+}
+
+// Reset modal state
+function resetModalState() {
+    selectedCoffeeItem = null;
+    modalOrderItems = {};
+    
+    // Reset all quantities to 0
+    document.querySelectorAll('#addItemModal .quantity-value').forEach(value => {
+        value.textContent = '0';
+    });
+    
+    // Reset all minus buttons to disabled
+    document.querySelectorAll('#addItemModal .quantity-btn.minus').forEach(btn => {
+        btn.disabled = true;
+    });
+    
+    // Remove selected classes
+    document.querySelectorAll('#addItemModal .food-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Reset add-ons
+    document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+        addon.classList.remove('selected');
+        addon.removeAttribute('data-for-item');
+    });
+    
+    // Reset selected item display
+    const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
+    if (selectedItemName) {
+        selectedItemName.textContent = 'Select a coffee item first';
+        selectedItemName.classList.add('none-selected');
+    }
+    
+    // Show coffee category by default
+    showCategory('coffee');
+}
+
+// Initialize modal functionality
+function initializeModalFunctionality() {
+    // Category switching
+    const categoryButtons = document.querySelectorAll('#addItemModal .category-button');
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.dataset.category;
+            showCategory(category);
+        });
+    });
+    
+    // Food item selection and quantity controls
+    const foodItems = document.querySelectorAll('#addItemModal .food-item');
+    foodItems.forEach(item => {
+        // Item selection
+        item.addEventListener('click', function(e) {
+            if (e.target.closest('.quantity-btn')) {
+                e.stopPropagation();
+                return;
+            }
+            selectFoodItem(this);
+        });
+        
+        // Quantity controls
+        const minusBtn = item.querySelector('.quantity-btn.minus');
+        const plusBtn = item.querySelector('.quantity-btn.plus');
+        const valueSpan = item.querySelector('.quantity-value');
+        
+        minusBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            decreaseQuantity(item, valueSpan, minusBtn);
+        });
+        
+        plusBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            increaseQuantity(item, valueSpan, minusBtn);
+        });
+    });
+    
+    // Add-on selection
+    const addons = document.querySelectorAll('#addItemModal .addon-circle');
+    addons.forEach(addon => {
+        addon.addEventListener('click', function() {
+            toggleAddon(this);
+        });
+    });
+}
+
+// Show specific category
+function showCategory(category) {
+    // Update category buttons
+    document.querySelectorAll('#addItemModal .category-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.category === category) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Show/hide grids
+    const coffeeGrid = document.querySelector('#addItemModal .coffee-grid');
+    const snacksGrid = document.querySelector('#addItemModal .snacks-grid');
+    const addonsSection = document.querySelector('#addItemModal .addons-section');
+    
+    if (category === 'coffee') {
+        coffeeGrid.classList.add('active');
+        snacksGrid.classList.remove('active');
+        addonsSection.style.display = 'block';
+    } else {
+        snacksGrid.classList.add('active');
+        coffeeGrid.classList.remove('active');
+        addonsSection.style.display = 'none';
+    }
+    
+    // Reset selections when switching categories
+    document.querySelectorAll('#addItemModal .food-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    selectedCoffeeItem = null;
+    
+    // Reset selected item display
+    const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
+    if (selectedItemName) {
+        selectedItemName.textContent = 'Select a coffee item first';
+        selectedItemName.classList.add('none-selected');
+    }
+}
+
+// Track the most recently selected coffee item for add-ons
+let currentActiveCoffee = null;
+
+// Select food item
+function selectFoodItem(item) {
+    // Get current quantity and UI elements
+    const quantityValue = item.querySelector('.quantity-value');
+    const minusBtn = item.querySelector('.quantity-btn.minus');
+    const currentQuantity = parseInt(quantityValue.textContent);
+    
+    // Check if this is a coffee item
+    const isCoffeeItem = item.closest('.coffee-grid') !== null;    if (isCoffeeItem) {
+        // For coffee items, implement individual toggle behavior
+        if (currentQuantity === 0) {
+            // Select this coffee item and set quantity to 1
+            item.classList.add('selected');
+            quantityValue.textContent = '1';
+            minusBtn.disabled = false;
+            
+            // Set this as the current active coffee for add-ons
+            currentActiveCoffee = item;
+            
+            updateModalOrderItem(item);
+            
+            // Update the add-on display
+            updateAddonDisplay();
+        } else {
+            // Deselect this coffee item and set quantity to 0
+            item.classList.remove('selected');
+            quantityValue.textContent = '0';
+            minusBtn.disabled = true;
+            
+            const foodName = item.querySelector('.food-name').textContent;
+            
+            // Clear any add-ons associated with this item
+            document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+                if (addon.getAttribute('data-for-item') === foodName) {
+                    addon.classList.remove('selected');
+                    addon.removeAttribute('data-for-item');
+                }
+            });
+            
+            // If this was the active coffee, find another selected coffee or clear
+            if (currentActiveCoffee === item) {
+                const otherSelectedCoffee = document.querySelector('#addItemModal .coffee-grid .food-item.selected');
+                currentActiveCoffee = otherSelectedCoffee || null;
+            }
+            
+            removeModalOrderItem(item);
+            
+            // Update the add-on display
+            updateAddonDisplay();
+        }
+    }else {
+        // For non-coffee items (snacks), implement individual toggle behavior
+        if (currentQuantity === 0) {
+            // Select and set quantity to 1
+            item.classList.add('selected');
+            quantityValue.textContent = '1';
+            minusBtn.disabled = false;
+            updateModalOrderItem(item);
+        } else {
+            // Deselect and set quantity to 0
+            item.classList.remove('selected');
+            quantityValue.textContent = '0';
+            minusBtn.disabled = true;
+            removeModalOrderItem(item);
+        }
+    }
+}
+
+// Increase quantity
+function increaseQuantity(item, valueSpan, minusBtn) {
+    let value = parseInt(valueSpan.textContent);
+    value++;
+    valueSpan.textContent = value;
+    minusBtn.disabled = false;
+    item.classList.add('selected');
+    
+    // If this is a coffee item, set it as the current active coffee
+    const isCoffeeItem = item.closest('.coffee-grid') !== null;
+    if (isCoffeeItem) {
+        currentActiveCoffee = item;
+        updateAddonDisplay();
+    }
+    
+    updateModalOrderItem(item);
+}
+
+// Decrease quantity
+function decreaseQuantity(item, valueSpan, minusBtn) {
+    let value = parseInt(valueSpan.textContent);
+    if (value > 0) {
+        value--;
+        valueSpan.textContent = value;
+        minusBtn.disabled = value === 0;
+        
+        if (value === 0) {
+            item.classList.remove('selected');
+            
+            // If this was the active coffee, find another selected coffee or clear
+            const isCoffeeItem = item.closest('.coffee-grid') !== null;
+            if (isCoffeeItem && currentActiveCoffee === item) {
+                const otherSelectedCoffee = document.querySelector('#addItemModal .coffee-grid .food-item.selected');
+                currentActiveCoffee = otherSelectedCoffee || null;
+                updateAddonDisplay();
+            }
+            
+            removeModalOrderItem(item);
+        } else {
+            updateModalOrderItem(item);
+        }
+    }
+}
+
+// Toggle add-on selection
+function toggleAddon(addon) {
+    // Check if there's an active coffee item
+    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected')) {
+        // Flash the "Select an item first" text
+        const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
+        selectedItemName.style.animation = 'none';
+        setTimeout(() => {
+            selectedItemName.style.animation = 'flash 0.5s 2';
+        }, 10);
+        return;
+    }
+    
+    const foodName = currentActiveCoffee.querySelector('.food-name').textContent;
+    const isCurrentlySelected = addon.classList.contains('selected') && addon.getAttribute('data-for-item') === foodName;
+    
+    if (isCurrentlySelected) {
+        // Remove selection if it was associated with this item
+        addon.classList.remove('selected');
+        addon.removeAttribute('data-for-item');
+    } else {
+        // Add selection and associate with current active coffee
+        addon.classList.add('selected');
+        addon.setAttribute('data-for-item', foodName);
+    }
+    
+    // Update the order item with new add-ons
+    updateModalOrderItem(currentActiveCoffee);
+}
+
+// Show selection modal for which coffee item to add the add-on to
+function showCoffeeSelectionForAddon(addon, selectedCoffeeItems) {
+    // Create a simple selection interface
+    const addonName = addon.getAttribute('data-name');
+    
+    // Create a temporary selection div
+    const selectionDiv = document.createElement('div');
+    selectionDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 2px solid #8B4513;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 300px;
+        text-align: center;
+    `;
+    
+    selectionDiv.innerHTML = `
+        <h4 style="margin-top: 0; color: #8B4513;">Add ${addonName} to which coffee?</h4>
+        <div id="coffee-selection-buttons" style="margin: 15px 0;"></div>
+        <button onclick="this.parentElement.remove()" style="background: #ccc; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">Cancel</button>
+    `;
+    
+    const buttonsContainer = selectionDiv.querySelector('#coffee-selection-buttons');
+    
+    // Add button for each selected coffee item
+    selectedCoffeeItems.forEach(coffeeItem => {
+        const foodName = coffeeItem.querySelector('.food-name').textContent;
+        const button = document.createElement('button');
+        button.textContent = foodName;
+        button.style.cssText = `
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        `;
+        
+        button.onclick = () => {
+            // Add the add-on to this specific coffee item
+            const isCurrentlySelected = addon.classList.contains('selected') && addon.getAttribute('data-for-item') === foodName;
+            
+            if (isCurrentlySelected) {
+                // Remove if already selected for this item
+                addon.classList.remove('selected');
+                addon.removeAttribute('data-for-item');
+            } else {
+                // Add to this coffee item
+                addon.classList.add('selected');
+                addon.setAttribute('data-for-item', foodName);
+            }
+            
+            // Update the order item
+            updateModalOrderItem(coffeeItem);
+            
+            // Update the display to show which item has add-ons
+            updateAddonDisplay();
+            
+            // Remove the selection modal
+            selectionDiv.remove();
+        };
+        
+        // Highlight if this coffee already has this add-on
+        if (addon.getAttribute('data-for-item') === foodName) {
+            button.style.background = '#A0522D';
+            button.innerHTML = `${foodName} ✓`;
+        }
+        
+        buttonsContainer.appendChild(button);
+    });
+    
+    document.body.appendChild(selectionDiv);
+}
+
+// Update the add-on display to show current associations
+function updateAddonDisplay() {
+    const selectedItemName = document.querySelector('#addItemModal .selected-item-name');
+    
+    if (!currentActiveCoffee || !currentActiveCoffee.classList.contains('selected')) {
+        selectedItemName.textContent = 'Select a coffee item first';
+        selectedItemName.classList.add('none-selected');
+        
+        // Clear all add-on visual selections (but keep the data attributes)
+        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+            addon.classList.remove('selected');
+        });
+    } else {
+        const foodName = currentActiveCoffee.querySelector('.food-name').textContent;
+        selectedItemName.textContent = foodName;
+        selectedItemName.classList.remove('none-selected');
+        
+        // Show add-ons for the current active coffee item
+        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+            if (addon.getAttribute('data-for-item') === foodName) {
+                addon.classList.add('selected');
+            } else {
+                addon.classList.remove('selected');
+            }
+        });
+    }
+}
+
+// Update modal order item
+function updateModalOrderItem(item) {
+    const name = item.dataset.name;
+    const price = parseFloat(item.dataset.price);
+    const quantity = parseInt(item.querySelector('.quantity-value').textContent);
+    
+    if (quantity > 0) {
+        // Get associated add-ons
+        const addons = [];
+        document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+            if (addon.getAttribute('data-for-item') === name) {
+                addons.push({
+                    name: addon.dataset.name,
+                    price: parseFloat(addon.dataset.price)
+                });
+            }
+        });
+        
+        modalOrderItems[name] = {
+            name: name,
+            price: price,
+            quantity: quantity,
+            addons: addons
+        };
+    } else {
+        delete modalOrderItems[name];
+    }
+}
+
+// Remove modal order item
+function removeModalOrderItem(item) {
+    const name = item.dataset.name;
+    delete modalOrderItems[name];
+    
+    // Remove associated add-ons
+    document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
+        if (addon.getAttribute('data-for-item') === name) {
+            addon.classList.remove('selected');
+            addon.removeAttribute('data-for-item');
+        }
+    });
+}
+
+// Add selected items to the main order
+function addSelectedItems() {
+    const itemsToAdd = Object.values(modalOrderItems);
+    
+    if (itemsToAdd.length === 0) {
+        alert('Please select at least one item.');
+        return;
+    }
+    
+    // Add items to the main order
+    itemsToAdd.forEach(item => {
+        // Calculate total price including add-ons
+        let totalPrice = item.price;
+        item.addons.forEach(addon => {
+            totalPrice += addon.price;
+        });
+          // Add each quantity as a separate item (matching the database structure)
+        for (let i = 0; i < item.quantity; i++) {
+            // Add to grid with same structure as database items
+            // Keep product name clean and let addItemToGrid handle add-ons in separate column
+            addItemToGrid(item.name, totalPrice, item.addons);
+        }
+    });
+    
+    // Update total
+    updateTotal();
+    
+    // Close modal
+    closeAddItemModal();
+}
+
+// Add item to the main cashiering grid
+function addItemToGrid(name, price, addons = []) {
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Create quantity element with Edit and Delete buttons (same as addOrderItemFromDB)
+    const itemDiv = document.createElement('div');
+    itemDiv.style.cssText = itemStyle;
+    itemDiv.innerHTML = `1 
+        <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+    
+    // Create name element
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = itemStyle;
+    nameDiv.textContent = name;
+    
+    // Create add-ons element
+    const addonsDiv = document.createElement('div');
+    addonsDiv.style.cssText = itemStyle;
+    if (addons && Array.isArray(addons) && addons.length > 0) {
+        addonsDiv.textContent = addons.map(a => a.name || a).join(', ');
+    } else {
+        addonsDiv.textContent = '-';
+    }
+    
+    // Create price element
+    const priceDiv = document.createElement('div');
+    priceDiv.style.cssText = itemStyle;
+    priceDiv.textContent = `₱${price.toFixed(2)}`;
+    
+    // Add to containers (same structure as addOrderItemFromDB)
+    itemsContainer.appendChild(itemDiv);
+    namesContainer.appendChild(nameDiv);
+    addonsContainer.appendChild(addonsDiv);
+    pricesContainer.appendChild(priceDiv);
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('addItemModal');
+    if (e.target === modal) {
+        closeAddItemModal();
+    }
+});
+
+// Initialize modal when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // The modal functionality will be initialized when the modal is shown
+    console.log('Add item modal functionality ready');
+});
+
+// ============ EDIT AND DELETE ITEM FUNCTIONALITY ============
+
+// Function to edit an item in the grid
+function editItem(buttonElement) {
+    const itemRow = buttonElement.closest('div').parentElement;
+    const rowIndex = Array.from(itemRow.parentElement.children).indexOf(itemRow);
+    
+    // Get all containers
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Get current values from the row
+    const quantityElement = itemsContainer.children[rowIndex];
+    const nameElement = namesContainer.children[rowIndex];
+    const addonsElement = addonsContainer.children[rowIndex];
+    const priceElement = pricesContainer.children[rowIndex];
+    
+    const currentQuantity = quantityElement.textContent.trim().split(' ')[0]; // Get quantity number only
+    const currentName = nameElement.textContent;
+    const currentAddons = addonsElement.textContent;
+    const currentPrice = priceElement.textContent.replace('₱', '');
+    
+    // Create a simple edit dialog
+    const newQuantity = prompt(`Edit quantity for "${currentName}":`, currentQuantity);
+    
+    if (newQuantity !== null && newQuantity !== '' && !isNaN(newQuantity) && parseInt(newQuantity) > 0) {
+        // Update the quantity display (keep the Edit/Delete buttons)
+        quantityElement.innerHTML = `${parseInt(newQuantity)} 
+            <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+        
+        // Update total if needed
+        updateTotal();
+        
+        console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
+    } else if (newQuantity !== null) {
+        alert('Please enter a valid quantity (positive number).');
+    }
+}
+
+// Function to delete an item from the grid
+function deleteItem(buttonElement) {
+    const itemRow = buttonElement.closest('div').parentElement;
+    const rowIndex = Array.from(itemRow.parentElement.children).indexOf(itemRow);
+    
+    // Get all containers
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Get item name for confirmation
+    const nameElement = namesContainer.children[rowIndex];
+    const itemName = nameElement.textContent;
+    
+    // Confirm deletion
+    if (confirm(`Are you sure you want to remove "${itemName}" from the order?`)) {
+        // Remove the corresponding elements from all containers
+        itemsContainer.removeChild(itemsContainer.children[rowIndex]);
+        namesContainer.removeChild(namesContainer.children[rowIndex]);
+        addonsContainer.removeChild(addonsContainer.children[rowIndex]);
+        pricesContainer.removeChild(pricesContainer.children[rowIndex]);
+        
+        // Update total
+        updateTotal();
+        
+        console.log(`Item "${itemName}" removed from order`);
+    }
+}
