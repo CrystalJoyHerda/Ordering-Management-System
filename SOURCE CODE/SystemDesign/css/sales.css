@@ -56,7 +56,7 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .card:hover {
@@ -110,12 +110,12 @@
 }
 
 .chart-placeholder {
-    height: 300px;
+    height: 400px;
     position: relative;
-    padding: 20px;
-    background-color: #f9f5f1;
-    border-radius: 8px;
-    margin: 20px 0;
+    padding: 30px;
+    background-color: #faf7f2;
+    border-radius: 12px;
+    margin: 0 20px;
 }
 
 .chart-labels {
@@ -124,75 +124,63 @@
     left: 0;
     width: 100%;
     height: 100%;
-    padding: 20px;
-    z-index: 1;
+    padding: 30px 50px 20px;
 }
 
 .y-axis {
     position: absolute;
-    left: 0;
-    top: 10px;
-    height: calc(100% - 30px);
+    left: 25px;
+    top: 30px;
+    height: calc(100% - 80px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    color: #67503b;
+    color: #666;
     font-family: Arial, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
-    line-height: 0.8;
-    width: 55px;
+    width: 80px;
     text-align: right;
-    padding-right: 10px;
-}
-
-.y-axis span {
-    display: block;
-    margin: -3px 0;
-    padding: 0;
+    padding-right: 15px;
 }
 
 .x-axis {
     position: absolute;
-    bottom: 10px;
-    left: 60px;
-    right: 20px;
+    bottom: 20px;
+    left: 95px;
+    right: 25px;
     display: flex;
     justify-content: space-between;
+    padding: 0 15px;
+}
+
+.x-axis span {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    padding: 0 15px;
 }
 
 .bar-graph {
-    position: relative;
-    height: calc(100% - 30px);
-    margin-left: 60px;
+    position: absolute;
+    left: 95px;
+    right: 25px;
+    top: 25px;
+    height: calc(100% - 80px);
     display: flex;
     align-items: flex-end;
-    gap: 15px;
-    z-index: 2;
+    gap: 0;
+    padding: 0 15px;
 }
 
 .bar {
     flex: 1;
+    margin: 0 15px;
+    min-height: 2px;
     background: linear-gradient(to top, #67503b, #a67c52);
-    border-radius: 4px 4px 0 0;
-    transition: height 0.3s ease;
-    cursor: pointer;
-    position: relative;
-}
-
-.bar:hover::after {
-    content: attr(data-value);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 10;
+    border-radius: 6px 6px 0 0;
+    transform-origin: bottom;
 }
 
 /* Products Table */
@@ -237,11 +225,11 @@
 
 /* Chart Labels and Description */
 .chart-placeholder {
-    height: 300px;
+    height: 400px;
     position: relative;
-    padding: 30px 60px 40px;
-    background-color: #f9f5f1;
-    border-radius: 8px;
+    padding: 30px;
+    background-color: #faf7f2;
+    border-radius: 12px;
     margin: 0 20px;
 }
 
@@ -256,44 +244,49 @@
 
 .y-axis {
     position: absolute;
-    left: 10px;
-    top: 20px;
-    height: calc(100% - 50px);
+    left: 25px;
+    top: 30px;
+    height: calc(100% - 80px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    color: #67503b;
+    color: #666;
     font-family: Arial, sans-serif;
     font-size: 12px;
     font-weight: 500;
+    width: 80px;
+    text-align: right;
+    padding-right: 15px;
 }
 
 .x-axis {
     position: absolute;
-    bottom: 0;
-    left: 50px;
-    right: 20px;
+    bottom: 20px;
+    left: 95px;
+    right: 25px;
     display: flex;
     justify-content: space-between;
-    color: #67503b;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: 500;
+    padding: 0 15px;
 }
 
-.x-axis span, .y-axis span {
+.x-axis span {
+    flex: 1;
     text-align: center;
-    min-width: 60px;
+    font-size: 12px;
+    color: #666;
+    padding: 0 15px;
 }
 
 .bar-graph {
-    position: relative;
-    height: 100%;
-    margin-left: 50px;
+    position: absolute;
+    left: 95px;
+    right: 25px;
+    top: 25px;
+    height: calc(100% - 80px);
     display: flex;
     align-items: flex-end;
-    gap: 15px;
-    padding-bottom: 30px;
+    gap: 0;
+    padding: 0 15px;
 }
 
 .chart-description {
@@ -360,57 +353,4 @@
     color: white;
     border-color: #67503b;
     box-shadow: 0 2px 4px rgba(103, 80, 59, 0.2);
-}
-
-/* Loading and Error States */
-.loading {
-    opacity: 0.7;
-    position: relative;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #67503b;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-.error-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 10px;
-    border-radius: 4px;
-    margin: 10px 0;
-    border: 1px solid #f5c6cb;
-}
-
-.success-message {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 10px;
-    border-radius: 4px;
-    margin: 10px 0;
-    border: 1px solid #c3e6cb;
-}
-
-/* Table row hover effects */
-.products-table tbody tr {
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.products-table tbody tr:hover {
-    background-color: #f8f5f1;
 }
