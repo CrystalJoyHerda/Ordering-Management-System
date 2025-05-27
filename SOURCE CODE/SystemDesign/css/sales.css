@@ -56,7 +56,7 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
 }
 
 .card:hover {
@@ -176,6 +176,23 @@
     background: linear-gradient(to top, #67503b, #a67c52);
     border-radius: 4px 4px 0 0;
     transition: height 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.bar:hover::after {
+    content: attr(data-value);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
 }
 
 /* Products Table */
@@ -343,4 +360,57 @@
     color: white;
     border-color: #67503b;
     box-shadow: 0 2px 4px rgba(103, 80, 59, 0.2);
+}
+
+/* Loading and Error States */
+.loading {
+    opacity: 0.7;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #67503b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    border: 1px solid #f5c6cb;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    border: 1px solid #c3e6cb;
+}
+
+/* Table row hover effects */
+.products-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.products-table tbody tr:hover {
+    background-color: #f8f5f1;
 }
