@@ -902,4 +902,264 @@ document.addEventListener('DOMContentLoaded', () => {
             throw error;
         }
     }
+
+    // View Order Modal close handlers
+    const viewOrderModal = document.getElementById('viewOrderModal');
+    const cancelButton = viewOrderModal?.querySelector('.cancel-modal-btn');
+    const closeButton = viewOrderModal?.querySelector('.close-modal');
+    
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+            // Close modal and return to menu
+            closeViewOrderModalAndReturn();
+        });
+    }
+    
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            closeViewOrderModalAndReturn();
+        });
+    }
+    
+    // Close when clicking outside modal
+    viewOrderModal?.addEventListener('click', function(e) {
+        if (e.target === viewOrderModal) {
+            closeViewOrderModalAndReturn();
+        }
+    });
 });
+
+// Function to close modal and return to menu
+function closeViewOrderModalAndReturn() {
+    const modal = document.getElementById('viewOrderModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+    // Return to menu
+    goToMenu();
+}
+
+window.increaseQuantity = function(item) {
+    const quantityValue = item.querySelector('.quantity-value');
+    const minusBtn = item.querySelector('.quantity-btn.minus');
+    
+    // Get current quantity and increment by exactly 1
+    let currentQuantity = parseInt(quantityValue.textContent) || 0;
+    currentQuantity = currentQuantity + 1;
+    
+    // Update display
+    quantityValue.textContent = currentQuantity.toString();
+    minusBtn.disabled = false;
+    
+    // Update item state
+    item.classList.add('selected');
+    
+    // Update order
+    updateOrderItem(item, currentQuantity);
+}
+
+window.decreaseQuantity = function(item) {
+    const quantityValue = item.querySelector('.quantity-value');
+    const minusBtn = item.querySelector('.quantity-btn.minus');
+    
+    // Get current quantity
+    let currentQuantity = parseInt(quantityValue.textContent) || 0;
+    
+    if (currentQuantity > 0) {
+        // Decrease by exactly 1
+        currentQuantity = currentQuantity - 1;
+        
+        // Update display
+        quantityValue.textContent = currentQuantity.toString();
+        minusBtn.disabled = currentQuantity === 0;
+        
+        if (currentQuantity === 0) {
+            item.classList.remove('selected');
+            removeFromOrder(item);
+        } else {
+            updateOrderItem(item, currentQuantity);
+        }
+    }
+}
+
+function updateOrderItem(item, quantity) {
+    const name = item.querySelector('.food-name').textContent;
+    const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
+    
+    // Find or create order item
+    let orderItem = currentOrder.find(order => order.name === name);
+    
+    if (orderItem) {
+        orderItem.quantity = quantity;
+        orderItem.total = price * quantity;
+    } else {
+        currentOrder.push({
+            name: name,
+            price: price,
+            quantity: quantity,
+            total: price * quantity
+        });
+    }
+    
+    updateOrderDisplay();
+}
+
+function removeFromOrder(item) {
+    const name = item.querySelector('.food-name').textContent;
+    currentOrder = currentOrder.filter(order => order.name !== name);
+    updateOrderDisplay();
+}
+
+function updateOrderDisplay() {
+    const totalAmount = currentOrder.reduce((sum, item) => sum + item.total, 0);
+    const totalItems = currentOrder.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Update total display
+    const totalElement = document.querySelector('.total-amount');
+    if (totalElement) {
+        totalElement.textContent = `₱${totalAmount.toFixed(2)}`;
+    }
+    
+    // Update item count
+    const itemCountElement = document.querySelector('.item-count');
+    if (itemCountElement) {
+        itemCountElement.textContent = totalItems;
+    }
+}
+
+// Initialize empty order array if not exists
+if (typeof currentOrder === 'undefined') {
+    let currentOrder = [];
+}
+
+// Initialize quantity controls with proper event handling
+document.addEventListener('DOMContentLoaded', function() {
+    setupQuantityControls();
+});
+
+function setupQuantityControls() {
+    const foodItems = document.querySelectorAll('.food-item');
+    
+    foodItems.forEach(item => {
+        const minusBtn = item.querySelector('.minus');
+        const plusBtn = item.querySelector('.plus');
+        const quantityValue = item.querySelector('.quantity-value');
+        
+        // Initialize quantity to 0
+        quantityValue.textContent = '0';
+        minusBtn.disabled = true;
+        
+        // Remove any existing event listeners to prevent duplicates
+        const newPlusBtn = plusBtn.cloneNode(true);
+        const newMinusBtn = minusBtn.cloneNode(true);
+        plusBtn.parentNode.replaceChild(newPlusBtn, plusBtn);
+        minusBtn.parentNode.replaceChild(newMinusBtn, minusBtn);
+        
+        // Add fresh event listeners
+        newPlusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            increaseQuantity(item);
+        });
+        
+        newMinusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            decreaseQuantity(item);
+        });
+    });
+}
+
+function increaseQuantity(item) {
+    const quantityValue = item.querySelector('.quantity-value');
+    const minusBtn = item.querySelector('.minus');
+    
+    // Get current quantity and increment by exactly 1
+    let currentQuantity = parseInt(quantityValue.textContent) || 0;
+    currentQuantity = currentQuantity + 1;
+    
+    // Update display
+    quantityValue.textContent = currentQuantity.toString();
+    minusBtn.disabled = false;
+    
+    // Update item state
+    item.classList.add('selected');
+    
+    // Update order
+    updateOrderItem(item, currentQuantity);
+}
+
+function decreaseQuantity(item) {
+    const quantityValue = item.querySelector('.quantity-value');
+    const minusBtn = item.querySelector('.minus');
+    
+    // Get current quantity
+    let currentQuantity = parseInt(quantityValue.textContent) || 0;
+    
+    if (currentQuantity > 0) {
+        // Decrease by exactly 1
+        currentQuantity = currentQuantity - 1;
+        
+        // Update display
+        quantityValue.textContent = currentQuantity.toString();
+        minusBtn.disabled = currentQuantity === 0;
+        
+        if (currentQuantity === 0) {
+            item.classList.remove('selected');
+            removeFromOrder(item);
+        } else {
+            updateOrderItem(item, currentQuantity);
+        }
+    }
+}
+
+function updateOrderItem(item, quantity) {
+    const name = item.querySelector('.food-name').textContent;
+    const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
+    
+    // Find or create order item
+    let orderItem = currentOrder.find(order => order.name === name);
+    
+    if (orderItem) {
+        orderItem.quantity = quantity;
+        orderItem.total = price * quantity;
+    } else {
+        currentOrder.push({
+            name: name,
+            price: price,
+            quantity: quantity,
+            total: price * quantity
+        });
+    }
+    
+    updateOrderDisplay();
+}
+
+function removeFromOrder(item) {
+    const name = item.querySelector('.food-name').textContent;
+    currentOrder = currentOrder.filter(order => order.name !== name);
+    updateOrderDisplay();
+}
+
+function updateOrderDisplay() {
+    const totalAmount = currentOrder.reduce((sum, item) => sum + item.total, 0);
+    const totalItems = currentOrder.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Update total display
+    const totalElement = document.querySelector('.total-amount');
+    if (totalElement) {
+        totalElement.textContent = `₱${totalAmount.toFixed(2)}`;
+    }
+    
+    // Update item count
+    const itemCountElement = document.querySelector('.item-count');
+    if (itemCountElement) {
+        itemCountElement.textContent = totalItems;
+    }
+}
+
+// Initialize empty order array if not exists
+if (typeof currentOrder === 'undefined') {
+    let currentOrder = [];
+}
