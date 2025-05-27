@@ -4,6 +4,7 @@
     <title>Cashier Dashboard</title>
     <link rel="stylesheet" href="../css/cashierdashboard.css">
     <link rel="icon" href="../assets/images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -37,41 +38,32 @@
                 </div>
             </div>
             <div class="content-area">
-                <!-- Dashboard content would go here -->
                 <div class="dashboard-widgets">
                     <div class="widget">
-                        <h3>Today's Summary</h3>
-                        <div class="date-time">Loading...</div>
-                        <div class="stats-container">
-                            <div class="stat-box">
-                                <div class="stat-label">Orders Today</div>
-                                <div class="stat-value" id="orders-count">-</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Sales Today</div>
-                                <div class="stat-value" id="sales-total">₱0.00</div>
-                            </div>
+                        <h3>Quick Actions</h3>
+                        <div class="quick-links">
+                            <a href="cashiering.html" class="quick-link-card" data-role-access="cashier">
+                                <div class="quick-link-icon">🛍️</div>
+                                <div class="quick-link-text">
+                                    <h4>Cashiering</h4>
+                                    <p>Process customer orders and payments</p>
+                                </div>
+                            </a>
+                            <a href="stockscashier.html" class="quick-link-card" data-role-access="cashier,admin">
+                                <div class="quick-link-icon">📦</div>
+                                <div class="quick-link-text">
+                                    <h4>Stocks</h4>
+                                    <p>View and manage inventory levels</p>
+                                </div>
+                            </a>
+                            <a href="saleshistorycashier.html" class="quick-link-card" data-role-access="cashier,admin">
+                                <div class="quick-link-icon">📊</div>
+                                <div class="quick-link-text">
+                                    <h4>Sales History</h4>
+                                    <p>View transaction history and reports</p>
+                                </div>
+                            </a>
                         </div>
-                    </div>
-                    
-                    <div class="widget">
-                        <h3>Recent Orders</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Time</th>
-                                    <th>Items</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders">
-                                <tr>
-                                    <td colspan="5">Loading recent orders...</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -87,7 +79,10 @@
                 <button id="cancel-logout" class="cancel-logout">Cancel</button>
             </div>
         </div>
-    </div>    <script src="../js/auth.js"></script>
+    </div>
+
+    <!-- Script References -->
+    <script src="../js/auth.js"></script>
     <script src="../js/auth-check.js"></script>
     <script src="../js/rbac.js"></script>
     <script src="../js/logout-helper.js"></script>

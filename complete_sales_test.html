@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales History Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #cce5ff; color: #004085; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .iframe-container {
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sales History Database Integration Test</h1>
+        
+        <div class="test-section">
+            <h3>📡 API Connectivity Tests</h3>
+            <button onclick="testAllAPIs()">Test All APIs</button>
+            <button onclick="testDatabaseConnection()">Test Database Connection</button>
+            <div id="apiResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Sales Data Verification</h3>
+            <button onclick="verifySalesData()">Verify Sales Data</button>
+            <button onclick="testDataStructure()">Test Data Structure</button>
+            <div id="dataResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Sales History Page Integration</h3>
+            <button onclick="testSalesHistoryPage()">Test Page Integration</button>
+            <button onclick="openSalesHistoryPage()">Open Sales History Page</button>
+            <div id="integrationResults"></div>
+        </div>
+        
+        <div class="iframe-container">
+            <h3>📱 Live Sales History Page Preview</h3>
+            <iframe id="salesHistoryFrame" src="http://localhost/SOURCE_CODE/SystemDesign/pages/saleshistorycashier.html"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost/SOURCE_CODE/Employee/public/api';
+        
+        function addResult(containerId, title, data, className = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${className}`;
+            resultDiv.innerHTML = `<strong>${title}</strong>\n${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}`;
+            container.appendChild(resultDiv);
+        }
+        
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+        
+        async function testAllAPIs() {
+            clearResults('apiResults');
+            
+            const tests = [
+                { name: 'Debug/Timezone', endpoint: 'sales.php?action=debug_timezone' },
+                { name: 'Sales Overview', endpoint: 'sales.php?action=overview' },
+                { name: 'Top Products', endpoint: 'sales.php?action=top_products&limit=5' },
+                { name: 'Sales Trends', endpoint: 'sales.php?action=trends&timeframe=daily' }
+            ];
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/${test.endpoint}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        addResult('apiResults', `✅ ${test.name}`, data, 'success');
+                    } else {
+                        addResult('apiResults', `❌ ${test.name}`, `HTTP ${response.status}: ${response.statusText}`, 'error');
+                    }
+                } catch (error) {
+                    addResult('apiResults', `🚨 ${test.name}`, `Error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testDatabaseConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sales.php?action=debug_timezone`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    addResult('apiResults', '✅ Database Connection', 'Database is connected and responding', 'success');
+                    addResult('apiResults', '📅 Server Time Info', data, 'info');
+                } else {
+                    addResult('apiResults', '❌ Database Connection', 'Database connection failed', 'error');
+                }
+            } catch (error) {
+                addResult('apiResults', '🚨 Database Connection', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function verifySalesData() {
+            clearResults('dataResults');
+            
+            try {
+                // Test overview data
+                const overviewResponse = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+                const overviewData = await overviewResponse.json();
+                
+                // Test products data
+                const productsResponse = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=10`);
+                const productsData = await productsResponse.json();
+                
+                if (overviewData.status === 'success' && productsData.status === 'success') {
+                    addResult('dataResults', '✅ Sales Data Available', 
+                        `Today's Sales: ₱${overviewData.data.today.total}\nTop Products: ${productsData.data.length} items`, 'success');
+                    
+                    addResult('dataResults', '📊 Overview Data', overviewData.data, 'info');
+                    addResult('dataResults', '🛍️ Products Data', productsData.data, 'info');
+                } else {
+                    addResult('dataResults', '❌ Sales Data Error', 'Failed to retrieve sales data', 'error');
+                }
+            } catch (error) {
+                addResult('dataResults', '🚨 Sales Data Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDataStructure() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=3`);
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.data.length > 0) {
+                    const sampleProduct = data.data[0];
+                    const requiredFields = ['product_name', 'total_quantity', 'total_revenue'];
+                    const hasAllFields = requiredFields.every(field => sampleProduct.hasOwnProperty(field));
+                    
+                    if (hasAllFields) {
+                        addResult('dataResults', '✅ Data Structure Valid', 
+                            `All required fields present: ${requiredFields.join(', ')}`, 'success');
+                        addResult('dataResults', '📝 Sample Product Data', sampleProduct, 'info');
+                    } else {
+                        addResult('dataResults', '❌ Data Structure Invalid', 
+                            `Missing fields in product data`, 'error');
+                    }
+                } else {
+                    addResult('dataResults', '⚠️ No Data Available', 'No products found in database', 'error');
+                }
+            } catch (error) {
+                addResult('dataResults', '🚨 Data Structure Test Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSalesHistoryPage() {
+            clearResults('integrationResults');
+            
+            // Test if the page can load the JavaScript functions
+            try {
+                // Simulate the page's data loading process
+                const overviewResponse = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+                const overviewData = await overviewResponse.json();
+                
+                const productsResponse = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=10`);
+                const productsData = await productsResponse.json();
+                
+                if (overviewData.status === 'success' && productsData.status === 'success') {
+                    addResult('integrationResults', '✅ Page Integration Test', 
+                        'Sales history page can successfully load data from database', 'success');
+                    
+                    // Test data formatting for display
+                    const formattedData = productsData.data.map(product => ({
+                        product: product.product_name,
+                        quantity: product.total_quantity,
+                        total: `₱${Number(product.total_revenue).toFixed(2)}`
+                    }));
+                    
+                    addResult('integrationResults', '📋 Formatted Display Data', formattedData, 'info');
+                } else {
+                    addResult('integrationResults', '❌ Page Integration Failed', 
+                        'Sales history page cannot load data from database', 'error');
+                }
+            } catch (error) {
+                addResult('integrationResults', '🚨 Integration Test Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function openSalesHistoryPage() {
+            window.open('http://localhost/SOURCE_CODE/SystemDesign/pages/saleshistorycashier.html', '_blank');
+        }
+        
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            addResult('apiResults', '🚀 Test Environment', 
+                `API Base URL: ${API_BASE_URL}\nTimestamp: ${new Date().toLocaleString()}`, 'info');
+        };
+    </script>
+</body>
+</html>
