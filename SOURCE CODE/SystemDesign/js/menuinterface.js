@@ -108,113 +108,117 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Food item selection and quantity scaler handling
-    const foodItems = document.querySelectorAll('.food-item');
-    foodItems.forEach(item => {
-        const quantityValue = item.querySelector('.quantity-value');
-        const minusBtn = item.querySelector('.minus');
+    function setupFoodItemHandlers() {
+        const foodItems = document.querySelectorAll('.food-item');
         
-        // Set initial quantity to 0
-        quantityValue.textContent = '0';
-        minusBtn.disabled = true;
+        foodItems.forEach(item => {
+            const quantityValue = item.querySelector('.quantity-value');
+            const minusBtn = item.querySelector('.minus');
+            
+            // Set initial state
+            quantityValue.textContent = '0';
+            minusBtn.disabled = true;
 
-        item.addEventListener('click', (e) => {
-            // Don't trigger if clicking quantity buttons
-            if (e.target.closest('.quantity-btn')) {
-                e.stopPropagation();
-                return;
-            }
-
-            // Deselect other items and hide their quantity scalers
-            foodItems.forEach(otherItem => {
-                if (otherItem !== item) {
-                    otherItem.classList.remove('selected');
+            item.addEventListener('click', (e) => {
+                // Don't trigger if clicking quantity buttons
+                if (e.target.closest('.quantity-btn')) {
+                    e.stopPropagation();
+                    return;
                 }
-            });
 
-            // Toggle selection of current item
-            const wasSelected = item.classList.contains('selected');
-            item.classList.toggle('selected');
-            
-            // Check if this is a second click on an item that's already in the order
-            const quantity = parseInt(quantityValue.textContent);
-            const isInOrder = item.classList.contains('in-order');
-            
-            if (wasSelected && isInOrder) {
-                // User is clicking an item that's already in the order - ask if they want to remove it
+                const wasSelected = item.classList.contains('selected');
+                const currentQuantity = parseInt(quantityValue.textContent);
                 const foodName = item.querySelector('.food-name').textContent;
-                
-                showConfirmationModal(foodName, () => {
-                    // Reset quantity to 0
+
+                if (wasSelected) {
+                    // Immediately remove item when unselecting
+                    item.classList.remove('selected', 'in-order');
                     quantityValue.textContent = '0';
                     minusBtn.disabled = true;
-                    item.classList.remove('in-order');                                    // Clean up any associated add-ons
-                                    document.querySelectorAll('.addon-circle').forEach(addon => {
-                                        if (addon.getAttribute('data-for-item') === foodName) {
-                                            addon.classList.remove('selected');
-                                            // Important: Remove the association completely
-                                            addon.removeAttribute('data-for-item');
-                                        }
-                                    });
                     
-                    updateOrderSummary();
-                });
-                
-                return;
-            }
-              // Update the selected item display in the add-ons section
-            const selectedItemName = document.querySelector('.selected-item-name');
-            if (item.classList.contains('selected')) {
-                const foodName = item.querySelector('.food-name').textContent;
-                const rightSection = document.querySelector('.right-section');
-                
-                // Check if the selected food item is in the coffee grid
-                const isCoffeeItem = item.closest('.coffee-grid') !== null;
-                
-                if (isCoffeeItem) {
-                    // Show add-ons section for coffee items
-                    rightSection.style.display = 'block';
-                    selectedItemName.textContent = foodName;
-                    selectedItemName.classList.remove('none-selected');
-                    
-                    // Highlight any add-ons already associated with this item
+                    // Clear associated add-ons
                     document.querySelectorAll('.addon-circle').forEach(addon => {
-                        // Only update visual selection, don't remove data-for-item attributes
                         if (addon.getAttribute('data-for-item') === foodName) {
-                            addon.classList.add('selected');
-                        } else {
-                            // Just visually deselect add-ons for other items
                             addon.classList.remove('selected');
+                            addon.removeAttribute('data-for-item');
                         }
                     });
-                } else {
-                    // Hide add-ons section for non-coffee items
-                    rightSection.style.display = 'none';
-                }
-                
-                // If item was just selected and has 0 quantity, set to 1
-                if (quantityValue.textContent === '0') {
-                    quantityValue.textContent = '1';
-                    minusBtn.disabled = false;
-                    item.classList.add('in-order');
+                    
+                    // Remove from order
+                    removeFromOrder(foodName);
                     updateOrderSummary();
-                }            } else {
-                selectedItemName.textContent = 'Select an item first';
-                selectedItemName.classList.add('none-selected');
-                
-                // Check if we're in the coffee category
-                const isCoffeeCategory = coffeeGrid.classList.contains('active');
-                if (isCoffeeCategory) {
-                    // Make sure add-ons section is visible if we're in coffee category
-                    rightSection.style.display = 'block';
+                    
+                } else {
+                    // Select new item
+                    item.classList.add('selected');
+                    if (currentQuantity === 0) {
+                        quantityValue.textContent = '1';
+                        minusBtn.disabled = false;
+                        item.classList.add('in-order');
+                    }
+                    addToOrder(item);
                 }
                 
-                // Visually deselect all add-ons, but keep their associations
-                document.querySelectorAll('.addon-circle').forEach(addon => {
-                    addon.classList.remove('selected');
-                });
-            }
+                updateSelectedItemDisplay();
+            });
+
+            // Quantity controls with immediate removal
+            minusBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                let quantity = parseInt(quantityValue.textContent);
+                if (quantity > 0) {
+                    quantity--;
+                    quantityValue.textContent = quantity;
+                    
+                    if (quantity === 0) {
+                        // Immediately remove when quantity reaches 0
+                        item.classList.remove('selected', 'in-order');
+                        minusBtn.disabled = true;
+                        removeFromOrder(item.querySelector('.food-name').textContent);
+                    } else {
+                        updateOrderQuantity(item, quantity);
+                    }
+                    
+                    updateOrderSummary();
+                }
+            });
         });
-    });
+    }
+
+    // Helper functions for order management
+    function removeFromOrder(itemName) {
+        // Remove from order array
+        currentOrder = currentOrder.filter(item => item.name !== itemName);
+        
+        // Clear associated add-ons
+        delete selectedAddons[itemName];
+        
+        // Update displays
+        updateOrderSummary();
+        updateSelectedItemDisplay();
+    }
+
+    function updateOrderSummary() {
+        const total = currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        document.querySelector('.total-amount').textContent = `₱${total.toFixed(2)}`;
+    }
+
+    function updateSelectedItemDisplay() {
+        const selectedItem = document.querySelector('.food-item.selected');
+        const displayElement = document.querySelector('.selected-item-name');
+        
+        if (selectedItem) {
+            const name = selectedItem.querySelector('.food-name').textContent;
+            displayElement.textContent = name;
+            displayElement.classList.remove('none-selected');
+        } else {
+            displayElement.textContent = 'Select an item first';
+            displayElement.classList.add('none-selected');
+        }
+    }
+
+    // Initial setup
+    setupFoodItemHandlers();
 
     // Prevent quantity buttons from closing the scaler
     document.querySelectorAll('.quantity-scaler').forEach(scaler => {
