@@ -287,3 +287,105 @@ h2 {
     background-color: #00ff37;
     color: black;
 }
+
+/* Invalid Cash Amount Modal Styles */
+.invalid-cash-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.invalid-cash-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.invalid-cash-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInScale {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.invalid-cash-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.invalid-cash-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.invalid-cash-modal .warning-icon {
+    font-size: 24px;
+    color: #fff3cd;
+}
+
+.invalid-cash-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.invalid-cash-modal .error-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.invalid-cash-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.invalid-cash-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.invalid-cash-modal .ok-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}

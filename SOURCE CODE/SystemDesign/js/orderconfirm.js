@@ -67,13 +67,13 @@ function setupCashInputHandler() {
                 
                 if (cash < total) {
                     e.preventDefault();
-                    alert('Please enter sufficient cash amount.');
+                    showInvalidCashModal();
                     return;
                 }
                 
                 if (cash === 0) {
                     e.preventDefault();
-                    alert('Please enter cash amount.');
+                    showInvalidCashModal();
                     return;
                 }
                 
@@ -83,15 +83,27 @@ function setupCashInputHandler() {
     }
 }
 
+// Show invalid cash amount modal
+function showInvalidCashModal() {
+    const modal = document.getElementById('invalidCashModal');
+    modal.classList.add('show');
+}
+
+// Close invalid cash amount modal
+function closeInvalidCashModal() {
+    const modal = document.getElementById('invalidCashModal');
+    modal.classList.remove('show');
+}
+
 function handlePrint() {
     const orderData = JSON.parse(localStorage.getItem('currentOrder'));
     const cashAmount = document.getElementById('cashInput').value;
     const totalAmount = document.getElementById('totalAmount').textContent;
     const changeAmount = document.getElementById('changeAmount').textContent;
 
-    // Validate cash input
+    // Validate cash input - replace alert with modal
     if (!cashAmount || parseFloat(cashAmount) <= 0) {
-        alert('Please enter a valid cash amount');
+        showInvalidCashModal();
         return;
     }
 
@@ -110,6 +122,14 @@ function handlePrint() {
     // Navigate directly to receipt page without print dialog
     window.location.href = 'receiptinter.html';
 }
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('invalidCashModal');
+    if (e.target === modal) {
+        closeInvalidCashModal();
+    }
+});
 
 // Make functions globally accessible
 window.handlePrint = handlePrint;

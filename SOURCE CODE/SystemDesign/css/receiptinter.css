@@ -70,9 +70,8 @@ h1 {
     padding: 10px 0;
     border-top: 1px dashed #ccc;
     border-bottom: 1px dashed #ccc;
-    height: auto;
-    max-height: 300px;
-    overflow-y: auto;
+    height: auto; /* Keep auto height */
+    /* Remove max-height and overflow-y to allow full expansion */
 }
 
 .item {

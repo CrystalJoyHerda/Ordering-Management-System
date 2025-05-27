@@ -18,7 +18,8 @@
                     <input type="text" readonly>
                 </div>
             </div>
-            <button class="employee-btn" onclick="window.location.href='employee.html'">Employee</button>
+            <!-- Employee button removed, keeping empty space for layout -->
+            <div></div>
         </div>
 
         <div class="content">
@@ -54,6 +55,28 @@
                     </div>
                 </div>
                 <button class="print-btn" onclick="handlePrint()">Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invalid Cash Amount Modal -->
+    <div class="invalid-cash-modal" id="invalidCashModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">⚠️</span>
+                    Invalid Cash Amount
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Please enter a valid cash amount.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeInvalidCashModal()">
+                    OK
+                </button>
             </div>
         </div>
     </div>
