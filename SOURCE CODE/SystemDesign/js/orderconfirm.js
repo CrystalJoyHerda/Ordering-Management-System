@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load order data
     const orderData = JSON.parse(localStorage.getItem('currentOrder'));
     if (!orderData) {
-        alert('No order found');
+        console.log('No order found');
         window.location.href = 'cashiering.html';
         return;
     }
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Create grid row with improved alignment and styling
-        const row = document.createElement('div');
+        const row =
         row.style.cssText = 'display: grid; grid-template-columns: 0.8fr 2.5fr 2fr 1.2fr; padding: 12px 15px; background: white; margin-bottom: 4px; border-radius: 6px; border-left: 4px solid #4A2C1B; align-items: center; min-height: 50px;';
         row.innerHTML = `
             <div style="text-align: center; font-weight: bold; color: #333; font-size: 16px;">${item.quantity}</div>

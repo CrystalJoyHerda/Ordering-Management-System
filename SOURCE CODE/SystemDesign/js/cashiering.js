@@ -56,18 +56,63 @@ function initializeQueueNumber() {
     }
 }
 
-// Cancel order function
+// Cancel order function - now checks if order is empty
 function cancelOrder() {
-    // Reset form or navigate away
-    if (confirm('Are you sure you want to cancel this order?')) {
-        // Clear fields and reset
-        document.getElementById('orderNumber').value = '';
-        document.getElementById('items-container').innerHTML = '';
-        document.getElementById('names-container').innerHTML = '';
-        document.getElementById('addons-container').innerHTML = '';
-        document.getElementById('prices-container').innerHTML = '';
-        document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+    // Check if order is empty
+    const total = document.getElementById('total').textContent;
+    
+    if (total === 'Total Amount: ₱0.00') {
+        showEmptyOrderWarningModal();
+        return;
     }
+    
+    // If order has items, show confirmation modal
+    showCancelOrderModal();
+}
+
+// Show empty order warning modal
+function showEmptyOrderWarningModal() {
+    const modal = document.getElementById('emptyOrderWarningModal');
+    modal.classList.add('show');
+}
+
+// Close empty order warning modal
+function closeEmptyOrderWarningModal() {
+    const modal = document.getElementById('emptyOrderWarningModal');
+    modal.classList.remove('show');
+}
+
+// Show cancel order confirmation modal
+function showCancelOrderModal() {
+    const modal = document.getElementById('cancelOrderModal');
+    modal.classList.add('show');
+}
+
+// Close cancel order modal
+function closeCancelOrderModal() {
+    const modal = document.getElementById('cancelOrderModal');
+    modal.classList.remove('show');
+}
+
+// Confirm cancel order - clear everything and reset
+function confirmCancelOrder() {
+    // Clear all order data
+    document.getElementById('orderNumber').value = '';
+    document.getElementById('items-container').innerHTML = '';
+    document.getElementById('names-container').innerHTML = '';
+    document.getElementById('addons-container').innerHTML = '';
+    document.getElementById('prices-container').innerHTML = '';
+    document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+    
+    // Reset order type selection
+    document.querySelectorAll('.type-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Close the modal
+    closeCancelOrderModal();
+    
+    console.log('Order cancelled and reset');
 }
 
 // Queue number generator
@@ -105,7 +150,7 @@ async function lookupOrderInternal() {
     console.log('Looking up order number:', orderNum);
     
     if (!orderNum) {
-        alert('Please enter an order number');
+        showOrderNumberRequiredModal();
         return;
     }
     
@@ -148,7 +193,7 @@ async function lookupOrderInternal() {
                 order.items.forEach(item => {
                     console.log('➕ Adding item:', item);
                     const addons = item.addons || [];
-                    // Use unit_price for display, total_price is for internal calculation
+                    // Use unit_price for display, total_price is for internal
                     const displayPrice = item.unit_price;
                     addOrderItemFromDB(item.quantity, item.product_name, displayPrice, item.total_price, addons);
                 });
@@ -169,11 +214,11 @@ async function lookupOrderInternal() {
             }
         } else {
             console.log('❌ Order lookup failed:', result);
-            alert(result.message || 'Order not found');
+            showOrderNotFoundModal(result.message || 'Order not found');
         }
     } catch (error) {
         console.error('🚨 Error looking up order:', error);
-        alert('Error looking up order: ' + error.message);
+        showLookupErrorModal('Error looking up order: ' + error.message);
     } finally {
         // Restore button state
         console.log('🔄 Restoring button state');
@@ -210,12 +255,21 @@ function handleAddItem() {
     const price = document.getElementById('price').value;
 
     if (!quantity || !name || !price) {
-        alert('Please fill all fields');
+        // Replace alert with modal
+        showInvalidInputModal();
         return;
     }
 
     addOrderItem(quantity, name, price);
     clearInputs();
+}
+
+// Add function for invalid input modal (if not already exists)
+function showInvalidInputModal() {
+    const modal = document.getElementById('invalidQuantityModal');
+    const messageElement = modal.querySelector('.error-message');
+    messageElement.textContent = 'Please fill all fields';
+    modal.classList.add('show');
 }
 
 function addOrderItem(quantity, name, price, addons) {
@@ -316,11 +370,20 @@ function handleConfirm() {
     const total = document.getElementById('total').textContent;
     const queueNum = document.getElementById('queueNumber').value;
 
+    // Check if items are added to the order
     if (total === 'Total Amount: ₱0.00') {
-        alert('Please add items first');
+        showNoItemsWarningModal();
         return;
     }
 
+    // Check if an order type is selected
+    const selectedOrderType = document.querySelector('.type-button.active');
+    if (!selectedOrderType) {
+        showOrderTypeWarningModal();
+        return;
+    }
+
+    // Proceed with order confirmation if both validations pass
     const orderItems = [];
     const quantities = document.getElementById('items-container').children;
     const names = document.getElementById('names-container').children;
@@ -356,36 +419,50 @@ function handleConfirm() {
 
     localStorage.setItem('currentOrder', JSON.stringify(orderData));
     window.location.href = 'orderconfirm.html';
-
-    // Get the selected order type
-    const orderType = document.querySelector('.type-button.active')?.dataset.type || 'dine-in';
-    
-    // Prepare receipt data
-    const receiptData = {
-        items: getCurrentOrderItems(),
-        queueNumber: document.getElementById('queueNumber').value,
-        orderType: orderType === 'dine-in' ? 'Dine In' : 'Take Out',
-        // ...other receipt data
-    };
-    
-    // Save to localStorage
-    localStorage.setItem('receiptData', JSON.stringify(receiptData));
-    
-    // Navigate to receipt page
-    window.location.href = 'receiptinter.html';
 }
 
-// Add CSS animation for fade in effect
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-`;
-document.head.appendChild(style);
+// Show no items warning modal
+function showNoItemsWarningModal() {
+    const modal = document.getElementById('noItemsWarningModal');
+    modal.classList.add('show');
+}
 
-// Event Listeners
+// Close no items warning modal
+function closeNoItemsWarningModal() {
+    const modal = document.getElementById('noItemsWarningModal');
+    modal.classList.remove('show');
+}
+
+// Show order type warning modal
+function showOrderTypeWarningModal() {
+    const modal = document.getElementById('orderTypeWarningModal');
+    modal.classList.add('show');
+}
+
+// Close order type warning modal
+function closeOrderTypeWarningModal() {
+    const modal = document.getElementById('orderTypeWarningModal');
+    modal.classList.remove('show');
+}
+
+// Handle order type selection from modal
+function selectOrderTypeFromModal(orderType) {
+    // Update the main order type buttons
+    document.querySelectorAll('.type-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === orderType) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Close the modal
+    closeOrderTypeWarningModal();
+    
+    // Automatically proceed with confirmation
+    handleConfirm();
+}
+
+// Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateDateTime, 1000);
     generateQueueNumber();
@@ -500,10 +577,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handler functions
 function handleCancel() {
-    if(confirm('Are you sure you want to cancel this order?')) {
-        clearOrder();
-        window.location.href = 'cashiering.html';
-    }
+    // Remove confirm() and just call cancelOrder which handles modals
+    cancelOrder();
 }
 
 // Menu navigation function - now opens modal instead of redirecting
@@ -567,7 +642,10 @@ document.querySelectorAll('.type-btn').forEach(btn => {
 // Order lookup functionality
 function lookupOrder() {
     const orderNumber = document.getElementById('orderNumber').value;
-    if (!orderNumber) return;
+    if (!orderNumber) {
+        showOrderNumberRequiredModal();
+        return;
+    }
 
     // Get order details from localStorage
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
@@ -576,7 +654,7 @@ function lookupOrder() {
     if (order) {
         showOrderInfo(order);
     } else {
-        alert('Order not found');
+        showOrderNotFoundModal('Order not found');
     }
 }
 
@@ -613,7 +691,10 @@ document.querySelectorAll('.type-button').forEach(button => {
 // Enhance lookupOrder function
 function lookupOrder() {
     const orderNumber = document.getElementById('orderNumber').value;
-    if (!orderNumber) return;
+    if (!orderNumber) {
+        showOrderNumberRequiredModal();
+        return;
+    }
 
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     const order = orders.find(o => o.orderNumber === orderNumber);
@@ -621,7 +702,7 @@ function lookupOrder() {
     if (order) {
         showOrderDetails(order);
     } else {
-        alert('Order not found');
+        showOrderNotFoundModal('Order not found');
     }
 }
 
@@ -1145,7 +1226,7 @@ function addSelectedItems() {
     const itemsToAdd = Object.values(modalOrderItems);
     
     if (itemsToAdd.length === 0) {
-        alert('Please select at least one item.');
+        showNoItemsSelectedModal();
         return;
     }
     
@@ -1301,7 +1382,7 @@ function editItem(buttonElement) {
         
         console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
     } else if (newQuantity !== null) {
-        alert('Please enter a valid quantity (positive number).');
+        showInvalidQuantityModal();
     }
 }
 
@@ -1325,8 +1406,8 @@ function deleteItem(buttonElement) {
     const nameElement = namesContainer.children[rowIndex];
     const itemName = nameElement.textContent;
     
-    // Confirm deletion
-    if (confirm(`Are you sure you want to remove "${itemName}" from the order?`)) {
+    // Show delete confirmation modal
+    showDeleteItemModal(itemName, () => {
         // Remove the corresponding elements from all containers
         itemsContainer.removeChild(itemsContainer.children[rowIndex]);
         namesContainer.removeChild(namesContainer.children[rowIndex]);
@@ -1337,7 +1418,34 @@ function deleteItem(buttonElement) {
         updateTotal();
         
         console.log(`Item "${itemName}" removed from order`);
+    });
+}
+
+// Show delete item confirmation modal
+function showDeleteItemModal(itemName, onConfirm) {
+    const modal = document.getElementById('deleteItemModal');
+    const messageElement = modal.querySelector('.delete-message');
+    messageElement.innerHTML = `Are you sure you want to remove <strong>"${itemName}"</strong> from the order?`;
+    
+    // Store the confirmation callback
+    modal.confirmCallback = onConfirm;
+    modal.classList.add('show');
+}
+
+// Close delete item modal
+function closeDeleteItemModal() {
+    const modal = document.getElementById('deleteItemModal');
+    modal.classList.remove('show');
+    delete modal.confirmCallback;
+}
+
+// Confirm delete item
+function confirmDeleteItem() {
+    const modal = document.getElementById('deleteItemModal');
+    if (modal.confirmCallback) {
+        modal.confirmCallback();
     }
+    closeDeleteItemModal();
 }
 
 // Track the item being edited
@@ -1476,6 +1584,70 @@ function editItem(buttonElement) {
         addons: addons,
         rowIndex: rowIndex
     });
+}
+
+// Show order number required modal
+function showOrderNumberRequiredModal() {
+    const modal = document.getElementById('orderNumberRequiredModal');
+    modal.classList.add('show');
+}
+
+// Close order number required modal
+function closeOrderNumberRequiredModal() {
+    const modal = document.getElementById('orderNumberRequiredModal');
+    modal.classList.remove('show');
+}
+
+// Show order not found modal
+function showOrderNotFoundModal(message) {
+    const modal = document.getElementById('orderNotFoundModal');
+    const messageElement = modal.querySelector('.error-message');
+    messageElement.textContent = message;
+    modal.classList.add('show');
+}
+
+// Close order not found modal
+function closeOrderNotFoundModal() {
+    const modal = document.getElementById('orderNotFoundModal');
+    modal.classList.remove('show');
+}
+
+// Show lookup error modal
+function showLookupErrorModal(message) {
+    const modal = document.getElementById('lookupErrorModal');
+    const messageElement = modal.querySelector('.error-message');
+    messageElement.textContent = message;
+    modal.classList.add('show');
+}
+
+// Close lookup error modal
+function closeLookupErrorModal() {
+    const modal = document.getElementById('lookupErrorModal');
+    modal.classList.remove('show');
+}
+
+// Show no items selected modal
+function showNoItemsSelectedModal() {
+    const modal = document.getElementById('noItemsSelectedModal');
+    modal.classList.add('show');
+}
+
+// Close no items selected modal
+function closeNoItemsSelectedModal() {
+    const modal = document.getElementById('noItemsSelectedModal');
+    modal.classList.remove('show');
+}
+
+// Show invalid quantity modal
+function showInvalidQuantityModal() {
+    const modal = document.getElementById('invalidQuantityModal');
+    modal.classList.add('show');
+}
+
+// Close invalid quantity modal
+function closeInvalidQuantityModal() {
+    const modal = document.getElementById('invalidQuantityModal');
+    modal.classList.remove('show');
 }
 
 // Make functions globally accessible

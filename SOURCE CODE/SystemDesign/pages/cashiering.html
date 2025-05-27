@@ -509,6 +509,246 @@
             </div>
         </div>
     </div>
+
+    <!-- Empty Order Warning Modal -->
+    <div class="empty-order-warning-modal" id="emptyOrderWarningModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">📭</span>
+                    Empty Order
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Cannot cancel an empty order.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeEmptyOrderWarningModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Number Required Modal -->
+    <div class="order-number-required-modal" id="orderNumberRequiredModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">🔢</span>
+                    Order Number Required
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="info-message">
+                    Please enter an order number to look up.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeOrderNumberRequiredModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Not Found Modal -->
+    <div class="order-not-found-modal" id="orderNotFoundModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">❌</span>
+                    Order Not Found
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Order not found
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeOrderNotFoundModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lookup Error Modal -->
+    <div class="lookup-error-modal" id="lookupErrorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">⚠️</span>
+                    Lookup Error
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    An error occurred while looking up the order.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeLookupErrorModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Items Selected Modal -->
+    <div class="no-items-selected-modal" id="noItemsSelectedModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">📝</span>
+                    No Items Selected
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Please select at least one item.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeNoItemsSelectedModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invalid Quantity Modal -->
+    <div class="invalid-quantity-modal" id="invalidQuantityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">❌</span>
+                    Invalid Quantity
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Please enter a valid quantity (positive number).
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeInvalidQuantityModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Item Modal -->
+    <div class="delete-item-modal" id="deleteItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">🗑️</span>
+                    Remove Item
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="delete-message">
+                    Are you sure you want to remove this item from the order?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn" onclick="closeDeleteItemModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn delete-btn" onclick="confirmDeleteItem()">
+                    Remove Item
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Order Modal -->
+    <div class="cancel-order-modal" id="cancelOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">⚠️</span>
+                    Cancel Order
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Are you sure you want to cancel this order?<br>
+                    <strong>All items and selections will be cleared.</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn no-btn" onclick="closeCancelOrderModal()">
+                    No, Keep Order
+                </button>
+                <button class="modal-btn yes-btn" onclick="confirmCancelOrder()">
+                    Yes, Cancel Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Items Warning Modal -->
+    <div class="no-items-warning-modal" id="noItemsWarningModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">📝</span>
+                    No Items Added
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Please add at least <strong>one item</strong> to your order before confirming.
+                </p>
+                <button class="add-items-btn" onclick="closeNoItemsWarningModal(); showAddItemModal();">
+                    Add Items to Order
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="close-only-btn" onclick="closeNoItemsWarningModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Type Warning Modal -->
+    <div class="order-type-warning-modal" id="orderTypeWarningModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">⚠️</span>
+                    Order Type Required
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Please select <strong>Dine In</strong> or <strong>Take Out</strong> before confirming your order.
+                </p>
+                <div class="order-type-options">
+                    <button class="order-type-btn" onclick="selectOrderTypeFromModal('dine-in')">
+                        <span class="icon">🍽️</span>
+                        <span>Dine In</span>
+                    </button>
+                    <button class="order-type-btn" onclick="selectOrderTypeFromModal('takeout')">
+                        <span class="icon">🥡</span>
+                        <span>Take Out</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-only-btn" onclick="closeOrderTypeWarningModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
   </div><script>
     // Page initialization - let external cashiering.js handle all functions
     document.addEventListener('DOMContentLoaded', function() {

@@ -9,7 +9,7 @@ function updateDateTime() {
     document.getElementById('queue-datetime').textContent = dateTimeString;
 }
 
-function formatTime(date) {
+function
     let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'pm' : 'am';

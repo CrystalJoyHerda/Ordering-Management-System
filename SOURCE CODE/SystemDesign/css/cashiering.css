@@ -747,8 +747,7 @@ header {
     border-top: 1px solid #eee;
 }
 
-.edit-item-modal .cancel-btn,
-.edit-item-modal .save-btn {
+.edit-item-modal .cancel-btn {
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
@@ -1089,4 +1088,931 @@ header {
 
 .coffee-selection-modal .selected-coffee {
     background: #A0522D !important;
+}
+
+/* Order Type Warning Modal Styles */
+.order-type-warning-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.order-type-warning-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.order-type-warning-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes slideInScale {
+    from {
+        transform: scale(0.8) translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.order-type-warning-modal .modal-header {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+
+.order-type-warning-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.order-type-warning-modal .warning-icon {
+    font-size: 24px;
+    color: #fff3cd;
+}
+
+.order-type-warning-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.order-type-warning-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.order-type-warning-modal .order-type-options {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.order-type-warning-modal .order-type-btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 15px 20px;
+    border: 2px solid #4A2C1B;
+    border-radius: 25px;
+    background: white;
+    color: #4A2C1B;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.order-type-warning-modal .order-type-btn:hover {
+    background: #4A2C1B;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 44, 27, 0.3);
+}
+
+.order-type-warning-modal .order-type-btn .icon {
+    font-size: 24px;
+}
+
+.order-type-warning-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.order-type-warning-modal .cancel-only-btn {
+    padding: 12px 30px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.order-type-warning-modal .cancel-only-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* No Items Warning Modal Styles */
+.no-items-warning-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.no-items-warning-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.no-items-warning-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.no-items-warning-modal .modal-header {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+
+.no-items-warning-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.no-items-warning-modal .warning-icon {
+    font-size: 24px;
+    color: #fff3cd;
+}
+
+.no-items-warning-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.no-items-warning-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.no-items-warning-modal .add-items-btn {
+    padding: 15px 30px;
+    border: 2px solid #4A2C1B;
+    border-radius: 25px;
+    background: #4A2C1B;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.no-items-warning-modal .add-items-btn:hover {
+    background: white;
+    color: #4A2C1B;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 44, 27, 0.3);
+}
+
+.no-items-warning-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.no-items-warning-modal .close-only-btn {
+    padding: 12px 30px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.no-items-warning-modal .close-only-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Cancel Order Modal Styles */
+.cancel-order-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-order-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.cancel-order-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.cancel-order-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.cancel-order-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.cancel-order-modal .warning-icon {
+    font-size: 24px;
+    color: #fff3cd;
+}
+
+.cancel-order-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.cancel-order-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.cancel-order-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.cancel-order-modal .modal-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.cancel-order-modal .no-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.cancel-order-modal .no-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.cancel-order-modal .yes-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cancel-order-modal .yes-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Empty Order Warning Modal Styles */
+.empty-order-warning-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-order-warning-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.empty-order-warning-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.empty-order-warning-modal .modal-header {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.empty-order-warning-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.empty-order-warning-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.empty-order-warning-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.empty-order-warning-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.empty-order-warning-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.empty-order-warning-modal .ok-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Order Number Required Modal Styles */
+.order-number-required-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.order-number-required-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.order-number-required-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.order-number-required-modal .modal-header {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.order-number-required-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.order-number-required-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.order-number-required-modal .info-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.order-number-required-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.order-number-required-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.order-number-required-modal .ok-btn:hover {
+    background-color: #138496;
+    transform: translateY(-1px);
+}
+
+/* Order Not Found Modal Styles */
+.order-not-found-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.order-not-found-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.order-not-found-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.order-not-found-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.order-not-found-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.order-not-found-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.order-not-found-modal .error-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.order-not-found-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.order-not-found-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.order-not-found-modal .ok-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Lookup Error Modal Styles */
+.lookup-error-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.lookup-error-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.lookup-error-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.lookup-error-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.lookup-error-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.lookup-error-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.lookup-error-modal .error-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.lookup-error-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.lookup-error-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.lookup-error-modal .ok-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* No Items Selected Modal Styles */
+.no-items-selected-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.no-items-selected-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.no-items-selected-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.no-items-selected-modal .modal-header {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.no-items-selected-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.no-items-selected-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.no-items-selected-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.no-items-selected-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.no-items-selected-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.no-items-selected-modal .ok-btn:hover {
+    background-color: #e0a800;
+    transform: translateY(-1px);
+}
+
+/* Invalid Quantity Modal Styles */
+.invalid-quantity-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.invalid-quantity-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.invalid-quantity-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.invalid-quantity-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.invalid-quantity-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.invalid-quantity-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.invalid-quantity-modal .error-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.invalid-quantity-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.invalid-quantity-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.invalid-quantity-modal .ok-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Delete Item Modal Styles */
+.delete-item-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-item-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+.delete-item-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.delete-item-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.delete-item-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.delete-item-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.delete-item-modal .delete-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.delete-item-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.delete-item-modal .modal-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.delete-item-modal .cancel-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.delete-item-modal .cancel-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.delete-item-modal .delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-item-modal .delete-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
 }
