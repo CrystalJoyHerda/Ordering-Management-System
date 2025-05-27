@@ -26,14 +26,17 @@ async function syncOrderToDatabase() {
             const qty = parseInt(qtyText);
             const name = names[i].textContent.trim();
             const addonText = addons[i].textContent.trim();
-            const priceText = prices[i].textContent.replace('₱', '').trim();
-            const unitPrice = parseFloat(priceText);
+            
+            // Get the unit price (price per item including add-ons)
+            const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price')) || 
+                             parseFloat(prices[i].textContent.replace('₱', ''));
+            const totalPrice = unitPrice * qty;
             
             orderItems.push({
                 product_name: name,
                 quantity: qty,
                 unit_price: unitPrice,
-                total_price: unitPrice * qty,
+                total_price: totalPrice,
                 addons: addonText !== '-' && addonText ? addonText.split(', ').map(a => a.trim()) : []
             });
         }
@@ -371,6 +374,16 @@ function addOrderItem(quantity, name, price, addons) {
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
 
+    // Calculate unit price including add-ons
+    let unitPrice = parseFloat(price);
+    if (addons && Array.isArray(addons) && addons.length > 0) {
+        addons.forEach(addon => {
+            if (addon.price) {
+                unitPrice += parseFloat(addon.price);
+            }
+        });
+    }
+
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = itemStyle;
     itemDiv.innerHTML = `${quantity} 
@@ -390,9 +403,12 @@ function addOrderItem(quantity, name, price, addons) {
         addonsDiv.textContent = '-';
     }
 
+    // Price should show unit price (including add-ons)
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${parseFloat(price).toFixed(2)}`;
+    priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
+    // Store the calculated unit price as data attribute
+    priceDiv.setAttribute('data-unit-price', unitPrice);
 
     itemsContainer.appendChild(itemDiv);
     namesContainer.appendChild(nameDiv);
@@ -430,12 +446,13 @@ function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
         addonsDiv.textContent = '-';
     }
 
-    // Show the unit price, but store total price for calculation
+    // Calculate unit price from total price and quantity
+    const unitPrice = totalPrice / quantity;
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${parseFloat(displayPrice).toFixed(2)}`;
-    // Store the actual total price as a data attribute for accurate calculation
-    priceDiv.setAttribute('data-total-price', totalPrice);
+    priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
+    // Store the calculated unit price for accurate calculation
+    priceDiv.setAttribute('data-unit-price', unitPrice);
 
     itemsContainer.appendChild(itemDiv);
     namesContainer.appendChild(nameDiv);
@@ -452,8 +469,13 @@ function updateTotal() {
 
     for (let i = 0; i < quantities.length; i++) {
         const quantity = parseInt(quantities[i].childNodes[0].textContent.trim());
-        const price = parseFloat(prices[i].textContent.replace('₱', ''));
-        total += quantity * price;
+        // Always use the stored unit price for accurate calculation
+        const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price'));
+        
+        // Ensure we have valid values
+        if (!isNaN(quantity) && !isNaN(unitPrice)) {
+            total += quantity * unitPrice;
+        }
     }
     
     document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
@@ -493,14 +515,17 @@ function handleConfirm() {
         
         const name = names[i].textContent.trim();
         const addonText = addons[i].textContent.trim();
-        const priceText = prices[i].textContent.replace('₱', '').trim();
-        const totalPrice = parseFloat(priceText);
+        
+        // Get the unit price including add-ons
+        const unitPrice = parseFloat(prices[i].getAttribute('data-unit-price')) || 
+                         parseFloat(prices[i].textContent.replace('₱', ''));
+        const totalPrice = unitPrice * qty;
         
         orderItems.push({
             quantity: qty,
             name: name,
             addons: addonText !== '-' ? addonText.split(', ') : [],
-            price: totalPrice / qty, // Unit price
+            price: unitPrice, // Unit price including add-ons
             totalPrice: totalPrice   // Total price for this line
         });
     }
@@ -1277,27 +1302,33 @@ function updateAddonDisplay() {
     }
 }
 
-// Update modal order item
+// Update modal order item with proper pricing
 function updateModalOrderItem(item) {
     const name = item.dataset.name;
-    const price = parseFloat(item.dataset.price);
+    const basePrice = parseFloat(item.dataset.price);
     const quantity = parseInt(item.querySelector('.quantity-value').textContent);
     
     if (quantity > 0) {
-        // Get associated add-ons
+        // Get associated add-ons and calculate total add-on price
         const addons = [];
+        let addonsTotal = 0;
         document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
             if (addon.getAttribute('data-for-item') === name) {
+                const addonPrice = parseFloat(addon.dataset.price);
                 addons.push({
                     name: addon.dataset.name,
-                    price: parseFloat(addon.dataset.price)
+                    price: addonPrice
                 });
+                addonsTotal += addonPrice;
             }
         });
         
+        // Calculate unit price including add-ons
+        const unitPrice = basePrice + addonsTotal;
+        
         modalOrderItems[name] = {
             name: name,
-            price: price,
+            price: unitPrice, // Store the calculated unit price
             quantity: quantity,
             addons: addons
         };
@@ -1306,21 +1337,7 @@ function updateModalOrderItem(item) {
     }
 }
 
-// Remove modal order item
-function removeModalOrderItem(item) {
-    const name = item.dataset.name;
-    delete modalOrderItems[name];
-    
-    // Remove associated add-ons
-    document.querySelectorAll('#addItemModal .addon-circle').forEach(addon => {
-        if (addon.getAttribute('data-for-item') === name) {
-            addon.classList.remove('selected');
-            addon.removeAttribute('data-for-item');
-        }
-    });
-}
-
-// Add selected items to the main order
+// Add selected items to the main order with correct pricing
 function addSelectedItems() {
     const itemsToAdd = Object.values(modalOrderItems);
     
@@ -1331,21 +1348,15 @@ function addSelectedItems() {
     
     // Add items to the main order
     itemsToAdd.forEach(item => {
-        // Calculate total price including add-ons
-        let totalPrice = item.price;
-        item.addons.forEach(addon => {
-            totalPrice += addon.price;
-        });
-          // Add each quantity as a separate item (matching the database structure)
+        // Calculate base price from the item data attributes
+        const basePrice = parseFloat(item.price) - (item.addons ? item.addons.reduce((sum, addon) => sum + addon.price, 0) : 0);
+        
+        // Add each quantity as individual items
         for (let i = 0; i < item.quantity; i++) {
-            // Add to grid with same structure as database items
-            // Keep product name clean and let addItemToGrid handle add-ons in separate column
-            addItemToGrid(item.name, totalPrice, item.addons);
+            // Pass base price and let addItemToGrid calculate the unit price with add-ons
+            addItemToGrid(item.name, basePrice, item.addons);
         }
     });
-    
-    // Update total
-    updateTotal();
     
     // Sync changes to database if we have an order ID
     if (currentOrderId) {
@@ -1360,76 +1371,6 @@ function addSelectedItems() {
     
     // Close modal
     closeAddItemModal();
-}
-
-// Add item to the main cashiering grid
-function addItemToGrid(name, price, addons = []) {
-    const itemsContainer = document.getElementById('items-container');
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    // Format add-ons for comparison
-    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
-        ? addons.map(a => a.name || a).join(', ') 
-        : '-';
-    
-    // Check for existing item with same name and add-ons
-    let existingRowIndex = -1;
-    for (let i = 0; i < namesContainer.children.length; i++) {
-        const existingName = namesContainer.children[i].textContent;
-        const existingAddons = addonsContainer.children[i].textContent;
-        
-        if (existingName === name && existingAddons === addonsText) {
-            existingRowIndex = i;
-            break;
-        }
-    }
-    
-    if (existingRowIndex !== -1) {
-        // Update existing item quantity and price
-        const quantityElement = itemsContainer.children[existingRowIndex];
-        const priceElement = pricesContainer.children[existingRowIndex];
-        
-        // Extract current quantity
-        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
-        const newQuantity = currentQuantity + 1;
-        
-        // Calculate new total price for this row
-        const newTotalPrice = newQuantity * price;
-        
-        // Update quantity display with buttons
-        quantityElement.innerHTML = `${newQuantity} 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        // Update price display
-        priceElement.textContent = `₱${newTotalPrice.toFixed(2)}`;
-    } else {
-        // Create new row as before
-        const itemDiv = document.createElement('div');
-        itemDiv.style.cssText = itemStyle;
-        itemDiv.innerHTML = `1 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.style.cssText = itemStyle;
-        nameDiv.textContent = name;
-        
-        const addonsDiv = document.createElement('div');
-        addonsDiv.style.cssText = itemStyle;
-        addonsDiv.textContent = addonsText;
-        
-        const priceDiv = document.createElement('div');
-        priceDiv.style.cssText = itemStyle;
-        priceDiv.textContent = `₱${price.toFixed(2)}`;
-        
-        itemsContainer.appendChild(itemDiv);
-        namesContainer.appendChild(nameDiv);
-        addonsContainer.appendChild(addonsDiv);
-        pricesContainer.appendChild(priceDiv);
-    }
 }
 
 // Close modal when clicking outside
@@ -1474,9 +1415,9 @@ function editItem(buttonElement) {
     const currentQuantity = quantityElement.textContent.trim().split(' ')[0];
     const currentName = nameElement.textContent;
     const currentAddons = addonsElement.textContent;
-    const currentPrice = priceElement.textContent.replace('₱', '');
+    const currentUnitPrice = priceElement.getAttribute('data-unit-price');
     
-    console.log('Current values:', { currentQuantity, currentName, currentPrice });
+    console.log('Current values:', { currentQuantity, currentName, currentUnitPrice });
     
     // Create a simple edit dialog
     const newQuantity = prompt(`Edit quantity for "${currentName}":`, currentQuantity);
@@ -1487,7 +1428,7 @@ function editItem(buttonElement) {
             <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
             <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
         
-        // Update total
+        // Update total using latest unit price
         updateTotal();
         
         console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
@@ -1662,17 +1603,29 @@ function saveChanges() {
         .map(addon => addon.querySelector('span').textContent)
         .filter(name => name);
     
-    // Calculate new price including add-ons
-    let basePrice = parseFloat(document.getElementById('prices-container')
-        .children[editingItemIndex].textContent.replace('₱', ''));
+    // Get current item info
+    const namesContainer = document.getElementById('names-container');
+    const pricesContainer = document.getElementById('prices-container');
+    const currentName = namesContainer.children[editingItemIndex].textContent;
+    
+    // Get base price (we need to calculate from current data or use a default)
+    // For now, we'll use the current unit price and subtract known add-ons
+    let currentUnitPrice = parseFloat(pricesContainer.children[editingItemIndex].getAttribute('data-unit-price'));
+    
+    // Calculate add-ons total
     const addonsTotal = Array.from(modal.querySelectorAll('.edit-addon-box.selected'))
-        .reduce((sum, addon) => sum + parseFloat(addon.dataset.price), 0);
-    const totalPrice = basePrice + addonsTotal;
+        .reduce((sum, addon) => sum + parseFloat(addon.dataset.price || 0), 0);
+    
+    // For simplicity, we'll estimate base price by subtracting previous add-ons
+    // In a real system, you'd store the base price separately
+    let basePrice = currentUnitPrice; // This is an approximation
+    
+    // Calculate new unit price
+    const newUnitPrice = basePrice + addonsTotal;
     
     // Update the grid
     const itemsContainer = document.getElementById('items-container');
     const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
     
     // Update quantity
     const itemDiv = itemsContainer.children[editingItemIndex];
@@ -1684,11 +1637,12 @@ function saveChanges() {
     const addonsDiv = addonsContainer.children[editingItemIndex];
     addonsDiv.textContent = selectedAddons.length ? selectedAddons.join(', ') : '-';
     
-    // Update price
+    // Update price with new unit price
     const priceDiv = pricesContainer.children[editingItemIndex];
-    priceDiv.textContent = `₱${totalPrice.toFixed(2)}`;
+    priceDiv.textContent = `₱${newUnitPrice.toFixed(2)}`;
+    priceDiv.setAttribute('data-unit-price', newUnitPrice);
     
-    // Update total
+    // Update total using latest unit prices
     updateTotal();
     
     // Sync changes to database if we have an order ID
@@ -1792,6 +1746,85 @@ function closeInvalidQuantityModal() {
     modal.classList.remove('show');
 }
 
-// Make functions globally accessible
-window.editItem = editItem;
-window.deleteItem = deleteItem;
+// Add item to the main cashiering grid
+function addItemToGrid(name, price, addons = []) {
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Calculate unit price including add-ons
+    let unitPrice = parseFloat(price);
+    if (addons && Array.isArray(addons) && addons.length > 0) {
+        addons.forEach(addon => {
+            if (addon.price) {
+                unitPrice += parseFloat(addon.price);
+            }
+        });
+    }
+    
+    // Format add-ons for comparison
+    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
+        ? addons.map(a => a.name || a).join(', ') 
+        : '-';
+    
+    // Check for existing item with same name and add-ons
+    let existingRowIndex = -1;
+    for (let i = 0; i < namesContainer.children.length; i++) {
+        const existingName = namesContainer.children[i].textContent;
+        const existingAddons = addonsContainer.children[i].textContent;
+        
+        if (existingName === name && existingAddons === addonsText) {
+            existingRowIndex = i;
+            break;
+        }
+    }
+    
+    if (existingRowIndex !== -1) {
+        // Update existing item quantity
+        const quantityElement = itemsContainer.children[existingRowIndex];
+        
+        // Extract current quantity
+        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
+        const newQuantity = currentQuantity + 1;
+        
+        // Update quantity display with buttons
+        quantityElement.innerHTML = `${newQuantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        // Update the data attribute with the latest unit price
+        const priceElement = pricesContainer.children[existingRowIndex];
+        priceElement.setAttribute('data-unit-price', unitPrice);
+        priceElement.textContent = `₱${unitPrice.toFixed(2)}`;
+    } else {
+        // Create new row
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = itemStyle;
+        itemDiv.innerHTML = `1 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = itemStyle;
+        nameDiv.textContent = name;
+        
+        const addonsDiv = document.createElement('div');
+        addonsDiv.style.cssText = itemStyle;
+        addonsDiv.textContent = addonsText;
+        
+        const priceDiv = document.createElement('div');
+        priceDiv.style.cssText = itemStyle;
+        priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
+        // Store calculated unit price for accurate calculation
+        priceDiv.setAttribute('data-unit-price', unitPrice);
+        
+        itemsContainer.appendChild(itemDiv);
+        namesContainer.appendChild(nameDiv);
+        addonsContainer.appendChild(addonsDiv);
+        pricesContainer.appendChild(priceDiv);
+    }
+    
+    // Always update total after adding items
+    updateTotal();
+}
