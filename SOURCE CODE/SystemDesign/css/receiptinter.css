@@ -70,30 +70,46 @@ h1 {
     padding: 10px 0;
     border-top: 1px dashed #ccc;
     border-bottom: 1px dashed #ccc;
-    height: auto; /* Remove fixed height */
+    height: auto;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .item {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     font-size: 0.9em;
-    margin-bottom: 8px;
-    padding-right: 10px; /* Space for scrollbar */
-    padding: 5px 0;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dotted #ddd;
+    line-height: 1.4;
 }
 
-/* Style the scrollbar */
-.order-items::-webkit-scrollbar {
-    width: 5px;
+.item:last-child {
+    border-bottom: none;
 }
 
-.order-items::-webkit-scrollbar-track {
-    background: #f1f1f1;
+.item span:first-child {
+    flex: 1;
+    margin-right: 10px;
+    font-weight: 500;
 }
 
-.order-items::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 5px;
+.item span:last-child {
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
+
+/* Add-ons styling within items */
+.item .addon-text {
+    font-size: 0.8em;
+    color: #666;
+    font-style: italic;
+    margin-left: 8px;
+    display: block;
+    margin-top: 2px;
 }
 
 /* Totals section styles */

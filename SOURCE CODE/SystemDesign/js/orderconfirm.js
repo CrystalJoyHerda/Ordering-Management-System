@@ -16,30 +16,47 @@ document.addEventListener('DOMContentLoaded', function() {
     gridContent.innerHTML = '';
     
     let total = 0;
-    orderData.items.forEach(item => {
+    orderData.items.forEach((item, index) => {
         const itemTotal = item.quantity * item.price;
         total += itemTotal;
         
+        // Format add-ons display - handle both array and string formats
+        let addonsDisplay = '-';
+        if (item.addons) {
+            if (Array.isArray(item.addons) && item.addons.length > 0) {
+                addonsDisplay = item.addons.join(', ');
+            } else if (typeof item.addons === 'string' && item.addons.trim() !== '' && item.addons !== '-') {
+                addonsDisplay = item.addons;
+            }
+        }
+        
+        // Create grid row with improved alignment and styling
         const row = document.createElement('div');
-        row.style.cssText = 'display: grid; grid-template-columns: 1fr 2fr 1fr; padding: 8px;';
+        row.style.cssText = 'display: grid; grid-template-columns: 0.8fr 2.5fr 2fr 1.2fr; padding: 12px 15px; background: white; margin-bottom: 4px; border-radius: 6px; border-left: 4px solid #4A2C1B; align-items: center; min-height: 50px;';
         row.innerHTML = `
-            <div>${item.quantity}</div>
-            <div>${item.name}</div>
-            <div>₱${itemTotal.toFixed(2)}</div>
+            <div style="text-align: center; font-weight: bold; color: #333; font-size: 16px;">${item.quantity}</div>
+            <div style="padding-left: 10px; font-weight: 500; color: #333; font-size: 15px; display: flex; align-items: center;">${item.name}</div>
+            <div style="padding-left: 10px; color: #666; font-style: ${addonsDisplay === '-' ? 'italic' : 'normal'}; font-size: 14px; display: flex; align-items: center;">${addonsDisplay}</div>
+            <div style="text-align: right; font-weight: bold; color: #4A2C1B; font-size: 16px; padding-right: 10px;">₱${itemTotal.toFixed(2)}</div>
         `;
         gridContent.appendChild(row);
     });
 
-    // Set total amount
-    document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
+    // Set total amount with emphasis
+    const totalElement = document.getElementById('totalAmount');
+    totalElement.textContent = `₱${total.toFixed(2)}`;
+    totalElement.style.fontWeight = 'bold';
+    totalElement.style.fontSize = '18px';
+    totalElement.style.color = '#4A2C1B';
 
     // Enable cash input handling
     const cashInput = document.getElementById('cashInput');
     cashInput.addEventListener('input', function() {
         const cash = parseFloat(this.value) || 0;
         const change = cash - total;
-        document.getElementById('changeAmount').textContent = 
-            change >= 0 ? `₱${change.toFixed(2)}` : '₱0.00';
+        const changeElement = document.getElementById('changeAmount');
+        changeElement.textContent = change >= 0 ? `₱${change.toFixed(2)}` : '₱0.00';
+        changeElement.style.color = change >= 0 ? '#4A2C1B' : '#ff4444';
     });
 });
 
@@ -55,7 +72,10 @@ function handlePrint() {
     const changeAmount = document.getElementById('changeAmount').textContent;
 
     const receiptData = {
-        items: orderData.items,
+        items: orderData.items.map(item => ({
+            ...item,
+            addons: item.addons || []  // Ensure add-ons are included in receipt
+        })),
         total: totalAmount,
         cash: `₱${parseFloat(cash).toFixed(2)}`,
         change: changeAmount,

@@ -46,18 +46,33 @@ function displayReceiptData(receiptData) {
     document.querySelector('.queue-number').textContent = receiptData.queueNumber;
     document.querySelector('.queue-slip .number').textContent = receiptData.queueNumber;
 
-    // Display order items
+    // Display order items with complete details
     const orderItems = document.getElementById('orderItemsList');
     orderItems.innerHTML = '';
     
     receiptData.items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'item';
+        
+        // Format item name with add-ons
+        let itemDisplay = `${item.name} x${item.quantity}`;
+        
+        // Add add-ons if they exist
+        if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
+            const addonsText = item.addons.join(', ');
+            itemDisplay += `\n  + ${addonsText}`;
+        } else if (item.addons && typeof item.addons === 'string' && item.addons !== '-' && item.addons.trim()) {
+            itemDisplay += `\n  + ${item.addons}`;
+        }
+        
         const subtotal = item.quantity * item.price;
+        
         div.innerHTML = `
-            <span>${item.name} x${item.quantity}</span>
-            <span>${formatMoney(subtotal)}</span>
+            <span style="white-space: pre-line; line-height: 1.4;">${itemDisplay}</span>
+            <span style="align-self: flex-start;">${formatMoney(subtotal)}</span>
         `;
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px dotted #ddd;';
+        
         orderItems.appendChild(div);
     });
 

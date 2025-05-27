@@ -38,7 +38,7 @@
             </div>
 
             <div class="order-items" id="orderItemsList">
-                <!-- Items will be populated dynamically -->
+                <!-- Items will be populated dynamically with full details -->
             </div>
 
             <div class="totals">
@@ -90,7 +90,12 @@
             const queueText = document.querySelector('.receipt-info p:nth-child(2)');
             queueText.textContent = `Queue Number: ${queueNumber}`;
 
-            // Optional: Populate other fields (datetime, order items, total, etc.)
+            // Update order type display
+            const orderType = receiptData.orderType || 'Dine In';
+            document.getElementById('order-type').textContent = orderType;
+
+            // The displayReceiptData function will handle all item details
+            displayReceiptData(receiptData);
         };
 
         document.getElementById('printBtn').addEventListener('click', function() {

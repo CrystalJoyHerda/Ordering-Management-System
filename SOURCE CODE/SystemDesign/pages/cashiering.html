@@ -459,6 +459,56 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Item Modal -->
+    <div class="edit-item-modal" id="editItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Item</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-item-name">Espresso</div>
+                <div class="edit-quantity-section">
+                    <h3>Quantity</h3>
+                    <div class="edit-quantity-controls">
+                        <button class="edit-quantity-btn minus-btn">-</button>
+                        <span class="quantity-value">1</span>
+                        <button class="edit-quantity-btn plus-btn">+</button>
+                    </div>
+                </div>
+                <div class="edit-addons-section">
+                    <h3>Add-ons</h3>
+                    <div class="edit-addons-grid">
+                        <div class="edit-addon-box" data-price="15">
+                            <img src="../assets/images/milk.png" alt="Extra Milk">
+                            <span>Extra Milk</span>
+                            <span class="price">₱15</span>
+                        </div>
+                        <div class="edit-addon-box" data-price="10">
+                            <img src="../assets/images/sugar.png" alt="Extra Sugar">
+                            <span>Extra Sugar</span>
+                            <span class="price">₱10</span>
+                        </div>
+                        <div class="edit-addon-box" data-price="20">
+                            <img src="../assets/images/whip_cream.png" alt="Whipped Cream">
+                            <span>Whipped Cream</span>
+                            <span class="price">₱20</span>
+                        </div>
+                        <div class="edit-addon-box" data-price="25">
+                            <img src="../assets/images/caramel_syrup.png" alt="Caramel Syrup">
+                            <span>Caramel Syrup</span>
+                            <span class="price">₱25</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn">Cancel</button>
+                <button class="save-btn">Save</button>
+            </div>
+        </div>
+    </div>
   </div><script>
     // Page initialization - let external cashiering.js handle all functions
     document.addEventListener('DOMContentLoaded', function() {

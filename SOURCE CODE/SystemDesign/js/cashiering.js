@@ -227,8 +227,8 @@ function addOrderItem(quantity, name, price, addons) {
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = itemStyle;
     itemDiv.innerHTML = `${quantity} 
-        <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
-        <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
     
     const nameDiv = document.createElement('div');
     nameDiv.style.cssText = itemStyle;
@@ -251,7 +251,8 @@ function addOrderItem(quantity, name, price, addons) {
     namesContainer.appendChild(nameDiv);
     addonsContainer.appendChild(addonsDiv);
     pricesContainer.appendChild(priceDiv);
-      updateTotal();
+    
+    updateTotal();
 }
 
 // Function specifically for adding items retrieved from database
@@ -266,8 +267,8 @@ function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
     const itemDiv = document.createElement('div');
     itemDiv.style.cssText = itemStyle;
     itemDiv.innerHTML = `${quantity} 
-        <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
-        <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
     
     const nameDiv = document.createElement('div');
     nameDiv.style.cssText = itemStyle;
@@ -323,14 +324,24 @@ function handleConfirm() {
     const orderItems = [];
     const quantities = document.getElementById('items-container').children;
     const names = document.getElementById('names-container').children;
+    const addons = document.getElementById('addons-container').children;
     const prices = document.getElementById('prices-container').children;
 
     for (let i = 0; i < quantities.length; i++) {
         const qty = parseInt(quantities[i].childNodes[0].textContent.trim());
         const price = parseFloat(prices[i].textContent.replace('₱', ''));
+        
+        // Get add-ons for this item
+        const itemAddons = [];
+        if (addons[i] && addons[i].textContent !== '-') {
+            const addonNames = addons[i].textContent.split(', ').filter(name => name.trim());
+            itemAddons.push(...addonNames);
+        }
+        
         orderItems.push({
             quantity: qty,
             name: names[i].textContent,
+            addons: itemAddons,
             price: price,
             subtotal: qty * price
         });
@@ -1167,37 +1178,67 @@ function addItemToGrid(name, price, addons = []) {
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
     
-    // Create quantity element with Edit and Delete buttons (same as addOrderItemFromDB)
-    const itemDiv = document.createElement('div');
-    itemDiv.style.cssText = itemStyle;
-    itemDiv.innerHTML = `1 
-        <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
-        <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+    // Format add-ons for comparison
+    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
+        ? addons.map(a => a.name || a).join(', ') 
+        : '-';
     
-    // Create name element
-    const nameDiv = document.createElement('div');
-    nameDiv.style.cssText = itemStyle;
-    nameDiv.textContent = name;
-    
-    // Create add-ons element
-    const addonsDiv = document.createElement('div');
-    addonsDiv.style.cssText = itemStyle;
-    if (addons && Array.isArray(addons) && addons.length > 0) {
-        addonsDiv.textContent = addons.map(a => a.name || a).join(', ');
-    } else {
-        addonsDiv.textContent = '-';
+    // Check for existing item with same name and add-ons
+    let existingRowIndex = -1;
+    for (let i = 0; i < namesContainer.children.length; i++) {
+        const existingName = namesContainer.children[i].textContent;
+        const existingAddons = addonsContainer.children[i].textContent;
+        
+        if (existingName === name && existingAddons === addonsText) {
+            existingRowIndex = i;
+            break;
+        }
     }
     
-    // Create price element
-    const priceDiv = document.createElement('div');
-    priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${price.toFixed(2)}`;
-    
-    // Add to containers (same structure as addOrderItemFromDB)
-    itemsContainer.appendChild(itemDiv);
-    namesContainer.appendChild(nameDiv);
-    addonsContainer.appendChild(addonsDiv);
-    pricesContainer.appendChild(priceDiv);
+    if (existingRowIndex !== -1) {
+        // Update existing item quantity and price
+        const quantityElement = itemsContainer.children[existingRowIndex];
+        const priceElement = pricesContainer.children[existingRowIndex];
+        
+        // Extract current quantity
+        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
+        const newQuantity = currentQuantity + 1;
+        
+        // Calculate new total price for this row
+        const newTotalPrice = newQuantity * price;
+        
+        // Update quantity display with buttons
+        quantityElement.innerHTML = `${newQuantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        // Update price display
+        priceElement.textContent = `₱${newTotalPrice.toFixed(2)}`;
+    } else {
+        // Create new row as before
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = itemStyle;
+        itemDiv.innerHTML = `1 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = itemStyle;
+        nameDiv.textContent = name;
+        
+        const addonsDiv = document.createElement('div');
+        addonsDiv.style.cssText = itemStyle;
+        addonsDiv.textContent = addonsText;
+        
+        const priceDiv = document.createElement('div');
+        priceDiv.style.cssText = itemStyle;
+        priceDiv.textContent = `₱${price.toFixed(2)}`;
+        
+        itemsContainer.appendChild(itemDiv);
+        namesContainer.appendChild(nameDiv);
+        addonsContainer.appendChild(addonsDiv);
+        pricesContainer.appendChild(priceDiv);
+    }
 }
 
 // Close modal when clicking outside
@@ -1218,11 +1259,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to edit an item in the grid
 function editItem(buttonElement) {
-    const itemRow = buttonElement.closest('div').parentElement;
-    const rowIndex = Array.from(itemRow.parentElement.children).indexOf(itemRow);
+    console.log('Edit button clicked');
+    
+    // Find the row index by looking at the button's parent container
+    const itemElement = buttonElement.parentElement;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemElement);
+    
+    console.log('Row index:', rowIndex);
     
     // Get all containers
-    const itemsContainer = document.getElementById('items-container');
     const namesContainer = document.getElementById('names-container');
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
@@ -1233,21 +1279,24 @@ function editItem(buttonElement) {
     const addonsElement = addonsContainer.children[rowIndex];
     const priceElement = pricesContainer.children[rowIndex];
     
-    const currentQuantity = quantityElement.textContent.trim().split(' ')[0]; // Get quantity number only
+    // Extract quantity (get first word which should be the number)
+    const currentQuantity = quantityElement.textContent.trim().split(' ')[0];
     const currentName = nameElement.textContent;
     const currentAddons = addonsElement.textContent;
     const currentPrice = priceElement.textContent.replace('₱', '');
+    
+    console.log('Current values:', { currentQuantity, currentName, currentPrice });
     
     // Create a simple edit dialog
     const newQuantity = prompt(`Edit quantity for "${currentName}":`, currentQuantity);
     
     if (newQuantity !== null && newQuantity !== '' && !isNaN(newQuantity) && parseInt(newQuantity) > 0) {
-        // Update the quantity display (keep the Edit/Delete buttons)
+        // Update the quantity display (keep the Edit/Delete buttons with consistent styling)
         quantityElement.innerHTML = `${parseInt(newQuantity)} 
-            <button onclick="editItem(this)" style="margin-left: 5px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px;">Delete</button>`;
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
         
-        // Update total if needed
+        // Update total
         updateTotal();
         
         console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
@@ -1258,11 +1307,16 @@ function editItem(buttonElement) {
 
 // Function to delete an item from the grid
 function deleteItem(buttonElement) {
-    const itemRow = buttonElement.closest('div').parentElement;
-    const rowIndex = Array.from(itemRow.parentElement.children).indexOf(itemRow);
+    console.log('Delete button clicked');
+    
+    // Find the row index by looking at the button's parent container
+    const itemElement = buttonElement.parentElement;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemElement);
+    
+    console.log('Row index to delete:', rowIndex);
     
     // Get all containers
-    const itemsContainer = document.getElementById('items-container');
     const namesContainer = document.getElementById('names-container');
     const addonsContainer = document.getElementById('addons-container');
     const pricesContainer = document.getElementById('prices-container');
@@ -1285,3 +1339,145 @@ function deleteItem(buttonElement) {
         console.log(`Item "${itemName}" removed from order`);
     }
 }
+
+// Track the item being edited
+let editingItemIndex = -1;
+
+// Show edit modal with item details
+function showEditModal(itemDetails) {
+    const modal = document.getElementById('editItemModal');
+    const itemName = modal.querySelector('.edit-item-name');
+    const quantityValue = modal.querySelector('.quantity-value');
+    
+    // Store the row index for saving later
+    editingItemIndex = itemDetails.rowIndex;
+    
+    // Set item details
+    itemName.textContent = itemDetails.name || 'Item';
+    quantityValue.textContent = itemDetails.quantity || '1';
+    
+    // Set selected add-ons if any
+    const currentAddons = itemDetails.addons ? itemDetails.addons.split(', ') : [];
+    modal.querySelectorAll('.edit-addon-box').forEach(addon => {
+        const addonName = addon.querySelector('span').textContent;
+        addon.classList.toggle('selected', currentAddons.includes(addonName));
+    });
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Setup event listeners
+    setupEditModalListeners();
+}
+
+function setupEditModalListeners() {
+    const modal = document.getElementById('editItemModal');
+    const closeBtn = modal.querySelector('.close-modal');
+    const cancelBtn = modal.querySelector('.cancel-btn');
+    const saveBtn = modal.querySelector('.save-btn');
+    const minusBtn = modal.querySelector('.edit-quantity-btn.minus-btn');
+    const plusBtn = modal.querySelector('.edit-quantity-btn.plus-btn');
+    const quantitySpan = modal.querySelector('.quantity-value');
+    const addons = modal.querySelectorAll('.edit-addon-box');
+
+    // Close modal events
+    closeBtn.onclick = cancelBtn.onclick = () => {
+        modal.classList.remove('show');
+        editingItemIndex = -1;
+    };
+
+    // Save changes
+    saveBtn.onclick = saveChanges;
+
+    // Quantity controls
+    minusBtn.onclick = () => {
+        let qty = parseInt(quantitySpan.textContent);
+        if (qty > 1) {
+            quantitySpan.textContent = qty - 1;
+            minusBtn.disabled = qty - 1 <= 1;
+        }
+    };
+
+    plusBtn.onclick = () => {
+        let qty = parseInt(quantitySpan.textContent);
+        quantitySpan.textContent = qty + 1;
+        minusBtn.disabled = false;
+    };
+
+    // Add-ons selection
+    addons.forEach(addon => {
+        addon.onclick = () => {
+            addon.classList.toggle('selected');
+        };
+    });
+}
+
+function saveChanges() {
+    if (editingItemIndex === -1) return;
+    
+    const modal = document.getElementById('editItemModal');
+    const quantity = parseInt(modal.querySelector('.quantity-value').textContent);
+    
+    // Get selected add-ons
+    const selectedAddons = Array.from(modal.querySelectorAll('.edit-addon-box.selected'))
+        .map(addon => addon.querySelector('span').textContent)
+        .filter(name => name);
+    
+    // Calculate new price including add-ons
+    let basePrice = parseFloat(document.getElementById('prices-container')
+        .children[editingItemIndex].textContent.replace('₱', ''));
+    const addonsTotal = Array.from(modal.querySelectorAll('.edit-addon-box.selected'))
+        .reduce((sum, addon) => sum + parseFloat(addon.dataset.price), 0);
+    const totalPrice = basePrice + addonsTotal;
+    
+    // Update the grid
+    const itemsContainer = document.getElementById('items-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Update quantity
+    const itemDiv = itemsContainer.children[editingItemIndex];
+    itemDiv.innerHTML = `${quantity} 
+        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+    
+    // Update add-ons
+    const addonsDiv = addonsContainer.children[editingItemIndex];
+    addonsDiv.textContent = selectedAddons.length ? selectedAddons.join(', ') : '-';
+    
+    // Update price
+    const priceDiv = pricesContainer.children[editingItemIndex];
+    priceDiv.textContent = `₱${totalPrice.toFixed(2)}`;
+    
+    // Update total
+    updateTotal();
+    
+    // Close modal
+    modal.classList.remove('show');
+    editingItemIndex = -1;
+}
+
+// Update editItem function to include row index
+function editItem(buttonElement) {
+    const itemElement = buttonElement.parentElement;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemElement.parentElement.children).indexOf(itemElement);
+    
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    
+    const itemName = namesContainer.children[rowIndex].textContent;
+    const quantity = itemElement.textContent.trim().split(' ')[0];
+    const addons = addonsContainer.children[rowIndex].textContent;
+    
+    showEditModal({
+        name: itemName,
+        quantity: quantity,
+        addons: addons,
+        rowIndex: rowIndex
+    });
+}
+
+// Make functions globally accessible
+window.editItem = editItem;
+window.deleteItem = deleteItem;
