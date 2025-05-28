@@ -300,51 +300,104 @@ class OrderModel extends BaseModel {
                 'message' => 'Failed to retrieve order: ' . $e->getMessage()
             ];
         }
-    }
-
-    public function updateOrder($id, $data) {
+    }    public function updateOrder($id, $data) {
         try {
-            $allowedFields = ['status', 'customer_name'];
-            $updateFields = [];
-            $params = [':id' => $id];
+            $this->conn->beginTransaction();
             
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
-                    $updateFields[] = "{$field} = :{$field}";
-                    $params[":{$field}"] = $data[$field];
+            // Handle complete order update from cashier interface
+            if (isset($data['items']) && isset($data['total_amount'])) {
+                // This is a complete order update from cashier interface
+                
+                // Update order details
+                $orderUpdateFields = [];
+                $orderParams = [':id' => $id];
+                
+                if (isset($data['total_amount'])) {
+                    $orderUpdateFields[] = "total_amount = :total_amount";
+                    $orderParams[':total_amount'] = $data['total_amount'];
                 }
-            }
-            
-            if (empty($updateFields)) {
-                return [
-                    'status' => 'error',
-                    'message' => 'No valid fields to update'
-                ];
-            }
-            
-            $query = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
-            
-            $stmt = $this->conn->prepare($query);
-            
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            
-            $stmt->execute();
-            
-            if ($stmt->rowCount() > 0) {
+                
+                if (isset($data['order_type'])) {
+                    $orderUpdateFields[] = "order_type = :order_type";
+                    $orderParams[':order_type'] = $data['order_type'];
+                }
+                
+                if (!empty($orderUpdateFields)) {
+                    $orderQuery = "UPDATE {$this->table} SET " . implode(', ', $orderUpdateFields) . " WHERE id = :id";
+                    $orderStmt = $this->conn->prepare($orderQuery);
+                    
+                    foreach ($orderParams as $key => $value) {
+                        $orderStmt->bindValue($key, $value);
+                    }
+                    
+                    $orderStmt->execute();
+                }
+                
+                // Delete existing order items
+                $deleteQuery = "DELETE FROM order_items WHERE order_id = :order_id";
+                $deleteStmt = $this->conn->prepare($deleteQuery);
+                $deleteStmt->bindValue(':order_id', $id);
+                $deleteStmt->execute();
+                
+                // Insert new order items
+                foreach ($data['items'] as $item) {
+                    $this->insertOrderItem($id, $item);
+                }
+                
+                $this->conn->commit();
+                
                 return [
                     'status' => 'success',
                     'message' => 'Order updated successfully'
                 ];
+                
             } else {
-                return [
-                    'status' => 'error',
-                    'message' => 'Order not found or no changes made'
-                ];
+                // Original update method for simple field updates
+                $allowedFields = ['status', 'customer_name'];
+                $updateFields = [];
+                $params = [':id' => $id];
+                
+                foreach ($allowedFields as $field) {
+                    if (isset($data[$field])) {
+                        $updateFields[] = "{$field} = :{$field}";
+                        $params[":{$field}"] = $data[$field];
+                    }
+                }
+                
+                if (empty($updateFields)) {
+                    return [
+                        'status' => 'error',
+                        'message' => 'No valid fields to update'
+                    ];
+                }
+                
+                $query = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
+                
+                $stmt = $this->conn->prepare($query);
+                
+                foreach ($params as $key => $value) {
+                    $stmt->bindValue($key, $value);
+                }
+                
+                $stmt->execute();
+                
+                if ($stmt->rowCount() > 0) {
+                    return [
+                        'status' => 'success',
+                        'message' => 'Order updated successfully'
+                    ];
+                } else {
+                    return [
+                        'status' => 'error',
+                        'message' => 'Order not found or no changes made'
+                    ];
+                }
             }
             
         } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
             error_log("Update order error: " . $e->getMessage());
             return [
                 'status' => 'error',

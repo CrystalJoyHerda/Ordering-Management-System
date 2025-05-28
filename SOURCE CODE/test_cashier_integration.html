@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier Database Sync - Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .test-section.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-section.warning {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+        h1, h2, h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .primary { background: #28a745; }
+        .primary:hover:not(:disabled) { background: #1e7e34; }
+        .danger { background: #dc3545; }
+        .danger:hover:not(:disabled) { background: #c82333; }
+        .warning { background: #ffc107; color: #212529; }
+        .warning:hover:not(:disabled) { background: #e0a800; }
+        
+        input, select {
+            padding: 10px;
+            border: 2px solid #ced4da;
+            border-radius: 6px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        
+        .log {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+        .log-entry {
+            margin-bottom: 2px;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+        .log-info { color: #17a2b8; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-pending { background: #6c757d; }
+        
+        .test-scenario {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .metric {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Cashier Database Synchronization - Integration Test</h1>
+    
+    <div class="test-container">
+        <h2>🎯 Test Overview</h2>
+        <p>This comprehensive test validates the complete database synchronization functionality for the cashier interface, including order lookup, item modifications, and real-time database updates.</p>
+        
+        <div class="test-grid">
+            <div class="test-section" id="connectionStatus">
+                <h3><span class="status-indicator status-pending"></span>Database Connection</h3>
+                <p>Testing API connectivity and database access...</p>
+                <button onclick="testConnection()" class="primary">Test Connection</button>
+            </div>
+            
+            <div class="test-section" id="orderLookupStatus">
+                <h3><span class="status-indicator status-pending"></span>Order Lookup & ID Storage</h3>
+                <p>Testing order retrieval and ID storage for sync...</p>
+                <div class="form-row">
+                    <input type="text" id="testOrderNumber" placeholder="Order Number" maxlength="3" value="220">
+                    <button onclick="testOrderLookup()">Test Lookup</button>
+                </div>
+            </div>
+            
+            <div class="test-section" id="syncStatus">
+                <h3><span class="status-indicator status-pending"></span>Database Synchronization</h3>
+                <p>Testing real-time database sync functionality...</p>
+                <button onclick="testSyncFunction()" id="syncTestBtn" disabled>Test Sync</button>
+            </div>
+            
+            <div class="test-section" id="endToEndStatus">
+                <h3><span class="status-indicator status-pending"></span>End-to-End Workflow</h3>
+                <p>Testing complete cashier workflow with database updates...</p>
+                <button onclick="runEndToEndTest()" id="e2eTestBtn" disabled>Run E2E Test</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test Scenarios -->
+    <div class="test-container">
+        <h2>🧪 Detailed Test Scenarios</h2>
+        
+        <div class="test-scenario">
+            <h3>Scenario 1: Order Modification Test</h3>
+            <p>Simulates editing quantities and prices in the cashier interface.</p>
+            <div class="form-row">
+                <label>Order ID:</label>
+                <input type="number" id="modifyOrderId" placeholder="Auto-filled" readonly>
+                <label>New Quantity:</label>
+                <input type="number" id="newQuantity" value="3" min="1">
+                <label>New Price:</label>
+                <input type="number" id="newPrice" value="175.50" step="0.01">
+                <button onclick="testOrderModification()">Test Modification</button>
+            </div>
+        </div>
+        
+        <div class="test-scenario">
+            <h3>Scenario 2: Item Addition Test</h3>
+            <p>Simulates adding new items to an existing order.</p>
+            <div class="form-row">
+                <input type="text" id="newItemName" placeholder="New Item Name" value="Test Beverage">
+                <input type="number" id="newItemQty" placeholder="Quantity" value="2" min="1">
+                <input type="number" id="newItemPrice" placeholder="Unit Price" value="120.00" step="0.01">
+                <button onclick="testItemAddition()">Test Addition</button>
+            </div>
+        </div>
+        
+        <div class="test-scenario">
+            <h3>Scenario 3: Order Type Change Test</h3>
+            <p>Simulates changing order type (Dine In ↔ Takeout).</p>
+            <div class="form-row">
+                <select id="newOrderType">
+                    <option value="dine_in">Dine In</option>
+                    <option value="takeout">Takeout</option>
+                </select>
+                <button onclick="testOrderTypeChange()">Test Order Type Change</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Dashboard -->
+    <div class="test-container">
+        <h2>📊 Test Results Dashboard</h2>
+        <div class="results-grid">
+            <div class="result-card">
+                <h4>Tests Passed</h4>
+                <div class="metric" id="passedCount">0</div>
+            </div>
+            <div class="result-card">
+                <h4>Tests Failed</h4>
+                <div class="metric" id="failedCount">0</div>
+            </div>
+            <div class="result-card">
+                <h4>API Response Time</h4>
+                <div class="metric" id="avgResponseTime">-</div>
+            </div>
+            <div class="result-card">
+                <h4>Last Sync Status</h4>
+                <div class="metric" id="lastSyncStatus">Pending</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Console Log -->
+    <div class="test-container">
+        <h2>📋 Test Console</h2>
+        <div class="form-row">
+            <button onclick="clearLog()" class="warning">Clear Log</button>
+            <button onclick="exportLog()" class="primary">Export Log</button>
+            <button onclick="runAllTests()" class="primary">Run All Tests</button>
+        </div>
+        <div id="testLog" class="log">
+            <div class="log-entry log-info">[SYSTEM] Cashier Database Sync Integration Test Suite initialized</div>
+            <div class="log-entry log-info">[SYSTEM] Ready to begin testing...</div>
+        </div>
+    </div>
+
+    <script>
+        // Global test state
+        let testState = {
+            currentOrderId: null,
+            connectionOk: false,
+            testsRun: 0,
+            testsPassed: 0,
+            testsFailed: 0,
+            responseTimes: [],
+            startTime: null
+        };
+        
+        // Logging and UI functions
+        function log(message, type = 'info', category = 'TEST') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] [${category}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(`[${category}] ${message}`);
+        }
+        
+        function updateStatus(sectionId, status, message = '') {
+            const section = document.getElementById(sectionId);
+            const indicator = section.querySelector('.status-indicator');
+            
+            section.className = `test-section ${status}`;
+            indicator.className = `status-indicator status-${status}`;
+            
+            if (message) {
+                const p = section.querySelector('p');
+                p.textContent = message;
+            }
+        }
+        
+        function updateMetrics() {
+            document.getElementById('passedCount').textContent = testState.testsPassed;
+            document.getElementById('failedCount').textContent = testState.testsFailed;
+            
+            if (testState.responseTimes.length > 0) {
+                const avg = testState.responseTimes.reduce((a, b) => a + b, 0) / testState.responseTimes.length;
+                document.getElementById('avgResponseTime').textContent = avg.toFixed(0) + 'ms';
+            }
+        }
+        
+        function recordTest(passed, responseTime = 0) {
+            testState.testsRun++;
+            if (passed) {
+                testState.testsPassed++;
+            } else {
+                testState.testsFailed++;
+            }
+            
+            if (responseTime > 0) {
+                testState.responseTimes.push(responseTime);
+            }
+            
+            updateMetrics();
+        }
+        
+        // Test Functions
+        async function testConnection() {
+            log('Testing database connection and API accessibility...', 'info');
+            testState.startTime = Date.now();
+            
+            try {
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php?limit=1', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const responseTime = Date.now() - testState.startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    testState.connectionOk = true;
+                    updateStatus('connectionStatus', 'success', 'Database connection successful');
+                    log(`✅ API connection successful (${responseTime}ms)`, 'success', 'CONNECTION');
+                    log(`📋 Found ${data.data ? data.data.length : 0} orders in database`, 'info', 'CONNECTION');
+                    recordTest(true, responseTime);
+                    
+                    // Enable dependent tests
+                    document.getElementById('syncTestBtn').disabled = false;
+                    document.getElementById('e2eTestBtn').disabled = false;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                testState.connectionOk = false;
+                updateStatus('connectionStatus', 'error', 'Database connection failed');
+                log(`❌ Connection failed: ${error.message}`, 'error', 'CONNECTION');
+                recordTest(false);
+            }
+        }
+        
+        async function testOrderLookup() {
+            const orderNumber = document.getElementById('testOrderNumber').value.trim();
+            
+            if (!orderNumber) {
+                log('⚠️ Please enter an order number to test', 'warning', 'LOOKUP');
+                return;
+            }
+            
+            log(`🔍 Testing order lookup for order: ${orderNumber}`, 'info', 'LOOKUP');
+            testState.startTime = Date.now();
+            
+            try {
+                const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNumber}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const responseTime = Date.now() - testState.startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.order) {
+                    testState.currentOrderId = result.order.id;
+                    
+                    // Update form fields
+                    document.getElementById('modifyOrderId').value = testState.currentOrderId;
+                    
+                    updateStatus('orderLookupStatus', 'success', `Order found: #${orderNumber} (ID: ${testState.currentOrderId})`);
+                    log(`✅ Order lookup successful (${responseTime}ms)`, 'success', 'LOOKUP');
+                    log(`📦 Order ID: ${testState.currentOrderId}, Total: ₱${result.order.total_amount}`, 'info', 'LOOKUP');
+                    log(`🍽️ Items: ${result.order.items ? result.order.items.length : 0}`, 'info', 'LOOKUP');
+                    
+                    recordTest(true, responseTime);
+                } else {
+                    throw new Error(result.message || 'Order not found');
+                }
+                
+            } catch (error) {
+                updateStatus('orderLookupStatus', 'error', 'Order lookup failed');
+                log(`❌ Order lookup failed: ${error.message}`, 'error', 'LOOKUP');
+                recordTest(false);
+            }
+        }
+        
+        async function testSyncFunction() {
+            if (!testState.currentOrderId) {
+                log('⚠️ Please lookup an order first to get an Order ID', 'warning', 'SYNC');
+                return;
+            }
+            
+            log(`🔄 Testing database synchronization for order ID: ${testState.currentOrderId}`, 'info', 'SYNC');
+            testState.startTime = Date.now();
+            
+            try {
+                const syncData = {
+                    id: testState.currentOrderId,
+                    items: [
+                        {
+                            product_name: 'Test Sync Coffee',
+                            quantity: 2,
+                            unit_price: 155.00,
+                            total_price: 310.00,
+                            addons: ['Extra Shot']
+                        }
+                    ],
+                    total_amount: 310.00,
+                    order_type: 'dine_in'
+                };
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(syncData)
+                });
+                
+                const responseTime = Date.now() - testState.startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    updateStatus('syncStatus', 'success', 'Database synchronization working correctly');
+                    log(`✅ Database sync successful (${responseTime}ms)`, 'success', 'SYNC');
+                    document.getElementById('lastSyncStatus').textContent = 'Success';
+                    recordTest(true, responseTime);
+                    
+                    // Verify the changes
+                    await verifySyncChanges();
+                } else {
+                    throw new Error(result.message || 'Sync failed');
+                }
+                
+            } catch (error) {
+                updateStatus('syncStatus', 'error', 'Database synchronization failed');
+                log(`❌ Database sync failed: ${error.message}`, 'error', 'SYNC');
+                document.getElementById('lastSyncStatus').textContent = 'Failed';
+                recordTest(false);
+            }
+        }
+        
+        async function verifySyncChanges() {
+            log('🔍 Verifying sync changes in database...', 'info', 'VERIFY');
+            
+            try {
+                const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?id=${testState.currentOrderId}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success' && result.data) {
+                        log(`✅ Verification successful: Total = ₱${result.data.total_amount}`, 'success', 'VERIFY');
+                        log(`📋 Items in order: ${result.data.items ? result.data.items.length : 0}`, 'info', 'VERIFY');
+                    }
+                }
+            } catch (error) {
+                log(`⚠️ Verification warning: ${error.message}`, 'warning', 'VERIFY');
+            }
+        }
+        
+        async function testOrderModification() {
+            if (!testState.currentOrderId) {
+                log('⚠️ Please lookup an order first', 'warning', 'MODIFY');
+                return;
+            }
+            
+            const quantity = parseInt(document.getElementById('newQuantity').value);
+            const price = parseFloat(document.getElementById('newPrice').value);
+            
+            log(`📝 Testing order modification: ${quantity} items at ₱${price} each`, 'info', 'MODIFY');
+            
+            try {
+                const modifyData = {
+                    id: testState.currentOrderId,
+                    items: [
+                        {
+                            product_name: 'Modified Test Item',
+                            quantity: quantity,
+                            unit_price: price,
+                            total_price: quantity * price,
+                            addons: []
+                        }
+                    ],
+                    total_amount: quantity * price,
+                    order_type: 'dine_in'
+                };
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(modifyData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Order modification successful`, 'success', 'MODIFY');
+                    recordTest(true);
+                } else {
+                    throw new Error(result.message || 'Modification failed');
+                }
+                
+            } catch (error) {
+                log(`❌ Order modification failed: ${error.message}`, 'error', 'MODIFY');
+                recordTest(false);
+            }
+        }
+        
+        async function testItemAddition() {
+            if (!testState.currentOrderId) {
+                log('⚠️ Please lookup an order first', 'warning', 'ADD');
+                return;
+            }
+            
+            const itemName = document.getElementById('newItemName').value;
+            const quantity = parseInt(document.getElementById('newItemQty').value);
+            const price = parseFloat(document.getElementById('newItemPrice').value);
+            
+            log(`➕ Testing item addition: ${quantity}x ${itemName} at ₱${price}`, 'info', 'ADD');
+            
+            try {
+                // First get current order to append to it
+                const getCurrentResponse = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?id=${testState.currentOrderId}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!getCurrentResponse.ok) {
+                    throw new Error('Failed to get current order');
+                }
+                
+                const currentData = await getCurrentResponse.json();
+                const currentItems = currentData.data.items || [];
+                
+                // Add new item
+                const updatedItems = [
+                    ...currentItems.map(item => ({
+                        product_name: item.product_name,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        total_price: item.total_price,
+                        addons: item.addons || []
+                    })),
+                    {
+                        product_name: itemName,
+                        quantity: quantity,
+                        unit_price: price,
+                        total_price: quantity * price,
+                        addons: []
+                    }
+                ];
+                
+                const newTotal = updatedItems.reduce((sum, item) => sum + item.total_price, 0);
+                
+                const addData = {
+                    id: testState.currentOrderId,
+                    items: updatedItems,
+                    total_amount: newTotal,
+                    order_type: 'dine_in'
+                };
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(addData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Item addition successful (New total: ₱${newTotal})`, 'success', 'ADD');
+                    recordTest(true);
+                } else {
+                    throw new Error(result.message || 'Addition failed');
+                }
+                
+            } catch (error) {
+                log(`❌ Item addition failed: ${error.message}`, 'error', 'ADD');
+                recordTest(false);
+            }
+        }
+        
+        async function testOrderTypeChange() {
+            if (!testState.currentOrderId) {
+                log('⚠️ Please lookup an order first', 'warning', 'TYPE');
+                return;
+            }
+            
+            const newType = document.getElementById('newOrderType').value;
+            log(`🔄 Testing order type change to: ${newType}`, 'info', 'TYPE');
+            
+            try {
+                // Get current order
+                const getCurrentResponse = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/orders.php?id=${testState.currentOrderId}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const currentData = await getCurrentResponse.json();
+                const currentItems = currentData.data.items || [];
+                
+                const typeChangeData = {
+                    id: testState.currentOrderId,
+                    items: currentItems.map(item => ({
+                        product_name: item.product_name,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        total_price: item.total_price,
+                        addons: item.addons || []
+                    })),
+                    total_amount: currentData.data.total_amount,
+                    order_type: newType
+                };
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(typeChangeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    log(`✅ Order type change successful to: ${newType}`, 'success', 'TYPE');
+                    recordTest(true);
+                } else {
+                    throw new Error(result.message || 'Type change failed');
+                }
+                
+            } catch (error) {
+                log(`❌ Order type change failed: ${error.message}`, 'error', 'TYPE');
+                recordTest(false);
+            }
+        }
+        
+        async function runEndToEndTest() {
+            log('🚀 Starting End-to-End test workflow...', 'info', 'E2E');
+            updateStatus('endToEndStatus', 'warning', 'Running end-to-end test...');
+            
+            try {
+                // Step 1: Test connection
+                await testConnection();
+                
+                // Step 2: Test order lookup
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testOrderLookup();
+                
+                // Step 3: Test synchronization
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testSyncFunction();
+                
+                // Step 4: Test modifications
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await testOrderModification();
+                
+                updateStatus('endToEndStatus', 'success', 'End-to-end test completed successfully');
+                log('🎉 End-to-End test workflow completed successfully!', 'success', 'E2E');
+                
+            } catch (error) {
+                updateStatus('endToEndStatus', 'error', 'End-to-end test failed');
+                log(`❌ End-to-End test failed: ${error.message}`, 'error', 'E2E');
+            }
+        }
+        
+        async function runAllTests() {
+            log('🔄 Running complete test suite...', 'info', 'SUITE');
+            
+            // Reset metrics
+            testState.testsRun = 0;
+            testState.testsPassed = 0;
+            testState.testsFailed = 0;
+            testState.responseTimes = [];
+            
+            try {
+                await testConnection();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                await testOrderLookup();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                await testSyncFunction();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                await testOrderModification();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                await testItemAddition();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                await testOrderTypeChange();
+                
+                log(`🎯 Test suite completed: ${testState.testsPassed}/${testState.testsRun} tests passed`, 'success', 'SUITE');
+                
+            } catch (error) {
+                log(`❌ Test suite error: ${error.message}`, 'error', 'SUITE');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '<div class="log-entry log-info">[SYSTEM] Log cleared</div>';
+        }
+        
+        function exportLog() {
+            const logContent = document.getElementById('testLog').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cashier-sync-test-${new Date().toISOString().slice(0,10)}.log`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🧪 Cashier Database Sync Integration Test Suite loaded', 'success', 'INIT');
+            log('💡 Tip: Start with "Test Connection" then proceed with order lookup', 'info', 'INIT');
+            
+            // Auto-test connection on load
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>

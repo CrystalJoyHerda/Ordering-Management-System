@@ -1,6 +1,91 @@
 // Test to verify JS file is loading
 console.log('cashiering.js file loaded successfully');
 
+// Global variable to store current order ID for database synchronization
+let currentOrderId = null;
+
+// Helper function to sync order changes to database
+async function syncOrderToDatabase() {
+    if (!currentOrderId) {
+        console.log('⚠️ No order ID available for sync');
+        return false;
+    }
+    
+    console.log('🔄 Syncing order changes to database...');
+    
+    try {
+        // Collect current order items from the interface
+        const orderItems = [];
+        const quantities = document.getElementById('items-container').children;
+        const names = document.getElementById('names-container').children;
+        const addons = document.getElementById('addons-container').children;
+        const prices = document.getElementById('prices-container').children;
+        
+        for (let i = 0; i < quantities.length; i++) {
+            const qtyText = quantities[i].childNodes[0].textContent.trim();
+            const qty = parseInt(qtyText);
+            const name = names[i].textContent.trim();
+            const addonText = addons[i].textContent.trim();
+            const priceText = prices[i].textContent.replace('₱', '').trim();
+            const unitPrice = parseFloat(priceText);
+            
+            orderItems.push({
+                product_name: name,
+                quantity: qty,
+                unit_price: unitPrice,
+                total_price: unitPrice * qty,
+                addons: addonText !== '-' && addonText ? addonText.split(', ').map(a => a.trim()) : []
+            });
+        }
+        
+        // Calculate new total
+        const totalAmount = orderItems.reduce((sum, item) => sum + item.total_price, 0);
+        
+        // Get order type
+        const selectedOrderType = document.querySelector('.type-button.active');
+        const orderType = selectedOrderType ? selectedOrderType.dataset.type.replace('-', '_') : 'dine_in';
+        
+        // Prepare update data
+        const updateData = {
+            id: currentOrderId,
+            items: orderItems,
+            total_amount: totalAmount,
+            order_type: orderType
+        };
+        
+        console.log('📤 Sending update data:', updateData);
+        
+        // Send PUT request to update the order
+        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('📥 Database sync result:', result);
+        
+        if (result.status === 'success') {
+            console.log('✅ Order successfully synced to database');
+            return true;
+        } else {
+            console.error('❌ Database sync failed:', result.message);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('🚨 Error syncing to database:', error);
+        return false;
+    }
+}
+
 // Debug: Make functions globally accessible
 window.lookupOrder = function() {
     console.log('🎯 Global lookupOrder called!');
@@ -109,6 +194,10 @@ function confirmCancelOrder() {
         btn.classList.remove('active');
     });
     
+    // Reset the current order ID for database synchronization
+    currentOrderId = null;
+    console.log('🔄 Order ID reset for database sync');
+    
     // Close the modal
     closeCancelOrderModal();
     
@@ -182,6 +271,10 @@ async function lookupOrderInternal() {
             console.log('✅ Order found successfully!');
             const order = result.order;
             console.log('📦 Order details:', order);
+            
+            // Store the order ID for database synchronization
+            currentOrderId = order.id;
+            console.log('🔗 Stored order ID for sync:', currentOrderId);
             
             // The order already includes items, no need for second API call
             if (order.items && order.items.length > 0) {
@@ -1254,6 +1347,17 @@ function addSelectedItems() {
     // Update total
     updateTotal();
     
+    // Sync changes to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Add items changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync add items changes to database');
+            }
+        });
+    }
+    
     // Close modal
     closeAddItemModal();
 }
@@ -1387,6 +1491,17 @@ function editItem(buttonElement) {
         updateTotal();
         
         console.log(`Item "${currentName}" quantity updated to ${newQuantity}`);
+        
+        // Sync changes to database if we have an order ID
+        if (currentOrderId) {
+            syncOrderToDatabase().then(success => {
+                if (success) {
+                    console.log('✅ Edit changes synced to database');
+                } else {
+                    console.warn('⚠️ Failed to sync edit changes to database');
+                }
+            });
+        }
     } else if (newQuantity !== null) {
         showInvalidQuantityModal();
     }
@@ -1411,8 +1526,7 @@ function deleteItem(buttonElement) {
     // Get item name for confirmation
     const nameElement = namesContainer.children[rowIndex];
     const itemName = nameElement.textContent;
-    
-    // Show delete confirmation modal
+      // Show delete confirmation modal
     showDeleteItemModal(itemName, () => {
         // Remove the corresponding elements from all containers
         itemsContainer.removeChild(itemsContainer.children[rowIndex]);
@@ -1424,6 +1538,17 @@ function deleteItem(buttonElement) {
         updateTotal();
         
         console.log(`Item "${itemName}" removed from order`);
+        
+        // Sync changes to database if we have an order ID
+        if (currentOrderId) {
+            syncOrderToDatabase().then(success => {
+                if (success) {
+                    console.log('✅ Delete changes synced to database');
+                } else {
+                    console.warn('⚠️ Failed to sync delete changes to database');
+                }
+            });
+        }
     });
 }
 
@@ -1565,6 +1690,17 @@ function saveChanges() {
     
     // Update total
     updateTotal();
+    
+    // Sync changes to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Edit modal changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync edit modal changes to database');
+            }
+        });
+    }
     
     // Close modal
     modal.classList.remove('show');

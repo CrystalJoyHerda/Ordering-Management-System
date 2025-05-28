@@ -77,16 +77,7 @@ try {
             
             $result = $order->createOrder($data);
             sendResponse($result);
-            break;
-
-        case 'PUT':
-            if (!isset($_GET['id'])) {
-                sendResponse([
-                    'status' => 'error',
-                    'message' => 'Order ID is required'
-                ], 400);
-            }
-
+            break;        case 'PUT':
             // Get raw input
             $rawInput = file_get_contents('php://input');
             $data = json_decode($rawInput, true);
@@ -99,7 +90,22 @@ try {
                 ], 400);
             }
             
-            $result = $order->updateOrder($_GET['id'], $data);
+            // Check for order ID in data or URL
+            $orderId = null;
+            if (isset($data['id'])) {
+                $orderId = $data['id'];
+            } elseif (isset($_GET['id'])) {
+                $orderId = $_GET['id'];
+            }
+            
+            if (!$orderId) {
+                sendResponse([
+                    'status' => 'error',
+                    'message' => 'Order ID is required in request body or URL'
+                ], 400);
+            }
+            
+            $result = $order->updateOrder($orderId, $data);
             sendResponse($result);
             break;
 
