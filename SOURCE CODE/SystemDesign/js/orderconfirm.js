@@ -34,6 +34,9 @@ function loadOrderData() {
     if (totalAmount) {
         totalAmount.textContent = `₱${orderData.total}`;
     }
+
+    // Log order ID for debugging
+    console.log('📋 Order confirmation - Order ID:', orderData.orderId);
 }
 
 function setupCashInputHandler() {
@@ -67,13 +70,13 @@ function setupCashInputHandler() {
                 
                 if (cash < total) {
                     e.preventDefault();
-                    showInvalidCashModal();
+                    alert('Please enter sufficient cash amount.');
                     return;
                 }
                 
                 if (cash === 0) {
                     e.preventDefault();
-                    showInvalidCashModal();
+                    alert('Please enter cash amount.');
                     return;
                 }
                 
@@ -83,27 +86,22 @@ function setupCashInputHandler() {
     }
 }
 
-// Show invalid cash amount modal
-function showInvalidCashModal() {
-    const modal = document.getElementById('invalidCashModal');
-    modal.classList.add('show');
-}
-
-// Close invalid cash amount modal
-function closeInvalidCashModal() {
-    const modal = document.getElementById('invalidCashModal');
-    modal.classList.remove('show');
-}
-
 function handlePrint() {
     const orderData = JSON.parse(localStorage.getItem('currentOrder'));
     const cashAmount = document.getElementById('cashInput').value;
     const totalAmount = document.getElementById('totalAmount').textContent;
     const changeAmount = document.getElementById('changeAmount').textContent;
 
-    // Validate cash input - replace alert with modal
+    // Validate cash input
     if (!cashAmount || parseFloat(cashAmount) <= 0) {
-        showInvalidCashModal();
+        alert('Please enter a valid cash amount');
+        return;
+    }
+
+    // Ensure we have an order ID for status updates
+    if (!orderData.orderId) {
+        console.error('❌ No order ID found in order data');
+        alert('Error: Order ID missing. Cannot process receipt.');
         return;
     }
 
@@ -112,24 +110,17 @@ function handlePrint() {
         ...orderData,
         cash: `₱${parseFloat(cashAmount).toFixed(2)}`,
         total: totalAmount,
-        change: changeAmount
+        change: changeAmount,
+        orderId: orderData.orderId
     };
 
     // Store receipt data for the receipt page
     localStorage.setItem('receiptData', JSON.stringify(receiptData));
-    console.log('Receipt data saved:', receiptData);
+    console.log('📋 Receipt data saved with Order ID:', receiptData.orderId);
     
     // Navigate directly to receipt page without print dialog
     window.location.href = 'receiptinter.html';
 }
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('invalidCashModal');
-    if (e.target === modal) {
-        closeInvalidCashModal();
-    }
-});
 
 // Make functions globally accessible
 window.handlePrint = handlePrint;

@@ -83,10 +83,10 @@ try {
         case 'GET':
             // Get sales data based on action parameter
             $action = $_GET['action'] ?? 'overview';
-            
-            switch ($action) {
+              switch ($action) {
                 case 'overview':
-                    $result = getSalesOverview($conn);
+                    $date = $_GET['date'] ?? null;
+                    $result = getSalesOverview($conn, $date);
                     sendResponse($result);
                     break;
                     
@@ -95,10 +95,10 @@ try {
                     $result = getSalesTrends($conn, $timeframe);
                     sendResponse($result);
                     break;
-                    
-                case 'top_products':
+                      case 'top_products':
                     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
-                    $result = getTopSellingProducts($conn, $limit);
+                    $date = $_GET['date'] ?? null;
+                    $result = getTopSellingProducts($conn, $limit, $date);
                     sendResponse($result);
                     break;
                       case 'date_range':
@@ -153,14 +153,19 @@ try {
 /**
  * Get sales overview data (today, weekly, monthly)
  */
-function getSalesOverview($conn) {
+function getSalesOverview($conn, $selectedDate = null) {
     try {
-        // Use Philippine date functions to ensure correct date calculation
-        $today = getPhilippineDate();
-        $yesterday = getPhilippineDate(-1);
+        // If a specific date is provided, use it; otherwise use Philippine date functions
+        if ($selectedDate) {
+            $today = $selectedDate;
+            $yesterday = date('Y-m-d', strtotime($selectedDate . ' -1 day'));
+        } else {
+            $today = getPhilippineDate();
+            $yesterday = getPhilippineDate(-1);
+        }
         
         // Calculate week and month dates using Philippine timezone
-        $philippineTime = new DateTime();
+        $philippineTime = new DateTime($today);
         $philippineTime->setTimezone(new DateTimeZone('Asia/Manila'));
         
         $thisWeekStart = clone $philippineTime;
@@ -180,44 +185,43 @@ function getSalesOverview($conn) {
         $lastMonthEnd = clone $lastMonthStart;
         $lastMonthEnd->modify('last day of this month');
         $lastMonthStartStr = $lastMonthStart->format('Y-m-d');
-        $lastMonthEndStr = $lastMonthEnd->format('Y-m-d');
-          // Today's sales
-        $todayQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :today AND status != 'cancelled'";
+        $lastMonthEndStr = $lastMonthEnd->format('Y-m-d');// Today's sales - only count completed orders
+        $todayQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :today AND status = 'completed'";
         $stmt = $conn->prepare($todayQuery);
         $stmt->bindValue(':today', $today);
         $stmt->execute();
         $todaySales = $stmt->fetch()['total'];
         
-        // Yesterday's sales for comparison
-        $yesterdayQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :yesterday AND status != 'cancelled'";
+        // Yesterday's sales for comparison - only count completed orders
+        $yesterdayQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :yesterday AND status = 'completed'";
         $stmt = $conn->prepare($yesterdayQuery);
         $stmt->bindValue(':yesterday', $yesterday);
         $stmt->execute();
         $yesterdaySales = $stmt->fetch()['total'];
         
-        // This week's sales
-        $weekQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) >= :week_start AND status != 'cancelled'";
+        // This week's sales - only count completed orders
+        $weekQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) >= :week_start AND status = 'completed'";
         $stmt = $conn->prepare($weekQuery);
         $stmt->bindValue(':week_start', $thisWeekStart);
         $stmt->execute();
         $weekSales = $stmt->fetch()['total'];
         
-        // Last week's sales for comparison
-        $lastWeekQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :last_week_start AND :last_week_end AND status != 'cancelled'";
+        // Last week's sales for comparison - only count completed orders
+        $lastWeekQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :last_week_start AND :last_week_end AND status = 'completed'";
         $stmt = $conn->prepare($lastWeekQuery);        $stmt->bindValue(':last_week_start', $lastWeekStartStr);
         $stmt->bindValue(':last_week_end', $lastWeekEndStr);
         $stmt->execute();
         $lastWeekSales = $stmt->fetch()['total'];
         
-        // This month's sales
-        $monthQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) >= :month_start AND status != 'cancelled'";
+        // This month's sales - only count completed orders
+        $monthQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) >= :month_start AND status = 'completed'";
         $stmt = $conn->prepare($monthQuery);
         $stmt->bindValue(':month_start', $thisMonthStart);
         $stmt->execute();
         $monthSales = $stmt->fetch()['total'];
         
-        // Last month's sales for comparison
-        $lastMonthQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :last_month_start AND :last_month_end AND status != 'cancelled'";
+        // Last month's sales for comparison - only count completed orders
+        $lastMonthQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :last_month_start AND :last_month_end AND status = 'completed'";
         $stmt = $conn->prepare($lastMonthQuery);
         $stmt->bindValue(':last_month_start', $lastMonthStartStr);
         $stmt->bindValue(':last_month_end', $lastMonthEndStr);
@@ -266,8 +270,7 @@ function getSalesTrends($conn, $timeframe = 'daily') {
                 for ($i = 6; $i >= 0; $i--) {
                     $date = date('Y-m-d', strtotime("-{$i} days"));
                     $label = date('M j', strtotime($date));
-                    
-                    $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :date AND status != 'cancelled'";
+                      $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = :date AND status = 'completed'";
                     $stmt = $conn->prepare($query);
                     $stmt->bindValue(':date', $date);
                     $stmt->execute();
@@ -287,8 +290,7 @@ function getSalesTrends($conn, $timeframe = 'daily') {
                     $weekStart = date('Y-m-d', strtotime("-{$i} weeks monday"));
                     $weekEnd = date('Y-m-d', strtotime("-{$i} weeks sunday"));
                     $label = 'Week ' . date('W', strtotime($weekStart));
-                    
-                    $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start AND :end AND status != 'cancelled'";
+                      $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start AND :end AND status = 'completed'";
                     $stmt = $conn->prepare($query);
                     $stmt->bindValue(':start', $weekStart);
                     $stmt->bindValue(':end', $weekEnd);
@@ -310,8 +312,7 @@ function getSalesTrends($conn, $timeframe = 'daily') {
                     $monthStart = date('Y-m-01', strtotime("-{$i} months"));
                     $monthEnd = date('Y-m-t', strtotime("-{$i} months"));
                     $label = date('M Y', strtotime($monthStart));
-                    
-                    $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start AND :end AND status != 'cancelled'";
+                      $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start AND :end AND status = 'completed'";
                     $stmt = $conn->prepare($query);
                     $stmt->bindValue(':start', $monthStart);
                     $stmt->bindValue(':end', $monthEnd);
@@ -344,8 +345,21 @@ function getSalesTrends($conn, $timeframe = 'daily') {
 /**
  * Get top selling products
  */
-function getTopSellingProducts($conn, $limit = 10) {
+function getTopSellingProducts($conn, $limit = 10, $selectedDate = null) {
     try {
+        // Build date condition
+        $dateCondition = '';
+        $dateParams = [];
+        
+        if ($selectedDate) {
+            // Filter by specific date
+            $dateCondition = ' AND DATE(o.created_at) = :selected_date';
+            $dateParams[':selected_date'] = $selectedDate;
+        } else {
+            // Default: last 30 days
+            $dateCondition = ' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)';
+        }
+        
         $query = "SELECT 
                     oi.product_name,
                     SUM(oi.quantity) as total_quantity,
@@ -354,29 +368,53 @@ function getTopSellingProducts($conn, $limit = 10) {
                     COUNT(DISTINCT o.id) as order_count
                   FROM order_items oi
                   JOIN orders o ON oi.order_id = o.id
-                  WHERE o.status != 'cancelled'
-                    AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                  WHERE o.status = 'completed'" . $dateCondition . "
                   GROUP BY oi.product_name
                   ORDER BY total_quantity DESC
                   LIMIT :limit";
         
         $stmt = $conn->prepare($query);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        
+        // Bind date parameters if any
+        foreach ($dateParams as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        
         $stmt->execute();
         $products = $stmt->fetchAll();
         
-        // Calculate trends (compare with previous 30 days)
+        // Calculate trends (compare with previous period)
         foreach ($products as &$product) {
-            $trendQuery = "SELECT 
-                            SUM(oi.quantity) as prev_quantity
-                           FROM order_items oi
-                           JOIN orders o ON oi.order_id = o.id
-                           WHERE o.status != 'cancelled'
-                             AND oi.product_name = :product_name
-                             AND o.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            $trendQuery = '';
+            $trendParams = [':product_name' => $product['product_name']];
+            
+            if ($selectedDate) {
+                // Compare with previous day
+                $prevDate = date('Y-m-d', strtotime($selectedDate . ' -1 day'));
+                $trendQuery = "SELECT 
+                                SUM(oi.quantity) as prev_quantity
+                               FROM order_items oi
+                               JOIN orders o ON oi.order_id = o.id
+                               WHERE o.status = 'completed'
+                                 AND oi.product_name = :product_name
+                                 AND DATE(o.created_at) = :prev_date";
+                $trendParams[':prev_date'] = $prevDate;
+            } else {
+                // Compare with previous 30 days
+                $trendQuery = "SELECT 
+                                SUM(oi.quantity) as prev_quantity
+                               FROM order_items oi
+                               JOIN orders o ON oi.order_id = o.id
+                               WHERE o.status = 'completed'
+                                 AND oi.product_name = :product_name
+                                 AND o.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            }
             
             $trendStmt = $conn->prepare($trendQuery);
-            $trendStmt->bindValue(':product_name', $product['product_name']);
+            foreach ($trendParams as $key => $value) {
+                $trendStmt->bindValue($key, $value);
+            }
             $trendStmt->execute();
             $prevData = $trendStmt->fetch();
             $prevQuantity = $prevData['prev_quantity'] ?? 0;
@@ -402,17 +440,16 @@ function getTopSellingProducts($conn, $limit = 10) {
  * Get sales data by date range
  */
 function getSalesDataByDateRange($conn, $startDate, $endDate) {
-    try {
-        // Total sales in date range
-        $totalQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start_date AND :end_date AND status != 'cancelled'";
+    try {        // Total sales in date range - only count completed orders
+        $totalQuery = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start_date AND :end_date AND status = 'completed'";
         $stmt = $conn->prepare($totalQuery);
         $stmt->bindValue(':start_date', $startDate);
         $stmt->bindValue(':end_date', $endDate);
         $stmt->execute();
         $totalSales = $stmt->fetch()['total'];
         
-        // Order count
-        $countQuery = "SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) BETWEEN :start_date AND :end_date AND status != 'cancelled'";
+        // Order count - only count completed orders
+        $countQuery = "SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) BETWEEN :start_date AND :end_date AND status = 'completed'";
         $stmt = $conn->prepare($countQuery);
         $stmt->bindValue(':start_date', $startDate);
         $stmt->bindValue(':end_date', $endDate);
@@ -421,15 +458,14 @@ function getSalesDataByDateRange($conn, $startDate, $endDate) {
         
         // Average order value
         $avgOrderValue = $orderCount > 0 ? $totalSales / $orderCount : 0;
-        
-        // Daily breakdown
+          // Daily breakdown - only count completed orders
         $dailyQuery = "SELECT 
                         DATE(created_at) as date,
                         COALESCE(SUM(total_amount), 0) as daily_total,
                         COUNT(*) as daily_count
                        FROM orders 
                        WHERE DATE(created_at) BETWEEN :start_date AND :end_date 
-                         AND status != 'cancelled'
+                         AND status = 'completed'
                        GROUP BY DATE(created_at)
                        ORDER BY date";
         

@@ -87,7 +87,8 @@ h2 {
 }
 
 .bar-graph {
-    height: 150px;
+    flex: 1;
+    min-height: 300px;
     border: 1px solid #eee;
     border-radius: 8px;
 }

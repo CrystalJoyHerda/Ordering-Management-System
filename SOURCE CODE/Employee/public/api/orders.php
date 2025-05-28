@@ -45,23 +45,25 @@ try {
     // Initialize order object
     $order = new OrderModel();
 
+    // Log the request for debugging
+    error_log("Orders API called - Method: " . $_SERVER['REQUEST_METHOD']);
+    error_log("Request body: " . file_get_contents('php://input'));
+
     // Handle request based on HTTP method
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
-            if (isset($_GET['id'])) {
-                $result = $order->getById($_GET['id']);
-                sendResponse($result);
-            } else if (isset($_GET['order_number'])) {
+            if (isset($_GET['order_number'])) {
                 $result = $order->getByOrderNumber($_GET['order_number']);
-                sendResponse($result);
+            } elseif (isset($_GET['id'])) {
+                $result = $order->getById($_GET['id']);
             } else {
                 // Get all orders with optional filters
                 $status = $_GET['status'] ?? null;
-                $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
-                $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+                $limit = $_GET['limit'] ?? 50;
+                $offset = $_GET['offset'] ?? 0;
+                $date = $_GET['date'] ?? null;
                 
-                $result = $order->getAllOrders($status, $limit, $offset);
-                sendResponse($result);
+                $result = $order->getAllOrders($status, $limit, $offset, $date);
             }
             break;
         
@@ -76,7 +78,6 @@ try {
             }
             
             $result = $order->createOrder($data);
-            sendResponse($result);
             break;        case 'PUT':
             // Get raw input
             $rawInput = file_get_contents('php://input');
@@ -105,35 +106,40 @@ try {
                 ], 400);
             }
             
-            $result = $order->updateOrder($orderId, $data);
-            sendResponse($result);
-            break;
-
-        case 'DELETE':
-            if (!isset($_GET['id'])) {
-                sendResponse([
-                    'status' => 'error',
-                    'message' => 'Order ID is required'
-                ], 400);
+            error_log("PUT request for order ID: " . $orderId);
+            error_log("PUT data: " . json_encode($data));
+            
+            // Check if this is a simple status update
+            if (isset($data['status']) && count($data) == 2) {
+                error_log("Detected simple status update to: " . $data['status']);
+                $result = $order->updateStatus($orderId, $data['status']);
+            } else {
+                error_log("Detected complex order update");
+                $result = $order->updateOrder($orderId, $data);
             }
-
-            $result = $order->deleteOrder($_GET['id']);
-            sendResponse($result);
             break;
-
+            
+        case 'DELETE':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!isset($data['id'])) {
+                throw new Exception('Order ID is required for deletion');
+            }
+            $result = $order->deleteOrder($data['id']);
+            break;
+            
         default:
-            sendResponse([
-                'status' => 'error',
-                'message' => 'Method not allowed'
-            ], 405);
+            throw new Exception('Method not allowed');
     }
-} catch (Exception $e) {
-    // Log the error
-    error_log("Orders API Error: " . $e->getMessage());
     
-    sendResponse([
+    error_log("API result: " . json_encode($result));
+    echo json_encode($result);
+    
+} catch (Exception $e) {
+    error_log("API Error: " . $e->getMessage());
+    http_response_code(400);
+    echo json_encode([
         'status' => 'error',
-        'message' => 'Server error: ' . $e->getMessage()
-    ], 500);
+        'message' => $e->getMessage()
+    ]);
 }
 ?>

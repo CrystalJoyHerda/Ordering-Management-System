@@ -30,10 +30,21 @@
     margin-top: 8px;
     font-size: 14px;
     opacity: 0.9;
+    position: relative;
 }
 
-.current-date i {
-    font-size: 16px;
+.current-date::after {
+    content: "• Live";
+    color: #4CAF50;
+    font-size: 12px;
+    margin-left: 8px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
 }
 
 .header-right {
@@ -417,4 +428,77 @@
     color: white;
     border-color: #67503b;
     box-shadow: 0 2px 4px rgba(103, 80, 59, 0.2);
+}
+
+/* Enhanced date display styling */
+.current-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+}
+
+.current-date::after {
+    content: "• Live";
+    color: #4CAF50;
+    font-size: 12px;
+    margin-left: 8px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+/* Today's Sales card enhancement */
+.card:first-child {
+    border-left: 4px solid #4CAF50;
+}
+
+.card:first-child h3::after {
+    content: " (Live)";
+    font-size: 12px;
+    color: #4CAF50;
+    font-weight: normal;
+}
+
+/* Debug indicator for data sync */
+.card.loading {
+    position: relative;
+    opacity: 0.7;
+}
+
+.card.loading::after {
+    content: "Updating...";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(103, 80, 59, 0.8);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    z-index: 1;
+}
+
+/* Enhanced Today's Sales card with date sync indicator */
+.card:first-child h3 {
+    position: relative;
+}
+
+.card:first-child h3::after {
+    content: " (Live - " attr(data-date) ")";
+    font-size: 10px;
+    color: #4CAF50;
+    font-weight: normal;
+    display: none;
+}
+
+.card:first-child[data-synced="true"] h3::after {
+    display: inline;
 }

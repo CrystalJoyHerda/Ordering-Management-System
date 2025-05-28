@@ -66,14 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 function getDashboardData($conn) {
     try {
         $today = date('Y-m-d');
-        
-        // Get today's orders count and sales total
+          // Get today's orders count and sales total - only count completed orders
         $todayQuery = "SELECT 
             COUNT(*) as orders_count,
             COALESCE(SUM(total_amount), 0) as sales_total 
             FROM orders 
             WHERE DATE(created_at) = :today 
-            AND status != 'cancelled'";
+            AND status = 'completed'";
         
         $stmt = $conn->prepare($todayQuery);
         $stmt->bindValue(':today', $today);

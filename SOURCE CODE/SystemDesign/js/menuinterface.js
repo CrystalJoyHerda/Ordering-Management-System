@@ -867,9 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     total_price: item.total,
                     addons: item.addons || []
                 }))
-            };
-              console.log('Submitting order to database:', orderData);
-            // Submit to backend API (XAMPP htdocs path)
+            };            console.log('Submitting order to database:', orderData);            // Submit to backend API (XAMPP htdocs path)
             const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
                 method: 'POST',
                 headers: {
