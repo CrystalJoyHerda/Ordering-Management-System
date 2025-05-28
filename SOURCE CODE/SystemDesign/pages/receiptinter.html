@@ -226,18 +226,11 @@
             const orderType = receiptData.orderType || 'Dine In';
             document.getElementById('order-type').textContent = orderType;
 
-            // Update cashier name
-            const cashierName = receiptData.cashierName || 'Ogille Dane Provido';
-            document.getElementById('cashier-name').textContent = cashierName;
-
-            // Display receipt items and payment details
-            displayItems(receiptData);
-            displayPaymentDetails(receiptData);
-            
-            console.log('🎫 Receipt page loaded successfully');
+            // The displayReceiptData function will handle all item details
+            displayReceiptData(receiptData);
         };
 
-        document.getElementById('printBtn').addEventListener('click', async function() {
+        document.getElementById('printBtn').addEventListener('click', function() {
             const btn = this;
             btn.textContent = 'Printing...';
             btn.disabled = true;
