@@ -100,6 +100,111 @@ function displayOrderItems(items) {
     });
 }
 
-document.getElementById('printBtn').addEventListener('click', function() {
-    window.location.href = 'cashiering.html';
+document.getElementById('printBtn').addEventListener('click', async function() {
+    const btn = this;
+    const originalText = btn.textContent;
+    
+    // Disable button to prevent double-clicks
+    btn.disabled = true;
+    btn.textContent = 'Printing...';
+    
+    // Get order data from localStorage
+    const receiptData = JSON.parse(localStorage.getItem('receiptData'));
+    console.log('🎫 Receipt data for printing:', receiptData);
+    
+    // If order has an ID, update its status to 'completed'
+    if (receiptData && receiptData.orderId) {
+        console.log('🎫 Receipt printing - updating order status for ID:', receiptData.orderId);
+        btn.textContent = 'Updating Status...';
+        
+        try {
+            const success = await updateOrderStatus(receiptData.orderId, 'completed');
+            
+            if (success) {
+                console.log('✅ Order status updated successfully!');
+                btn.textContent = 'Status Updated - Redirecting...';
+                
+                // Clear the order data from localStorage since it's completed
+                localStorage.removeItem('receiptData');
+                localStorage.removeItem('currentOrder');
+                
+            } else {
+                console.error('❌ Failed to update order status');
+                btn.textContent = 'Update Failed - Redirecting...';
+            }
+        } catch (error) {
+            console.error('🚨 Error updating order status:', error);
+            btn.textContent = 'Error - Redirecting...';
+        }
+        
+        // Wait 2 seconds to ensure the update completes
+        setTimeout(() => {
+            window.location.href = 'cashiering.html';
+        }, 2000);
+        
+    } else {
+        console.warn('⚠️ Order ID not found in receipt data, cannot update status');
+        console.log('Receipt data available:', receiptData);
+        
+        if (!receiptData) {
+            console.error('❌ No receipt data found at all');
+        } else if (!receiptData.orderId) {
+            console.error('❌ Receipt data exists but missing orderId:', Object.keys(receiptData));
+        }
+        
+        // Still redirect but immediately since no update needed
+        setTimeout(() => {
+            window.location.href = 'cashiering.html';
+        }, 1000);
+    }
 });
+
+/**
+ * Updates the order status in the database
+ * @param {number} orderId - The ID of the order
+ * @param {string} status - The new status
+ */
+async function updateOrderStatus(orderId, status) {
+    try {
+        console.log(`🔄 Updating order ${orderId} status to ${status}...`);
+        
+        // Prepare the request body
+        const requestBody = {
+            id: orderId,
+            status: status
+        };
+        
+        console.log('📤 Sending status update request:', requestBody);
+
+        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        console.log('📡 Response status:', response.status, 'OK:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ HTTP Error Response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('📥 Order status update result:', result);
+        
+        if (result.status === 'success') {
+            console.log(`✅ Order ${orderId} status successfully updated to ${status}`);
+            return true;
+        } else {
+            console.error('❌ Order status update failed:', result.message);
+            return false;
+        }
+    } catch (error) {
+        console.error('🚨 Error updating order status:', error);
+        return false;
+    }
+}

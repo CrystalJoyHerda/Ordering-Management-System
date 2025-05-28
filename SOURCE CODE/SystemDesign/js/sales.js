@@ -2,8 +2,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // API base URL
     const API_BASE_URL = 'http://localhost/SOURCE_CODE/Employee/public/api';
     
-    // Load current Philippine date and time first
+    // Load current local date and time first
     loadCurrentDate();
+    
+    // Set up automatic date updates
+    setupAutoDateUpdate();
     
     // Initialize date inputs with current dates
     const today = new Date();
@@ -39,14 +42,32 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading(overviewCards);
         
         try {
-            const response = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+            // Get current local date and ensure it's properly formatted
+            const today = new Date();
+            const currentDate = formatDateForAPI(today);
+            
+            console.log('=== Date Debug Info ===');
+            console.log('Browser local date:', today.toString());
+            console.log('Formatted date for API:', currentDate);
+            console.log('Display date:', today.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            }));
+            console.log('======================');
+            
+            const response = await fetch(`${API_BASE_URL}/sales.php?action=overview&current_date=${currentDate}&debug=1`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
             
+            // Log the API response for debugging
+            console.log('API Response for date', currentDate, ':', data);
+            
             if (data.status === 'success') {
-                updateOverviewCards(data.data);
+                updateOverviewCards(data.data, currentDate);
                 showSuccess('Sales data loaded successfully', document.querySelector('.main-content'));
             } else {
                 console.error('API Error:', data.message);
@@ -63,20 +84,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update overview cards with real data
-    function updateOverviewCards(data) {
+    function updateOverviewCards(data, currentDate) {
         const cards = document.querySelectorAll('.overview-cards .card');
         
-        // Today's sales
+        // Today's sales - get from chart data that matches today's date
         if (cards[0]) {
             const todayAmount = cards[0].querySelector('.amount');
             const todayTrend = cards[0].querySelector('.trend');
             const todayIcon = todayTrend.querySelector('i');
             
-            todayAmount.textContent = `₱${Number(data.today.total).toLocaleString()}`;
-            todayTrend.textContent = `${data.today.change >= 0 ? '+' : ''}${data.today.change}% `;
-            todayTrend.className = `trend ${data.today.change >= 0 ? 'positive' : 'negative'}`;
-            todayIcon.className = `fas fa-arrow-${data.today.change >= 0 ? 'up' : 'down'}`;
-            todayTrend.appendChild(todayIcon);
+            // First, try to get today's sales from the daily chart data
+            const todaysSalesFromChart = getTodaysSalesFromChart(currentDate);
+            
+            if (todaysSalesFromChart !== null) {
+                // Use chart data if available
+                console.log('Using today\'s sales from chart data:', todaysSalesFromChart);
+                todayAmount.textContent = `₱${Number(todaysSalesFromChart).toLocaleString()}`;
+                
+                // Calculate trend based on previous day if available
+                const yesterdayDate = new Date();
+                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                const yesterdaysSales = getTodaysSalesFromChart(formatDateForAPI(yesterdayDate));
+                
+                let trendPercentage = 0;
+                if (yesterdaysSales && yesterdaysSales > 0) {
+                    trendPercentage = Math.round(((todaysSalesFromChart - yesterdaysSales) / yesterdaysSales) * 100);
+                }
+                
+                todayTrend.textContent = `${trendPercentage >= 0 ? '+' : ''}${trendPercentage}% `;
+                todayTrend.className = `trend ${trendPercentage >= 0 ? 'positive' : 'negative'}`;
+                todayIcon.className = `fas fa-arrow-${trendPercentage >= 0 ? 'up' : 'down'}`;
+                todayTrend.appendChild(todayIcon);
+            } else {
+                // Fallback to API data if chart data not available
+                console.log('Using today\'s sales from API data:', data.today.total);
+                todayAmount.textContent = `₱${Number(data.today.total).toLocaleString()}`;
+                todayTrend.textContent = `${data.today.change >= 0 ? '+' : ''}${data.today.change}% `;
+                todayTrend.className = `trend ${data.today.change >= 0 ? 'positive' : 'negative'}`;
+                todayIcon.className = `fas fa-arrow-${data.today.change >= 0 ? 'up' : 'down'}`;
+                todayTrend.appendChild(todayIcon);
+            }
         }
         
         // Weekly sales
@@ -104,6 +151,68 @@ document.addEventListener('DOMContentLoaded', function() {
             monthlyIcon.className = `fas fa-arrow-${data.monthly.change >= 0 ? 'up' : 'down'}`;
             monthlyTrend.appendChild(monthlyIcon);
         }
+    }
+
+    // Function to get today's sales from chart data
+    function getTodaysSalesFromChart(targetDate) {
+        console.log('Looking for sales data for date:', targetDate);
+        
+        // Check daily chart data first
+        const dailyData = currentChartData.daily;
+        if (dailyData && Array.isArray(dailyData) && dailyData.length > 0) {
+            for (let dayData of dailyData) {
+                if (dayData.date === targetDate || dayData.label === targetDate) {
+                    console.log('Found sales in daily data:', dayData.total || dayData.daily_total);
+                    return parseFloat(dayData.total || dayData.daily_total || 0);
+                }
+            }
+        }
+        
+        // Check if we have date range data that includes today
+        const bars = document.querySelectorAll('.bar');
+        const xAxisLabels = document.querySelectorAll('.x-axis span');
+        
+        // Convert target date to display format for comparison
+        const targetDateObj = new Date(targetDate + 'T00:00:00');
+        const targetDisplay = targetDateObj.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+        });
+        
+        console.log('Looking for x-axis label matching:', targetDisplay);
+        
+        // Find matching x-axis label
+        for (let i = 0; i < xAxisLabels.length; i++) {
+            const labelText = xAxisLabels[i].textContent.trim();
+            console.log('Checking x-axis label:', labelText);
+            
+            if (labelText === targetDisplay) {
+                // Found matching label, get corresponding bar data
+                if (bars[i]) {
+                    const barDataValue = bars[i].getAttribute('data-value');
+                    if (barDataValue) {
+                        // Extract numeric value from "₱1,234" format
+                        const numericValue = parseFloat(barDataValue.replace(/[₱,]/g, '')) || 0;
+                        console.log('Found sales from bar data:', numericValue);
+                        return numericValue;
+                    }
+                    
+                    // Try to get from title attribute
+                    const titleValue = bars[i].getAttribute('title');
+                    if (titleValue && titleValue.includes('₱')) {
+                        const match = titleValue.match(/₱([\d,]+)/);
+                        if (match) {
+                            const numericValue = parseFloat(match[1].replace(/,/g, '')) || 0;
+                            console.log('Found sales from bar title:', numericValue);
+                            return numericValue;
+                        }
+                    }
+                }
+            }
+        }
+        
+        console.log('No sales data found for date:', targetDate);
+        return null;
     }    // Fetch sales trends for charts
     async function loadSalesTrends(timeframe = 'daily') {
         const chartContainer = document.querySelector('.chart-container');
@@ -113,7 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`${API_BASE_URL}/sales.php?action=trends&timeframe=${timeframe}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }            const result = await response.json();
+            }            
+            const result = await response.json();
             debugAPIResponse('trends', result);
             
             if (result.status === 'success') {
@@ -122,6 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentChartData[timeframe] = result.data;
                     updateChart(timeframe);
                     updateChartLabels(timeframe, result.data);
+                    
+                    // Update today's sales after chart data is loaded
+                    if (timeframe === 'daily') {
+                        updateTodaysSalesFromChart();
+                    }
                 } else {
                     console.error('Invalid data format received:', result.data);
                     currentChartData[timeframe] = [];
@@ -141,6 +256,44 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Failed to load chart data. Using demo data.', chartContainer);
         } finally {
             hideLoading(chartContainer);
+        }
+    }
+
+    // Update today's sales from chart data
+    function updateTodaysSalesFromChart() {
+        const today = new Date();
+        const currentDate = formatDateForAPI(today);
+        const todaysSales = getTodaysSalesFromChart(currentDate);
+        
+        if (todaysSales !== null) {
+            const todayCard = document.querySelector('.overview-cards .card:first-child');
+            if (todayCard) {
+                const todayAmount = todayCard.querySelector('.amount');
+                const todayTrend = todayCard.querySelector('.trend');
+                const todayIcon = todayTrend.querySelector('i');
+                
+                console.log('Updating Today\'s Sales card with chart data:', todaysSales);
+                todayAmount.textContent = `₱${Number(todaysSales).toLocaleString()}`;
+                
+                // Calculate trend based on previous day if available
+                const yesterdayDate = new Date();
+                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                const yesterdaysSales = getTodaysSalesFromChart(formatDateForAPI(yesterdayDate));
+                
+                let trendPercentage = 0;
+                if (yesterdaysSales && yesterdaysSales > 0) {
+                    trendPercentage = Math.round(((todaysSales - yesterdaysSales) / yesterdaysSales) * 100);
+                }
+                
+                todayTrend.textContent = `${trendPercentage >= 0 ? '+' : ''}${trendPercentage}% `;
+                todayTrend.className = `trend ${trendPercentage >= 0 ? 'positive' : 'negative'}`;
+                todayIcon.className = `fas fa-arrow-${trendPercentage >= 0 ? 'up' : 'down'}`;
+                todayTrend.appendChild(todayIcon);
+                
+                // Add visual indicator that this is synced with chart
+                todayCard.setAttribute('data-synced', 'true');
+                todayCard.setAttribute('data-date', currentDate);
+            }
         }
     }// Update chart based on filter
     function updateChart(timeframe) {
@@ -380,6 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bar.style.height = '5%';
             bar.setAttribute('title', 'No data');
             bar.setAttribute('data-date', '');
+            bar.setAttribute('data-value', '₱0');
             if (index < xAxisLabels.length) {
                 xAxisLabels[index].textContent = '';
             }
@@ -421,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     bars[dateIndex].style.height = `${Math.max(percentage, 5)}%`;
                     bars[dateIndex].style.transition = 'height 0.5s ease';
                     bars[dateIndex].setAttribute('data-date', dayData.date);
+                    bars[dateIndex].setAttribute('data-value', `₱${Number(total).toLocaleString()}`);
                     
                     // Format tooltip with day name: "Mon, May 15: ₱25,000"
                     const tooltipDate = dataDate.toLocaleDateString('en-US', {
@@ -431,6 +586,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     bars[dateIndex].setAttribute('title', `${tooltipDate}: ₱${Number(total).toLocaleString()}`);
                 }
             });
+            
+            // After updating chart, update today's sales from the new chart data
+            updateTodaysSalesFromChart();
         }
         
         // Update chart description and average
@@ -513,12 +671,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Format date for input fields
-    function formatDate(date) {
+    // Format date for API calls (ensures YYYY-MM-DD format in local timezone)
+    function formatDateForAPI(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+
+    // Format date for input fields (same as formatDateForAPI but kept separate for clarity)
+    function formatDate(date) {
+        return formatDateForAPI(date);
     }
 
     // Add hover effects for interactive elements
@@ -611,43 +774,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('=== End Debug ===');
     }
 
-    // Load and display current Philippine date from server
-    async function loadCurrentDate() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/sales.php?action=debug_timezone`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                // Display the corrected Philippine date
-                const dateDisplay = document.getElementById('date-display');
-                const timezoneDisplay = document.getElementById('timezone-display');
-                
-                if (dateDisplay) {
-                    dateDisplay.textContent = data.corrected_formatted_date || data.formatted_date;
-                }
-                
-                if (timezoneDisplay) {
-                    timezoneDisplay.textContent = `${data.timezone} (UTC+8)`;
-                }
-                
-                console.log('Current Philippine date loaded:', data.corrected_formatted_date);
-            } else {
-                console.error('Failed to load current date:', data.message);
-                // Fallback to browser date
-                setFallbackDate();
-            }
-        } catch (error) {
-            console.error('Error loading current date:', error);
-            // Fallback to browser date
-            setFallbackDate();
-        }
-    }
-
-    // Fallback date display using browser time
-    function setFallbackDate() {
+    // Load and display current local date and time
+    function loadCurrentDate() {
         const dateDisplay = document.getElementById('date-display');
         const timezoneDisplay = document.getElementById('timezone-display');
         
@@ -657,14 +785,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
-                day: 'numeric',
-                timeZone: 'Asia/Manila'
+                day: 'numeric'
             };
             dateDisplay.textContent = today.toLocaleDateString('en-US', options);
+            
+            // Store the current date for comparison using the same format as API
+            window.lastDisplayedDate = formatDateForAPI(today);
+            
+            // Debug: Show what date we're storing
+            console.log('Current display date stored as:', window.lastDisplayedDate);
         }
         
         if (timezoneDisplay) {
-            timezoneDisplay.textContent = 'Asia/Manila (UTC+8)';
+            // Get the user's timezone
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const now = new Date();
+            const offset = -now.getTimezoneOffset() / 60;
+            const offsetStr = offset >= 0 ? `+${offset}` : `${offset}`;
+            timezoneDisplay.textContent = `${timezone} (UTC${offsetStr})`;
         }
+        
+        console.log('Current local date loaded and formatted for API');
+    }
+
+    // Set up automatic date updates
+    function setupAutoDateUpdate() {
+        // Update date every minute to catch day changes
+        setInterval(() => {
+            const previousDate = window.lastDisplayedDate;
+            loadCurrentDate();
+            
+            // Get current formatted date
+            const currentDate = formatDateForAPI(new Date());
+            
+            if (previousDate && previousDate !== currentDate) {
+                console.log('=== Date Change Detected ===');
+                console.log('Previous date:', previousDate);
+                console.log('Current date:', currentDate);
+                console.log('Refreshing sales data...');
+                console.log('===========================');
+                
+                // Refresh today's sales for the new date
+                loadSalesOverview();
+                
+                // Also refresh other time-based data
+                loadSalesTrends('daily');
+            }
+            
+            window.lastDisplayedDate = currentDate;
+        }, 60000); // Check every minute
+        
+        // Also update when the page becomes visible (in case user left it open overnight)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log('Page became visible, refreshing data...');
+                loadCurrentDate();
+                // Refresh sales data when page becomes visible to ensure accuracy
+                loadSalesOverview();
+            }
+        });
     }
 });

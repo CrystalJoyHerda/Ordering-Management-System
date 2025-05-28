@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Completed Orders in Sales</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; margin: 0 auto; }
+        h1 { color: #4A2C1B; }
+        .test-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; white-space: pre-wrap; max-height: 400px; overflow: auto; }
+        .error { background: #ffe6e6; color: #cc0000; }
+        .success { background: #e6ffe6; color: #006600; }
+        button { background-color: #4A2C1B; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Sales Data Filter for Completed Orders</h1>
+    <p>This page verifies that only orders with status "completed" are included in sales data.</p>
+
+    <div class="test-section">
+        <h2>Step 1: Fetch All Orders with Status</h2>
+        <button onclick="fetchAllOrders()">Fetch All Orders</button>
+        <div id="ordersResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Fetch Sales Data</h2>
+        <button onclick="fetchSalesData()">Fetch Sales Data</button>
+        <div id="salesResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Verify Order Status Filter</h2>
+        <button onclick="verifyOrderStatusFilter()">Verify Sales Data Only Includes Completed Orders</button>
+        <div id="verificationResult" class="result"></div>
+    </div>
+
+    <script>
+        // API base URLs
+        const ORDERS_API = 'http://localhost/SOURCE_CODE/Employee/public/api/orders.php';
+        const SALES_API = 'http://localhost/SOURCE_CODE/Employee/public/api/sales.php';
+        
+        // Store fetched data for analysis
+        let allOrders = [];
+        let salesData = {
+            overview: null,
+            products: []
+        };
+        
+        function displayResult(elementId, data, isError = false) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function fetchAllOrders() {
+            try {
+                const response = await fetch(`${ORDERS_API}?limit=50`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    allOrders = data.data || [];
+                    
+                    // Display order status summary
+                    const summary = {
+                        totalOrders: allOrders.length,
+                        byStatus: {
+                            completed: allOrders.filter(o => o.status === 'completed').length,
+                            pending: allOrders.filter(o => o.status === 'pending').length,
+                            cancelled: allOrders.filter(o => o.status === 'cancelled').length,
+                            other: allOrders.filter(o => !['completed', 'pending', 'cancelled'].includes(o.status)).length
+                        },
+                        orders: allOrders.slice(0, 10).map(o => ({
+                            id: o.id,
+                            order_number: o.order_number,
+                            status: o.status,
+                            total_amount: o.total_amount
+                        }))
+                    };
+                    
+                    displayResult('ordersResult', summary);
+                } else {
+                    displayResult('ordersResult', { error: 'Failed to fetch orders', message: data.message }, true);
+                }
+            } catch (error) {
+                displayResult('ordersResult', { error: error.message }, true);
+            }
+        }
+
+        async function fetchSalesData() {
+            try {
+                // Fetch sales overview
+                const overviewResponse = await fetch(`${SALES_API}?action=overview&status=completed`);
+                const overviewData = await overviewResponse.json();
+                
+                // Fetch top products
+                const productsResponse = await fetch(`${SALES_API}?action=top_products&limit=20&status=completed`);
+                const productsData = await productsResponse.json();
+                
+                if (overviewData.status === 'success' && productsData.status === 'success') {
+                    salesData.overview = overviewData.data;
+                    salesData.products = productsData.data || [];
+                    
+                    displayResult('salesResult', {
+                        salesOverview: salesData.overview,
+                        topProducts: salesData.products.slice(0, 5)
+                    });
+                } else {
+                    displayResult('salesResult', { 
+                        error: 'Failed to fetch sales data',
+                        overviewError: overviewData.status !== 'success' ? overviewData.message : null,
+                        productsError: productsData.status !== 'success' ? productsData.message : null
+                    }, true);
+                }
+            } catch (error) {
+                displayResult('salesResult', { error: error.message }, true);
+            }
+        }        async function verifyOrderStatusFilter() {
+            try {
+                if (allOrders.length === 0) {
+                    displayResult('verificationResult', { error: 'Please fetch orders first (Step 1)' }, true);
+                    return;
+                }
+                
+                if (!salesData.overview || !salesData.products || salesData.products.length === 0) {
+                    displayResult('verificationResult', { error: 'Please fetch sales data first (Step 2)' }, true);
+                    return;
+                }
+                
+                // Get all product names from sales data
+                const productNamesInSales = new Set(salesData.products.map(p => p.product_name));
+                
+                // Find orders that are not completed but have products that appear in sales data
+                const nonCompletedOrdersInSales = allOrders
+                    .filter(order => order.status !== 'completed') // Only non-completed orders
+                    .filter(order => {
+                        // Check if this order has items that appear in sales data
+                        if (!order.items || !Array.isArray(order.items)) return false;
+                        return order.items.some(item => productNamesInSales.has(item.product_name));
+                    });
+                
+                const result = {
+                    isPassing: nonCompletedOrdersInSales.length === 0,
+                    message: nonCompletedOrdersInSales.length === 0
+                        ? "✅ SUCCESS: Only completed orders are included in sales data"
+                        : "❌ FAILED: Found non-completed orders in sales data",
+                    completedOrdersCount: allOrders.filter(o => o.status === 'completed').length,
+                    totalProductsInSalesData: salesData.products.length,
+                    nonCompletedOrdersInSales: nonCompletedOrdersInSales.map(o => ({
+                        id: o.id,
+                        order_number: o.order_number,
+                        status: o.status,
+                        created_at: o.created_at,
+                        matching_products: o.items
+                            .filter(item => productNamesInSales.has(item.product_name))
+                            .map(item => item.product_name)
+                    }))
+                };
+                
+                displayResult('verificationResult', result, !result.isPassing);
+                
+            } catch (error) {
+                displayResult('verificationResult', { error: error.message }, true);
+            }
+        }
+    </script>
+</body>
+</html>

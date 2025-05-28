@@ -156,9 +156,7 @@ class OrderModel extends BaseModel {
         }
         
         return $orderNumber;
-    }
-
-    public function getAllOrders($status = null, $limit = 50, $offset = 0) {
+    }    public function getAllOrders($status = null, $limit = 50, $offset = 0, $date = null) {
         try {
             $query = "SELECT o.*, 
                       GROUP_CONCAT(
@@ -169,10 +167,20 @@ class OrderModel extends BaseModel {
                       LEFT JOIN order_items oi ON o.id = oi.order_id";
             
             $params = [];
+            $conditions = [];
             
             if ($status) {
-                $query .= " WHERE o.status = :status";
+                $conditions[] = "o.status = :status";
                 $params[':status'] = $status;
+            }
+            
+            if ($date) {
+                $conditions[] = "DATE(o.created_at) = :date";
+                $params[':date'] = $date;
+            }
+            
+            if (!empty($conditions)) {
+                $query .= " WHERE " . implode(' AND ', $conditions);
             }
             
             $query .= " GROUP BY o.id ORDER BY o.created_at DESC LIMIT :limit OFFSET :offset";
@@ -304,6 +312,30 @@ class OrderModel extends BaseModel {
         try {
             $this->conn->beginTransaction();
             
+            // Handle simple status update (from receipt printing)
+            if (isset($data['status']) && count($data) == 2 && isset($data['id'])) {
+                // This is a simple status update
+                $query = "UPDATE {$this->table} SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindValue(':status', $data['status']);
+                $stmt->bindValue(':id', $id);
+                $stmt->execute();
+                
+                if ($stmt->rowCount() > 0) {
+                    $this->conn->commit();
+                    return [
+                        'status' => 'success',
+                        'message' => 'Order status updated successfully'
+                    ];
+                } else {
+                    $this->conn->rollBack();
+                    return [
+                        'status' => 'error',
+                        'message' => 'Order not found or no changes made'
+                    ];
+                }
+            }
+            
             // Handle complete order update from cashier interface
             if (isset($data['items']) && isset($data['total_amount'])) {
                 // This is a complete order update from cashier interface
@@ -371,7 +403,7 @@ class OrderModel extends BaseModel {
                     ];
                 }
                 
-                $query = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . " WHERE id = :id";
+                $query = "UPDATE {$this->table} SET " . implode(', ', $updateFields) . ", updated_at = CURRENT_TIMESTAMP WHERE id = :id";
                 
                 $stmt = $this->conn->prepare($query);
                 
@@ -382,11 +414,13 @@ class OrderModel extends BaseModel {
                 $stmt->execute();
                 
                 if ($stmt->rowCount() > 0) {
+                    $this->conn->commit();
                     return [
                         'status' => 'success',
                         'message' => 'Order updated successfully'
                     ];
                 } else {
+                    $this->conn->rollBack();
                     return [
                         'status' => 'error',
                         'message' => 'Order not found or no changes made'
@@ -402,6 +436,37 @@ class OrderModel extends BaseModel {
             return [
                 'status' => 'error',
                 'message' => 'Failed to update order: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    // Add a dedicated method for status updates
+    public function updateStatus($id, $status) {
+        try {
+            $query = "UPDATE {$this->table} SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindValue(':status', $status);
+            $stmt->bindValue(':id', $id);
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                return [
+                    'status' => 'success',
+                    'message' => 'Order status updated successfully',
+                    'data' => ['id' => $id, 'new_status' => $status]
+                ];
+            } else {
+                return [
+                    'status' => 'error',
+                    'message' => 'Order not found or no changes made'
+                ];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Update order status error: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to update order status: ' . $e->getMessage()
             ];
         }
     }
@@ -437,7 +502,9 @@ class OrderModel extends BaseModel {
             }
             
         } catch (Exception $e) {
-            $this->conn->rollBack();
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
             error_log("Delete order error: " . $e->getMessage());
             return [
                 'status' => 'error',

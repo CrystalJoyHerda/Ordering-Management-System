@@ -26,14 +26,16 @@
               <div class="logout-section">
                 <button class="logout-btn">Log Out</button>
             </div>
-        </div>
-
-        <!-- Main Content -->
+        </div>        <!-- Main Content -->
         <div class="main-content">            <div class="header">
                 <h1>Sales History</h1>
                 <div class="shift-info">
                     <span id="totalSales">Total: ₱0.00</span>
-                    <button id="refreshBtn" style="margin-left: 20px; background: white; color: #67503b; border: 1px solid white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;">🔄 Refresh</button>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-left: 20px;">
+                        <label for="datePicker" style="color: white; font-size: 14px;">Date:</label>
+                        <input type="date" id="datePicker" style="background: white; color: #67503b; border: 1px solid white; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                        <button id="refreshBtn" style="background: white; color: #67503b; border: 1px solid white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;">🔄 Refresh</button>
+                    </div>
                 </div>
             </div>
 
@@ -111,47 +113,75 @@
                 logoutBtn.addEventListener('click', handleLogout);
             }
             
+            // Date picker functionality
+            const datePicker = document.getElementById('datePicker');
+            if (datePicker) {
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                datePicker.value = today;
+                
+                // Load data when date changes
+                datePicker.addEventListener('change', function() {
+                    loadSalesData(datePicker.value);
+                });
+            }
+            
             // Refresh button functionality
             const refreshBtn = document.getElementById('refreshBtn');
             if (refreshBtn) {
                 refreshBtn.addEventListener('click', function() {
                     refreshBtn.textContent = '🔄 Refreshing...';
                     refreshBtn.disabled = true;
-                    loadSalesData().finally(() => {
+                    const selectedDate = document.getElementById('datePicker').value;
+                    loadSalesData(selectedDate).finally(() => {
                         refreshBtn.textContent = '🔄 Refresh';
                         refreshBtn.disabled = false;
                     });
                 });
             }
             
-            // Load real sales data from database
-            loadSalesData();
+            // Load real sales data from database with today's date
+            const initialDate = document.getElementById('datePicker').value;
+            loadSalesData(initialDate);
         });        // Function to load sales data from database
-        async function loadSalesData() {
+        async function loadSalesData(selectedDate = null) {
             try {
                 showLoading();
-                console.log('🔄 Loading sales data from database...');
                 
-                // Fetch today's sales overview
-                const overviewResponse = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+                // Use selected date or default to today
+                const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+                console.log('🔄 Loading sales data from database for date:', targetDate);
+                
+                // Update display to show selected date
+                updateDateDisplay(targetDate);
+                
+                // Fetch sales overview for selected date (only completed orders)
+                const overviewResponse = await fetch(`${API_BASE_URL}/sales.php?action=overview&status=completed&date=${targetDate}`);
                 if (!overviewResponse.ok) {
                     throw new Error(`HTTP error! status: ${overviewResponse.status}`);
                 }
                 const overviewData = await overviewResponse.json();
                 console.log('📊 Overview data:', overviewData);
-                
-                // Fetch top selling products for today
-                const productsResponse = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=20`);
+                  
+                // Fetch top selling products for selected date (only completed orders)
+                const productsResponse = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=20&status=completed&date=${targetDate}`);
                 if (!productsResponse.ok) {
                     throw new Error(`HTTP error! status: ${productsResponse.status}`);
                 }
                 const productsData = await productsResponse.json();
                 console.log('🛍️ Products data:', productsData);
                 
-                if (overviewData.status === 'success' && productsData.status === 'success') {
+                // Fetch orders for selected date for order status display
+                const ordersResponse = await fetch(`${API_BASE_URL}/orders.php?limit=20&date=${targetDate}`);
+                if (!ordersResponse.ok) {
+                    throw new Error(`HTTP error! status: ${ordersResponse.status}`);
+                }
+                const ordersData = await ordersResponse.json();
+                console.log('📋 Orders data:', ordersData);
+                  if (overviewData.status === 'success' && productsData.status === 'success') {
                     console.log('✅ Sales data loaded successfully');
-                    updateSalesDisplay(overviewData.data, productsData.data);
-                    updateCharts(productsData.data);
+                    updateSalesDisplay(overviewData.data, productsData.data, targetDate);
+                    updateCharts(productsData.data, ordersData.status === 'success' ? ordersData.data : [], targetDate);
                 } else {
                     console.error('❌ API Error:', overviewData.message || productsData.message);
                     throw new Error('Failed to fetch sales data: ' + (overviewData.message || productsData.message));
@@ -163,15 +193,15 @@
                 showFallbackData();
             } finally {
                 hideLoading();
-            }
-        }// Function to update sales display with real data
-        function updateSalesDisplay(overview, products) {
+            }        }// Function to update sales display with real data
+        function updateSalesDisplay(overview, products, selectedDate) {
             const tbody = document.querySelector('.sales-table tbody');
             tbody.innerHTML = '';
             
             // Check if we have products data
             if (!products || products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #666;">No sales data available for today</td></tr>';
+                const dateDisplay = selectedDate ? `for ${formatDateDisplay(selectedDate)}` : 'for today';
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #666;">No sales data available ${dateDisplay}</td></tr>`;
                 document.getElementById('totalSales').textContent = 'Total: ₱0.00';
                 return;
             }
@@ -185,7 +215,8 @@
                     <td>₱${Number(product.total_revenue).toFixed(2)}</td>
                 `;
                 tbody.appendChild(row);
-            });            // Update total sales from overview
+            });            
+            // Update total sales from overview
             const totalSales = overview.today?.total || overview.today_sales || 0;
             document.getElementById('totalSales').textContent = `Total: ₱${Number(totalSales).toFixed(2)}`;
             
@@ -196,10 +227,8 @@
                 quantity: product.total_quantity,
                 total: product.total_revenue
             }));
-        }
-
-        // Function to update charts with real data
-        function updateCharts(products) {
+        }        // Function to update charts with real data
+        function updateCharts(products, orders, selectedDate) {
             // Create simple visual representations in chart containers
             const donutChart = document.querySelector('.donut-chart');
             const barGraph = document.querySelector('.bar-graph');
@@ -208,28 +237,48 @@
             donutChart.innerHTML = '';
             barGraph.innerHTML = '';
             
+            // Determine if it's today or another date for display text
+            const isToday = selectedDate === new Date().toISOString().split('T')[0];
+            const dateText = isToday ? 'Today' : formatDateDisplay(selectedDate);
+            
             if (products && products.length > 0) {
                 // Create donut chart representation
                 donutChart.innerHTML = `
                     <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
                         <h4 style="margin: 0 0 10px 0; color: #67503b;">Top Products</h4>
                         <div style="font-size: 24px; font-weight: bold; color: #67503b;">${products.length}</div>
-                        <div style="font-size: 12px; color: #666;">Products Sold Today</div>
+                        <div style="font-size: 12px; color: #666;">Products Sold ${isToday ? 'Today' : 'on ' + new Date(selectedDate).toLocaleDateString()}</div>
                     </div>
                 `;
-                
-                // Create bar graph representation
-                const maxRevenue = Math.max(...products.slice(0, 5).map(p => p.total_revenue));
+            } else {
+                donutChart.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available for ${isToday ? 'today' : new Date(selectedDate).toLocaleDateString()}</div>`;
+            }
+              // Create order status display instead of revenue distribution
+            if (orders && orders.length > 0) {                
                 barGraph.innerHTML = `
-                    <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 10px;">
-                        <h4 style="margin: 0 0 15px 0; color: #67503b; text-align: center;">Revenue Distribution</h4>
-                        <div style="display: flex; align-items: end; justify-content: space-around; height: 100px;">
-                            ${products.slice(0, 5).map(product => {
-                                const height = (product.total_revenue / maxRevenue) * 80;
+                    <div style="display: flex; flex-direction: column; height: 100%; padding: 8px;">
+                        <h4 style="margin: 0 0 12px 0; color: #67503b; text-align: center; font-size: 16px;">Orders ${isToday ? 'Today' : 'on ' + new Date(selectedDate).toLocaleDateString()}</h4>
+                        <div style="flex: 1; overflow-y: auto; height: 100%; min-height: 0;">
+                            ${orders.slice(0, 20).map(order => {
+                                const statusColor = order.status === 'completed' ? '#28a745' : 
+                                                  order.status === 'pending' ? '#ffc107' : 
+                                                  order.status === 'cancelled' ? '#dc3545' : '#6c757d';
+                                const statusBadge = order.status === 'completed' ? '✅' : 
+                                                   order.status === 'pending' ? '⏳' : 
+                                                   order.status === 'cancelled' ? '❌' : '❓';
+                                
                                 return `
-                                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1; margin: 0 2px;">
-                                        <div style="background: #67503b; width: 100%; height: ${height}px; margin-bottom: 5px; border-radius: 2px;"></div>
-                                        <span style="font-size: 10px; color: #666; text-align: center; word-break: break-word;">${product.product_name.substring(0, 8)}</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 6px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${statusColor};">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-weight: bold; font-size: 14px; color: #333;">Order #${order.order_number || order.id}</span>
+                                            <span style="font-size: 11px; color: #666;">${new Date(order.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <span style="font-size: 14px;">${statusBadge}</span>
+                                            <span style="font-size: 12px; font-weight: bold; color: ${statusColor}; text-transform: capitalize;">
+                                                ${order.status}
+                                            </span>
+                                        </div>
                                     </div>
                                 `;
                             }).join('')}
@@ -237,8 +286,7 @@
                     </div>
                 `;
             } else {
-                donutChart.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available</div>';
-                barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available</div>';
+                barGraph.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No orders available for ${isToday ? 'today' : new Date(selectedDate).toLocaleDateString()}</div>`;
             }
         }
 
@@ -256,9 +304,7 @@
             console.error('💥 Sales History Error:', message);
             const tbody = document.querySelector('.sales-table tbody');
             tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #e74c3c;">${message}</td></tr>`;
-        }
-
-        // Function to show fallback data when offline
+        }        // Function to show fallback data when offline
         function showFallbackData() {
             const tbody = document.querySelector('.sales-table tbody');
             tbody.innerHTML = `
@@ -272,10 +318,35 @@
             const donutChart = document.querySelector('.donut-chart');
             const barGraph = document.querySelector('.bar-graph');
             donutChart.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode</div>';
-            barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode</div>';
-        }        // Function to refresh sales data (can be called manually)
+            barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode - Recent Orders</div>';        }// Function to format date for display
+        function formatDateDisplay(dateString) {
+            const date = new Date(dateString);
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Function to update date display in the table header
+        function updateDateDisplay(selectedDate) {
+            const tableBox = document.querySelector('.table-box h2');
+            if (tableBox) {
+                const isToday = selectedDate === new Date().toISOString().split('T')[0];
+                if (isToday) {
+                    tableBox.textContent = "Today's Sales";
+                } else {
+                    tableBox.textContent = `Sales for ${formatDateDisplay(selectedDate)}`;
+                }
+            }
+        }
+
+        // Function to refresh sales data (can be called manually)
         function refreshSalesData() {
-            loadSalesData();
+            const selectedDate = document.getElementById('datePicker').value;
+            loadSalesData(selectedDate);
         }
 
         // Function to test API connectivity (for debugging)

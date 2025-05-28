@@ -44,9 +44,8 @@ function handleLogout() {
         // Clear JWT token and user data
         localStorage.removeItem('auth_token');
         sessionStorage.removeItem('user');
-        
-        // Attempt to call server-side logout
-        fetch('http://localhost/Ordering-Management-System/SOURCE%20CODE/Employee/public/api/auth.php?action=logout', {
+          // Attempt to call server-side logout
+        fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
             method: 'GET'
         }).catch(error => {
             console.error('Logout API error:', error);
