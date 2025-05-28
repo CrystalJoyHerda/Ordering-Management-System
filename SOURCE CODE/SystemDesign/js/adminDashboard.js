@@ -144,3 +144,34 @@ function handleLogout() {
         });
     }
 }
+
+// Delete modal functionality
+function showDeleteModal(itemId) {
+    const modal = document.getElementById('delete-modal');
+    modal.style.display = 'flex';
+    modal.dataset.itemId = itemId; // Store the ID of item to be deleted
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    modal.style.display = 'none';
+}
+
+function confirmDelete() {
+    const modal = document.getElementById('delete-modal');
+    const itemId = modal.dataset.itemId;
+    
+    // Implement your delete logic here
+    console.log(`Deleting item with ID: ${itemId}`);
+    
+    // Close the modal after deletion
+    closeDeleteModal();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('delete-modal');
+    if (event.target === modal) {
+        closeDeleteModal();
+    }
+}

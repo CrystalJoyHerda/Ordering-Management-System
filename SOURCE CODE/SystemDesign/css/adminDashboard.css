@@ -247,6 +247,7 @@ button:hover {
     background: #45a049;
 }
 
+/* Employee Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -254,21 +255,87 @@ button:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
     background: white;
-    margin: 15% auto;
-    padding: 20px;
-    width: 80%;
+    border-radius: 8px;
+    width: 90%;
     max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-form input, form select {
+.modal-header {
+    background-color: #67503b;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-modal {
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #3b2a1f;
+    font-weight: 500;
+}
+
+.form-control {
     width: 100%;
-    padding: 8px;
-    margin: 10px 0;
+    padding: 8px 12px;
+    border: 1px solid #d4c8b9;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-cancel, .btn-save {
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    border: 1px solid #d4c8b9;
+    color: #67503b;
+}
+
+.btn-save {
+    background: #67503b;
+    border: none;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #4a3422;
 }
 
 /* Logout Modal Styles */
@@ -355,4 +422,80 @@ form input, form select {
 
 .cancel-logout:hover {
     background-color: #5a6268;
+}
+
+/* Delete Modal Styles */
+.delete-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-modal.show {
+    display: flex;
+}
+
+.delete-modal .modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.delete-modal .modal-header {
+    background-color: #67503b;  /* Changed from #dc3545 to match theme */
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.delete-modal .warning-icon {
+    margin-right: 10px;
+}
+
+.delete-modal .warning-message {
+    text-align: center;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 20px 0;
+}
+
+.delete-modal .modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 20px 20px;
+}
+
+.delete-modal .btn-cancel {
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border: 1px solid #67503b;  /* Changed from #dc3545 to match theme */
+    color: #67503b;  /* Changed from #dc3545 to match theme */
+    border-radius: 4px;
+}
+
+.delete-modal .btn-delete {
+    background-color: #67503b;  /* Changed from #dc3545 to match theme */
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 4px;
+}
+
+.delete-modal .btn-delete:hover {
+    background-color: #4a3422;  /* Changed from #c82333 to darker brown */
 }

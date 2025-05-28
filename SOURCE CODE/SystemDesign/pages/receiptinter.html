@@ -33,7 +33,7 @@
                     <p id="receipt-datetime"></p>
                     <p>Queue Number: <span class="queue-number">0000</span></p>
                     <p>Order Type: <span id="order-type">---</span></p>
-                    <p>Cashier: <span id="cashier-name">Ogille Dane Provido</span></p>
+                    <p>Cashier: <span id="cashier-name">---</span></p>
                 </div>
             </div>
 
@@ -93,6 +93,10 @@
             // Update order type display
             const orderType = receiptData.orderType || 'Dine In';
             document.getElementById('order-type').textContent = orderType;
+
+            // Update cashier name
+            const cashierName = receiptData.cashierName || 'Ogille Dane Provido';
+            document.getElementById('cashier-name').textContent = cashierName;
 
             // The displayReceiptData function will handle all item details
             displayReceiptData(receiptData);

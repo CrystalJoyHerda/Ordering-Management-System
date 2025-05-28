@@ -39,18 +39,18 @@
                     <div class="widget">
                         <h3>Quick Actions</h3>
                         <div class="quick-links">
+                            <a href="manageEmployee.html" class="quick-link-card" data-role-access="admin">
+                                <div class="quick-link-icon">👥</div>
+                                <div class="quick-link-text">
+                                    <h4>Manage Employees</h4>
+                                    <p>Add, edit, or manage staff</p>
+                                </div>
+                            </a>
                             <a href="inventory.html" class="quick-link-card" data-role-access="admin">
                                 <div class="quick-link-icon">📦</div>
                                 <div class="quick-link-text">
                                     <h4>Inventory Management</h4>
                                     <p>Add, edit, or delete products</p>
-                                </div>
-                            </a>
-                            <a href="manageEmployee.html" class="quick-link-card" data-role-access="admin">
-                                <div class="quick-link-icon">👥</div>
-                                <div class="quick-link-text">
-                                    <h4>Employee Management</h4>
-                                    <p>Manage employee details</p>
                                 </div>
                             </a>
                             <a href="sales.html" class="quick-link-card" data-role-access="admin">
@@ -66,6 +66,47 @@
         </div>
     </div>
 
+    <!-- Manage Employee Modal -->
+    <div id="employee-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Employee</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="employee-form">
+                    <div class="form-group">
+                        <label for="emp-name">Full Name</label>
+                        <input type="text" id="emp-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-email">Email</label>
+                        <input type="email" id="emp-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-role">Role</label>
+                        <select id="emp-role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="cashier">Cashier</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-status">Status</label>
+                        <select id="emp-status" class="form-control" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel">Cancel</button>
+                        <button type="submit" class="btn-save">Save Employee</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Logout Confirmation Modal -->
     <div id="logout-modal" class="logout-modal">
         <div class="logout-modal-content">
@@ -74,6 +115,26 @@
             <div class="logout-modal-buttons">
                 <button id="confirm-logout" class="confirm-logout">Yes, Logout</button>
                 <button id="cancel-logout" class="cancel-logout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title"><span class="warning-icon">⚠️</span> Delete Confirmation</h2>
+                <span class="close-modal" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    Are you sure you want to delete this item?<br>
+                    This action cannot be undone.
+                </p>
+                <div class="form-actions">
+                    <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                    <button class="btn-delete" onclick="confirmDelete()">Delete</button>
+                </div>
             </div>
         </div>
     </div>    <script src="../js/auth.js"></script>

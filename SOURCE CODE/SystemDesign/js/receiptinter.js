@@ -28,6 +28,15 @@ function formatMoney(value) {
     return isNaN(value) ? '₱0.00' : `₱${value.toFixed(2)}`;
 }
 
+function updateCashierName() {
+    // Get the logged-in user data from sessionStorage
+    const userData = JSON.parse(sessionStorage.getItem('user')) || {};
+    const cashierName = userData.name || 'Unknown Cashier';
+    
+    // Update the cashier name on the receipt
+    document.getElementById('cashier-name').textContent = cashierName;
+}
+
 window.onload = function() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
@@ -38,6 +47,8 @@ window.onload = function() {
         window.location.href = 'cashiering.html';
         return;
     }
+
+    updateCashierName(); // Add this line to update cashier name
 
     // Update order details
     document.getElementById('order-type').textContent = receiptData.orderType || 'Not specified';

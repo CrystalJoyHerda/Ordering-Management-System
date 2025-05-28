@@ -65,7 +65,26 @@
                         </tr>
                     </thead>
                     <tbody id="stocksTableBody">
-                        <!-- Table will be populated dynamically -->
+                        <!-- Table data now includes status indicators -->
+                        <tr>
+                            <td>${item.product}</td>
+                            <td>${item.category || 'Uncategorized'}</td>
+                            <td>
+                                <span class="status-badge ${item.remaining <= item.threshold ? 'low-stock' : 
+                                    item.remaining <= item.threshold * 2 ? 'warning' : 'good'}">
+                                    ${item.remaining <= item.threshold ? 'Low Stock' : 
+                                    item.remaining <= item.threshold * 2 ? 'Medium Stock' : 'In Stock'}
+                                </span>
+                            </td>
+                            <td>${item.remaining} ${item.unit}</td>
+                            <td>
+                                <span class="alert-badge ${item.remaining <= item.threshold ? 'critical' : 
+                                    item.remaining <= item.threshold * 2 ? 'warning' : 'good'}">
+                                    ${item.remaining <= item.threshold ? 'Restock Now' : 
+                                    item.remaining <= item.threshold * 2 ? 'Monitor Stock' : 'Stock Level OK'}
+                                </span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -244,9 +263,21 @@
                 row.innerHTML = `
                     <td>${item.product}</td>
                     <td>${item.category || 'Uncategorized'}</td>
-                    <td><span class="status ${status}">${status === 'low' ? 'Low Stock' : 'Good Stock'}</span></td>
+                    <td>
+                        <span class="status-badge ${item.remaining <= item.threshold ? 'low-stock' : 
+                            item.remaining <= item.threshold * 2 ? 'warning' : 'good'}">
+                            ${item.remaining <= item.threshold ? 'Low Stock' : 
+                            item.remaining <= item.threshold * 2 ? 'Medium Stock' : 'In Stock'}
+                        </span>
+                    </td>
                     <td>${item.remaining} ${item.unit}</td>
-                    <td>${alert}</td>
+                    <td>
+                        <span class="alert-badge ${item.remaining <= item.threshold ? 'critical' : 
+                            item.remaining <= item.threshold * 2 ? 'warning' : 'good'}">
+                            ${item.remaining <= item.threshold ? 'Restock Now' : 
+                            item.remaining <= item.threshold * 2 ? 'Monitor Stock' : 'Stock Level OK'}
+                        </span>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
