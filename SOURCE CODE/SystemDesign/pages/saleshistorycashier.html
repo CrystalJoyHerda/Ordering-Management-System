@@ -29,12 +29,11 @@
         </div>
 
         <!-- Main Content -->
-        <div class="main-content">
-            <div class="header">
+        <div class="main-content">            <div class="header">
                 <h1>Sales History</h1>
                 <div class="shift-info">
-                    <span id="currentShift"></span>
                     <span id="totalSales">Total: ₱0.00</span>
+                    <button id="refreshBtn" style="margin-left: 20px; background: white; color: #67503b; border: 1px solid white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;">🔄 Refresh</button>
                 </div>
             </div>
 
@@ -52,10 +51,9 @@
                             <!-- Graph will be added here -->
                         </div>
                     </div>
-                </div>
-
-                <!-- Right box with table -->
+                </div>                <!-- Right box with table -->
                 <div class="table-box">
+                    <h2>Today's Sales</h2>
                     <table class="sales-table">
                         <thead>
                             <tr>
@@ -98,88 +96,213 @@
                     }
                 });
             }
-        }
-
-        // Initialize when DOM is loaded
+        }        // Database API configuration
+        const API_BASE_URL = 'http://localhost/SOURCE_CODE/Employee/public/api';
+        
+        // Sales data structure
+        let currentShiftSales = {
+            sales: [],
+            totalAmount: 0
+        };        // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             // Logout button functionality
             const logoutBtn = document.querySelector('.logout-btn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', handleLogout);
             }
-        });
-
-        // Sample sales data structure (replace with your actual data source)
-        let currentShiftSales = {
-            cashier: 'Ogille Dane Provido',
-            shiftStart: '1:00pm',
-            shiftEnd: '8:00pm',
-            sales: [],
-            totalAmount: 0
-        };
-
-        // Function to add new sale
-        function addSale(orderData) {
-            currentShiftSales.sales.push(orderData);
-            updateSalesDisplay();
-            updateCharts();
-        }
-
-        // Function to update sales display
-        function updateSalesDisplay() {
+            
+            // Refresh button functionality
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    refreshBtn.textContent = '🔄 Refreshing...';
+                    refreshBtn.disabled = true;
+                    loadSalesData().finally(() => {
+                        refreshBtn.textContent = '🔄 Refresh';
+                        refreshBtn.disabled = false;
+                    });
+                });
+            }
+            
+            // Load real sales data from database
+            loadSalesData();
+        });        // Function to load sales data from database
+        async function loadSalesData() {
+            try {
+                showLoading();
+                console.log('🔄 Loading sales data from database...');
+                
+                // Fetch today's sales overview
+                const overviewResponse = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+                if (!overviewResponse.ok) {
+                    throw new Error(`HTTP error! status: ${overviewResponse.status}`);
+                }
+                const overviewData = await overviewResponse.json();
+                console.log('📊 Overview data:', overviewData);
+                
+                // Fetch top selling products for today
+                const productsResponse = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=20`);
+                if (!productsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${productsResponse.status}`);
+                }
+                const productsData = await productsResponse.json();
+                console.log('🛍️ Products data:', productsData);
+                
+                if (overviewData.status === 'success' && productsData.status === 'success') {
+                    console.log('✅ Sales data loaded successfully');
+                    updateSalesDisplay(overviewData.data, productsData.data);
+                    updateCharts(productsData.data);
+                } else {
+                    console.error('❌ API Error:', overviewData.message || productsData.message);
+                    throw new Error('Failed to fetch sales data: ' + (overviewData.message || productsData.message));
+                }
+                
+            } catch (error) {
+                console.error('🚨 Error loading sales data:', error);
+                showError('Failed to load sales data. Please check your connection.');
+                showFallbackData();
+            } finally {
+                hideLoading();
+            }
+        }// Function to update sales display with real data
+        function updateSalesDisplay(overview, products) {
             const tbody = document.querySelector('.sales-table tbody');
             tbody.innerHTML = '';
             
-            currentShiftSales.sales.forEach(sale => {
+            // Check if we have products data
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #666;">No sales data available for today</td></tr>';
+                document.getElementById('totalSales').textContent = 'Total: ₱0.00';
+                return;
+            }
+            
+            // Display top selling products
+            products.forEach(product => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${sale.product}</td>
-                    <td>${sale.quantity}</td>
-                    <td>₱${sale.total.toFixed(2)}</td>
+                    <td>${product.product_name}</td>
+                    <td>${product.total_quantity}</td>
+                    <td>₱${Number(product.total_revenue).toFixed(2)}</td>
                 `;
                 tbody.appendChild(row);
-            });
-
-            // Update total sales
-            currentShiftSales.totalAmount = currentShiftSales.sales.reduce((sum, sale) => sum + sale.total, 0);
-            document.getElementById('totalSales').textContent = `Total: ₱${currentShiftSales.totalAmount.toFixed(2)}`;
+            });            // Update total sales from overview
+            const totalSales = overview.today?.total || overview.today_sales || 0;
+            document.getElementById('totalSales').textContent = `Total: ₱${Number(totalSales).toFixed(2)}`;
+            
+            // Store data for future reference
+            currentShiftSales.totalAmount = totalSales;
+            currentShiftSales.sales = products.map(product => ({
+                product: product.product_name,
+                quantity: product.total_quantity,
+                total: product.total_revenue
+            }));
         }
 
-        // Function to update charts (implement with your preferred chart library)
-        function updateCharts() {
-            // Group sales by product for donut chart
-            const productTotals = {};
-            currentShiftSales.sales.forEach(sale => {
-                if (productTotals[sale.product]) {
-                    productTotals[sale.product] += sale.total;
-                } else {
-                    productTotals[sale.product] = sale.total;
-                }
-            });
-
-            // Update donut chart here
-
-            // Group sales by hour for bar graph
-            const hourlyTotals = {};
-            currentShiftSales.sales.forEach(sale => {
-                const hour = new Date(sale.timestamp).getHours();
-                if (hourlyTotals[hour]) {
-                    hourlyTotals[hour] += sale.total;
-                } else {
-                    hourlyTotals[hour] = sale.total;
-                }
-            });
-
-            // Update bar graph here
+        // Function to update charts with real data
+        function updateCharts(products) {
+            // Create simple visual representations in chart containers
+            const donutChart = document.querySelector('.donut-chart');
+            const barGraph = document.querySelector('.bar-graph');
+            
+            // Clear existing content
+            donutChart.innerHTML = '';
+            barGraph.innerHTML = '';
+            
+            if (products && products.length > 0) {
+                // Create donut chart representation
+                donutChart.innerHTML = `
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0; color: #67503b;">Top Products</h4>
+                        <div style="font-size: 24px; font-weight: bold; color: #67503b;">${products.length}</div>
+                        <div style="font-size: 12px; color: #666;">Products Sold Today</div>
+                    </div>
+                `;
+                
+                // Create bar graph representation
+                const maxRevenue = Math.max(...products.slice(0, 5).map(p => p.total_revenue));
+                barGraph.innerHTML = `
+                    <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 10px;">
+                        <h4 style="margin: 0 0 15px 0; color: #67503b; text-align: center;">Revenue Distribution</h4>
+                        <div style="display: flex; align-items: end; justify-content: space-around; height: 100px;">
+                            ${products.slice(0, 5).map(product => {
+                                const height = (product.total_revenue / maxRevenue) * 80;
+                                return `
+                                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1; margin: 0 2px;">
+                                        <div style="background: #67503b; width: 100%; height: ${height}px; margin-bottom: 5px; border-radius: 2px;"></div>
+                                        <span style="font-size: 10px; color: #666; text-align: center; word-break: break-word;">${product.product_name.substring(0, 8)}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                donutChart.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available</div>';
+                barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available</div>';
+            }
         }
 
-        // Display current shift info
-        document.getElementById('currentShift').textContent = 
-            `Current Shift: ${currentShiftSales.shiftStart} - ${currentShiftSales.shiftEnd}`;
+        // Function to show loading state
+        function showLoading() {
+            const tbody = document.querySelector('.sales-table tbody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #666;">Loading sales data...</td></tr>';
+        }
 
-        // Initialize display
-        updateSalesDisplay();
-        updateCharts();
+        // Function to hide loading state
+        function hideLoading() {
+            // Loading state will be replaced by actual data
+        }        // Function to show error message
+        function showError(message) {
+            console.error('💥 Sales History Error:', message);
+            const tbody = document.querySelector('.sales-table tbody');
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #e74c3c;">${message}</td></tr>`;
+        }
+
+        // Function to show fallback data when offline
+        function showFallbackData() {
+            const tbody = document.querySelector('.sales-table tbody');
+            tbody.innerHTML = `
+                <tr><td>Offline Mode</td><td>-</td><td>₱0.00</td></tr>
+                <tr><td colspan="3" style="text-align: center; padding: 10px; color: #666; font-style: italic;">Connect to database to view real sales data</td></tr>
+            `;
+            
+            document.getElementById('totalSales').textContent = 'Total: ₱0.00 (Offline)';
+            
+            // Show offline message in charts
+            const donutChart = document.querySelector('.donut-chart');
+            const barGraph = document.querySelector('.bar-graph');
+            donutChart.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode</div>';
+            barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode</div>';
+        }        // Function to refresh sales data (can be called manually)
+        function refreshSalesData() {
+            loadSalesData();
+        }
+
+        // Function to test API connectivity (for debugging)
+        async function testApiConnection() {
+            try {
+                console.log('🔍 Testing API connection...');
+                const response = await fetch(`${API_BASE_URL}/sales.php?action=overview`);
+                console.log('📡 API Response status:', response.status);
+                console.log('📡 API Response ok:', response.ok);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📊 API Response data:', data);
+                    return true;
+                } else {
+                    console.error('❌ API connection failed:', response.status, response.statusText);
+                    return false;
+                }
+            } catch (error) {
+                console.error('🚨 API connection error:', error);
+                return false;
+            }
+        }
+
+        // Make test function available globally for debugging
+        window.testApiConnection = testApiConnection;
+        window.refreshSalesData = refreshSalesData;
     </script>
 </body>
 </html>
