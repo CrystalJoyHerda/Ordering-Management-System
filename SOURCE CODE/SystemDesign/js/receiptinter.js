@@ -30,12 +30,71 @@ function formatMoney(value) {
 
 function updateCashierName() {
     // Get the logged-in user data from sessionStorage
-    const userData = JSON.parse(sessionStorage.getItem('user')) || {};
-    const cashierName = userData.name || 'Unknown Cashier';
-    
-    // Update the cashier name on the receipt
-    document.getElementById('cashier-name').textContent = cashierName;
+    const userData = JSON.parse(sessionStorage.getItem('username')) || {};
+    console.log('Cashier Name:', userData);
+
+    // const cashierName = userData.name || 'Unknown Cashier';
+    // // Update the cashier name on the receipt
+    // document.getElementById('cashier-name').textContent = cashierName;
 }
+
+// Initialize everything when the document is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Cashier dashboard loaded');
+    
+    // Check if RBAC service is available
+    if (typeof RBACService !== 'undefined') {
+        // Enforce cashier-only access to this page
+        RBACService.enforcePageAccess('cashier');
+        
+        // Get user data and display name
+        const userData = RBACService.getUserData();
+        if (userData) {
+            const cashierNameElement = document.getElementById('cashier-name');
+            if (cashierNameElement) {
+                cashierNameElement.textContent = userData.name;
+            }
+        }    } else {
+        // Fallback to basic authentication if RBAC is not available
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            // Not logged in, redirect to login
+            window.location.href = '../pages/loginInterface.html';
+            return;
+        }
+        
+        try {
+            // Decode token to get user data
+            const payload = token.split('.')[1];
+            const userData = JSON.parse(atob(payload));
+            const user = userData.data;
+            
+            if (user.role !== 'cashier') {
+                // Not a cashier, redirect to appropriate dashboard
+                if (user.role === 'admin') {
+                    window.location.href = 'admindashboard.html';
+                } else {
+                    window.location.href = '../loginInterface.html';
+                }
+                return;
+            }
+            
+            // User is cashier, continue loading cashier dashboard
+            // Display cashier name if element exists
+            const cashierNameElement = document.getElementById('cashier-name');
+            if (cashierNameElement) {
+                cashierNameElement.textContent = user.name;
+            }
+            // document.getElementById('cashier-name').textContent = cashierName;
+        } catch (e) {
+            // Invalid token, redirect to login
+            console.error('Token validation error:', e);
+            // localStorage.removeItem('auth_token');
+            // window.location.href = '../loginInterface.html';
+            // return;
+        }
+    }
+    });
 
 window.onload = function() {
     updateDateTime();
