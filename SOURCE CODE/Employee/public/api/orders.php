@@ -6,6 +6,9 @@ while (ob_get_level()) ob_end_clean();
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
+// Set timezone to Philippine time to match local timezone
+date_default_timezone_set('Asia/Manila');
+
 // Set CORS and security headers
 if (isset($_SERVER['HTTP_ORIGIN'])) {
     header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
