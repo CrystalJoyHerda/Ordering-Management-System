@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // API base URL
     const API_BASE_URL = 'http://localhost/SOURCE_CODE/Employee/public/api';
     
+    // Load current Philippine date and time first
+    loadCurrentDate();
+    
     // Initialize date inputs with current dates
     const today = new Date();
     const lastWeek = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -292,6 +295,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         try {
+            // Get the actual date objects
+            const startDateObj = new Date(startDate + 'T00:00:00');
+            const endDateObj = new Date(endDate + 'T00:00:00');
+            
+            // Validate dates
+            if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+                showError('Invalid date range selected', document.querySelector('.main-content'));
+                return;
+            }
+            
             const response = await fetch(`${API_BASE_URL}/sales.php?action=date_range&start_date=${startDate}&end_date=${endDate}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -299,55 +312,190 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.status === 'success') {
-                updateDateRangeData(data.data);
+                updateDateRangeData(data.data, startDateObj, endDateObj);
             } else {
                 console.error('API Error:', data.message);
+                // If API fails, show demo data for the selected date range
+                generateDemoDataForDateRange(startDateObj, endDateObj);
             }
         } catch (error) {
             console.error('Error fetching date range data:', error);
+            // If fetch fails, show demo data for the selected date range
+            const startDateObj = new Date(startDate + 'T00:00:00');
+            const endDateObj = new Date(endDate + 'T00:00:00');
+            generateDemoDataForDateRange(startDateObj, endDateObj);
         } finally {
             // Remove loading state
             cards.forEach(card => {
                 card.style.opacity = '1';
             });
         }
-    }    // Update dashboard with date range data
-    function updateDateRangeData(data) {
-        // Update chart with date range data
+    }    // Generate demo data for a specific date range when API fails
+    function generateDemoDataForDateRange(startDate, endDate) {
+        // Calculate number of days in range
+        const daysDiff = Math.floor((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+        
+        // Create demo data structure
+        const demoData = {
+            total_sales: 0,
+            daily_breakdown: []
+        };
+        
+        // Generate data for each day
+        for (let i = 0; i < Math.min(daysDiff, 7); i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            // Random sales between 10000 and 50000
+            const dailyTotal = Math.floor(Math.random() * 40000) + 10000;
+            demoData.total_sales += dailyTotal;
+            
+            demoData.daily_breakdown.push({
+                date: formatDate(currentDate),
+                daily_total: dailyTotal
+            });
+        }
+        
+        // Update chart with demo data
+        updateDateRangeData(demoData, startDate, endDate);
+    }
+
+    // Update dashboard with date range data
+    function updateDateRangeData(data, startDate, endDate) {
+        // Get elements
         const bars = document.querySelectorAll('.bar');
+        const xAxisLabels = document.querySelectorAll('.x-axis span');
+        const chartDescription = document.querySelector('.chart-description p');
+        const avgElement = document.querySelector('.legend-avg');
+        
+        console.log('Data for date range:', data);
+        console.log('Date range:', startDate, 'to', endDate);
+        
+        // Calculate dates in the range
+        const datesInRange = getDatesInRange(startDate, endDate);
+        console.log('Dates in range:', datesInRange.map(d => formatDate(d)));
+        
+        // Reset all bars and labels first
+        bars.forEach((bar, index) => {
+            bar.style.height = '5%';
+            bar.setAttribute('title', 'No data');
+            bar.setAttribute('data-date', '');
+            if (index < xAxisLabels.length) {
+                xAxisLabels[index].textContent = '';
+            }
+        });
+        
+        // Update x-axis labels with dates
+        datesInRange.forEach((date, index) => {
+            if (index < xAxisLabels.length) {
+                // Format date as "May 15" for x-axis
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+                xAxisLabels[index].textContent = formattedDate;
+            }
+        });
+        
+        // If we have daily breakdown data, update the bars
         if (data.daily_breakdown && data.daily_breakdown.length > 0) {
+            // Calculate maximum value for scaling
             const maxValue = Math.max(...data.daily_breakdown.map(item => parseFloat(item.daily_total || item.total || 0)));
             
-            bars.forEach((bar, index) => {
-                if (data.daily_breakdown[index]) {
-                    const total = parseFloat(data.daily_breakdown[index].daily_total || data.daily_breakdown[index].total || 0);
+            // Map data points to dates in our range
+            data.daily_breakdown.forEach(dayData => {
+                const dataDate = new Date(dayData.date + 'T00:00:00');
+                
+                // Find which index this date corresponds to
+                const dateIndex = datesInRange.findIndex(date => 
+                    date.getFullYear() === dataDate.getFullYear() &&
+                    date.getMonth() === dataDate.getMonth() &&
+                    date.getDate() === dataDate.getDate()
+                );
+                
+                if (dateIndex !== -1 && dateIndex < bars.length) {
+                    const total = parseFloat(dayData.daily_total || dayData.total || 0);
                     const percentage = maxValue > 0 ? (total / maxValue) * 100 : 0;
-                    bar.style.height = `${Math.max(percentage, 5)}%`;
-                    bar.setAttribute('title', `${data.daily_breakdown[index].date}: ₱${Number(total).toLocaleString()}`);
-                } else {
-                    bar.style.height = '5%';
-                }
-            });
-            
-            // Update x-axis labels with dates
-            const xAxisLabels = document.querySelectorAll('.x-axis span');
-            xAxisLabels.forEach((label, index) => {
-                if (data.daily_breakdown[index]) {
-                    const date = new Date(data.daily_breakdown[index].date);
-                    label.textContent = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    
+                    // Update bar
+                    bars[dateIndex].style.height = `${Math.max(percentage, 5)}%`;
+                    bars[dateIndex].style.transition = 'height 0.5s ease';
+                    bars[dateIndex].setAttribute('data-date', dayData.date);
+                    
+                    // Format tooltip with day name: "Mon, May 15: ₱25,000"
+                    const tooltipDate = dataDate.toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    bars[dateIndex].setAttribute('title', `${tooltipDate}: ₱${Number(total).toLocaleString()}`);
                 }
             });
         }
         
-        // Update description
-        const chartDescription = document.querySelector('.chart-description p');
-        chartDescription.textContent = `Revenue trends for selected date range (${data.total_sales ? '₱' + Number(data.total_sales).toLocaleString() : '₱0'} total)`;
+        // Update chart description and average
+        const startFormatted = startDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric' 
+        });
         
-        // Update average
-        const avgElement = document.querySelector('.legend-avg');
-        const avgDaily = data.daily_breakdown && data.daily_breakdown.length > 0 ? 
-                        data.daily_breakdown.reduce((sum, item) => sum + parseFloat(item.daily_total || item.total || 0), 0) / data.daily_breakdown.length : 0;
-        avgElement.textContent = `Average: ₱${Number(avgDaily).toLocaleString()}`;
+        const endFormatted = endDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric' 
+        });
+        
+        if (chartDescription) {
+            chartDescription.textContent = `Revenue trends from ${startFormatted} to ${endFormatted}`;
+        }
+        
+        if (avgElement && data.daily_breakdown && data.daily_breakdown.length > 0) {
+            // Calculate average from actual data points
+            const total = data.daily_breakdown.reduce((sum, item) => {
+                return sum + parseFloat(item.daily_total || item.total || 0);
+            }, 0);
+            
+            const average = total / data.daily_breakdown.length;
+            avgElement.textContent = `Average: ₱${Number(average).toLocaleString()}`;
+        } else if (avgElement) {
+            avgElement.textContent = 'Average: ₱0';
+        }
+    }
+
+    // Helper function to get an array of dates between startDate and endDate (inclusive)
+    function getDatesInRange(startDate, endDate) {
+        const dates = [];
+        // Limit to maximum of 7 days to match our 7 bars
+        const maxDays = 7;
+        
+        // Calculate the actual number of days
+        const totalDays = Math.floor((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+        const daysToShow = Math.min(totalDays, maxDays);
+        
+        // If more than 7 days selected, skip some days to show a representative sample
+        const skipFactor = totalDays > maxDays ? Math.floor(totalDays / maxDays) : 1;
+        
+        for (let i = 0; i < daysToShow; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + (i * skipFactor));
+            
+            // Don't go past end date
+            if (currentDate <= endDate) {
+                dates.push(currentDate);
+            }
+        }
+        
+        // If we have room for the end date and it's not already included, add it
+        const lastDate = dates[dates.length - 1];
+        if (dates.length < maxDays && 
+            !(lastDate.getFullYear() === endDate.getFullYear() && 
+              lastDate.getMonth() === endDate.getMonth() && 
+              lastDate.getDate() === endDate.getDate())) {
+            dates.push(endDate);
+        }
+        
+        return dates;
     }
 
     // Show fallback data when API fails
@@ -461,5 +609,62 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Data.data content:', data.data);
         }
         console.log('=== End Debug ===');
+    }
+
+    // Load and display current Philippine date from server
+    async function loadCurrentDate() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/sales.php?action=debug_timezone`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Display the corrected Philippine date
+                const dateDisplay = document.getElementById('date-display');
+                const timezoneDisplay = document.getElementById('timezone-display');
+                
+                if (dateDisplay) {
+                    dateDisplay.textContent = data.corrected_formatted_date || data.formatted_date;
+                }
+                
+                if (timezoneDisplay) {
+                    timezoneDisplay.textContent = `${data.timezone} (UTC+8)`;
+                }
+                
+                console.log('Current Philippine date loaded:', data.corrected_formatted_date);
+            } else {
+                console.error('Failed to load current date:', data.message);
+                // Fallback to browser date
+                setFallbackDate();
+            }
+        } catch (error) {
+            console.error('Error loading current date:', error);
+            // Fallback to browser date
+            setFallbackDate();
+        }
+    }
+
+    // Fallback date display using browser time
+    function setFallbackDate() {
+        const dateDisplay = document.getElementById('date-display');
+        const timezoneDisplay = document.getElementById('timezone-display');
+        
+        if (dateDisplay) {
+            const today = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                timeZone: 'Asia/Manila'
+            };
+            dateDisplay.textContent = today.toLocaleDateString('en-US', options);
+        }
+        
+        if (timezoneDisplay) {
+            timezoneDisplay.textContent = 'Asia/Manila (UTC+8)';
+        }
     }
 });

@@ -1,3 +1,67 @@
+/* Header with date display */
+.header {
+    background-color: #67503b;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.header-left h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.current-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.current-date i {
+    font-size: 16px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.timezone-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.timezone-info i {
+    font-size: 16px;
+}
+
+#date-display {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+#timezone-display {
+    font-weight: 500;
+}
+
 /* Sales Dashboard specific styles */
 .sales-content {
     padding: 20px;
