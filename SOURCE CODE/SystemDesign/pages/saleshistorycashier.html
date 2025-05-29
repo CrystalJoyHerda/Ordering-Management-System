@@ -238,7 +238,8 @@
             barGraph.innerHTML = '';
             
             // Determine if it's today or another date for display text
-            const isToday = selectedDate === new Date().toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            const isToday = selectedDate === today;
             const dateText = isToday ? 'Today' : formatDateDisplay(selectedDate);
             
             if (products && products.length > 0) {
@@ -247,17 +248,18 @@
                     <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
                         <h4 style="margin: 0 0 10px 0; color: #67503b;">Top Products</h4>
                         <div style="font-size: 24px; font-weight: bold; color: #67503b;">${products.length}</div>
-                        <div style="font-size: 12px; color: #666;">Products Sold ${isToday ? 'Today' : 'on ' + new Date(selectedDate).toLocaleDateString()}</div>
+                        <div style="font-size: 12px; color: #666;">Products Sold ${isToday ? 'Today' : 'on ' + formatDateDisplay(selectedDate)}</div>
                     </div>
                 `;
             } else {
-                donutChart.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available for ${isToday ? 'today' : new Date(selectedDate).toLocaleDateString()}</div>`;
+                donutChart.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No data available for ${isToday ? 'today' : formatDateDisplay(selectedDate)}</div>`;
             }
-              // Create order status display instead of revenue distribution
+              
+            // Create order status display instead of revenue distribution
             if (orders && orders.length > 0) {                
                 barGraph.innerHTML = `
                     <div style="display: flex; flex-direction: column; height: 100%; padding: 8px;">
-                        <h4 style="margin: 0 0 12px 0; color: #67503b; text-align: center; font-size: 16px;">Orders ${isToday ? 'Today' : 'on ' + new Date(selectedDate).toLocaleDateString()}</h4>
+                        <h4 style="margin: 0 0 12px 0; color: #67503b; text-align: center; font-size: 16px;">Orders ${isToday ? 'Today' : 'on ' + formatDateDisplay(selectedDate)}</h4>
                         <div style="flex: 1; overflow-y: auto; height: 100%; min-height: 0;">
                             ${orders.slice(0, 20).map(order => {
                                 const statusColor = order.status === 'completed' ? '#28a745' : 
@@ -271,7 +273,7 @@
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 6px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${statusColor};">
                                         <div style="display: flex; flex-direction: column;">
                                             <span style="font-weight: bold; font-size: 14px; color: #333;">Order #${order.order_number || order.id}</span>
-                                            <span style="font-size: 11px; color: #666;">${new Date(order.created_at).toLocaleDateString()}</span>
+                                            <span style="font-size: 11px; color: #666;">${formatDateDisplay(order.created_at.split(' ')[0])}</span>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 5px;">
                                             <span style="font-size: 14px;">${statusBadge}</span>
@@ -286,7 +288,7 @@
                     </div>
                 `;
             } else {
-                barGraph.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No orders available for ${isToday ? 'today' : new Date(selectedDate).toLocaleDateString()}</div>`;
+                barGraph.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">No orders available for ${isToday ? 'today' : formatDateDisplay(selectedDate)}</div>`;
             }
         }
 
@@ -320,7 +322,10 @@
             donutChart.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode</div>';
             barGraph.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #666;">Offline Mode - Recent Orders</div>';        }// Function to format date for display
         function formatDateDisplay(dateString) {
-            const date = new Date(dateString);
+            // Parse the date string directly to avoid timezone issues
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            
             const options = { 
                 year: 'numeric', 
                 month: 'long', 
@@ -334,7 +339,8 @@
         function updateDateDisplay(selectedDate) {
             const tableBox = document.querySelector('.table-box h2');
             if (tableBox) {
-                const isToday = selectedDate === new Date().toISOString().split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+                const isToday = selectedDate === today;
                 if (isToday) {
                     tableBox.textContent = "Today's Sales";
                 } else {

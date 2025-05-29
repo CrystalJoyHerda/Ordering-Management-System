@@ -287,6 +287,13 @@ body {
     color: #dc3545;
 }
 
+.status-badge.no-stock,
+.alert-badge.no-stock {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f1b0b7;
+}
+
 .status-badge.low-stock,
 .alert-badge.low-stock {
     background-color: #ffeaea;
