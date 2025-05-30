@@ -10,7 +10,8 @@ body {
     justify-content: center;
     align-items: center; /* Center content vertically */
     height: 100vh; /* Full viewport height */
-    background-color: #f0f0f0;
+    background: url('../../../RESOURCES/Orderspictures/coffeeshopbg.png') no-repeat center center fixed;
+    background-size: cover;
     text-align: center;
     overflow: hidden; /* Prevent scrolling */
 }
@@ -19,83 +20,104 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Center the content vertically */
-    width: 100%; /* Full width */
-    max-width: 500px; /* Increased width for responsiveness */
-    padding: 30px; /* Increased padding for spacing */
-    background-color: white; /* Optional: Add a background color */
-    border-radius: 20px; /* Optional: Rounded corners */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Optional: Add shadow for better visibility */
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 30px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 h1 {
+    color: #3b2a1f;
+    margin-bottom: 10px;
+    text-align: center;
     font-size: 28px; /* Increased font size */
     font-weight: bold;
-    margin-bottom: 10px; /* Increased spacing */
 }
 
 .subtitle {
+    color: #000000;
+    margin-bottom: 30px;
+    font-style: italic;
     font-size: 16px; /* Increased font size */
-    color: #804000;
-    margin-bottom: 25px; /* Increased spacing */
 }
 
 .login-box {
-    background: gray;
-    padding: 40px; /* Increased padding */
-    border-radius: 20px; /* Slightly larger rounded corners */
+    background: rgba(255, 255, 255, 0.6);
+    padding: 30px; /* Increased padding */
+    border-radius: 10px; /* Slightly larger rounded corners */
     width: 100%; /* Full width of the container */
-    max-width: 350px; /* Increased max width */
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.15); /* Slightly larger shadow */
+    max-width: 400px; /* Increased max width */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Slightly larger shadow */
 }
 
 .login-box h2 {
+    color: #3b2a1f;
+    margin-bottom: 25px;
+    text-align: center;
     font-size: 24px; /* Increased font size */
     font-weight: bold;
-    margin-bottom: 20px; /* Increased spacing */
 }
 
 .login-box input {
     width: 100%;
-    padding: 15px; /* Increased padding */
-    margin: 15px 0; /* Increased spacing */
-    border: none;
-    border-radius: 12px; /* Slightly larger rounded corners */
+    padding: 12px 15px; /* Increased padding */
+    margin-bottom: 15px; /* Increased spacing */
+    border: 1px solid #d4c8b9;
+    border-radius: 6px; /* Slightly larger rounded corners */
     background: #fff7f7;
     text-align: center;
     font-size: 16px; /* Increased font size */
+    transition: border-color 0.3s;
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: #67503b;
+    box-shadow: 0 0 5px rgba(103, 80, 59, 0.2);
 }
 
 .login-box button {
     width: 100%;
-    padding: 15px; /* Increased padding */
-    background: white;
-    color: black;
+    padding: 12px; /* Increased padding */
+    background-color: #67503b;
+    color: white;
     font-weight: bold;
     border: none;
-    border-radius: 25px; /* Slightly larger rounded corners */
+    border-radius: 6px; /* Slightly larger rounded corners */
     cursor: pointer;
     margin-top: 15px; /* Increased spacing */
     font-size: 16px; /* Increased font size */
+    transition: background-color 0.3s;
 }
 
 .login-box button:hover {
-    background: lightgray;
+    background-color: #4a3422;
+}
+
+.login-box button:disabled {
+    background-color: #a67c52;
+    cursor: not-allowed;
 }
 
 .forgot-password {
     display: block;
-    margin-top: 20px; /* Increased spacing */
-    font-size: 16px; /* Increased font size */
-    color: black;
+    margin-top: 15px; /* Increased spacing */
+    font-size: 14px; /* Increased font size */
+    color: #67503b;
     text-decoration: none;
     text-align: center; /* Center the text */
+    transition: color 0.3s;
 }
 
 .forgot-password:hover {
+    color: #4a3422;
     text-decoration: underline;
 }
 
+/* Error message styles */
 #error-message {
     display: none;
     color: #ff0000;
