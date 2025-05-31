@@ -680,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add a delay to simulate printing the receipt (3 seconds)
         setTimeout(() => {
             // Show a success message instead of the spinner
-            loadingSpinner.innerHTML = '<p class="success-message" style="font-size: 18px; color: #388e3c; font-weight: bold;">✓ Receipt printed successfully!</p><p>Your queue number is <strong>' + document.getElementById('orderNumber').textContent + '</strong></p><p>Please wait for your order to be called.</p>';
+            loadingSpinner.innerHTML = '<p class="success-message" style="font-size: 18px; color: #388e3c; font-weight: bold;">✓ Receipt printed successfully!</p><p>Please proceed to the cashier.</p>';
             
             // Re-enable the OK button so it can be clicked to immediately go to welcome page
             document.querySelector('.close-thank-you-btn').disabled = false;
