@@ -2022,3 +2022,98 @@ header {
     background-color: #c82333;
     transform: translateY(-1px);
 }
+
+/* Order Completed Modal Styles */
+.order-completed-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.order-completed-modal.show {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+    animation: fadeIn 0.3s ease;
+}
+
+.order-completed-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    animation: slideInScale 0.3s ease;
+    overflow: hidden;
+}
+
+.order-completed-modal .modal-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.order-completed-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.order-completed-modal .modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.order-completed-modal .warning-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.order-completed-modal .info-message {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.order-completed-modal .modal-footer {
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.order-completed-modal .ok-btn {
+    padding: 12px 30px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.order-completed-modal .ok-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}

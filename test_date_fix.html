@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Date Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .date-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .method {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .correct {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .incorrect {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Date Fix Test - Sales History Cashier</h1>
+    
+    <p>This test compares the old method (UTC-based) vs the new method (local timezone-based) for getting today's date.</p>
+    
+    <div class="date-comparison">
+        <div class="method incorrect">
+            <h3>❌ Old Method (UTC-based)</h3>
+            <p><strong>Method:</strong> <code>new Date().toISOString().split('T')[0]</code></p>
+            <p><strong>Result:</strong> <span id="oldMethod"></span></p>
+            <p><strong>Issue:</strong> Can be off by one day due to timezone differences</p>
+        </div>
+        
+        <div class="method correct">
+            <h3>✅ New Method (Local timezone)</h3>
+            <p><strong>Method:</strong> <code>getTodayLocalDate()</code></p>
+            <p><strong>Result:</strong> <span id="newMethod"></span></p>
+            <p><strong>Benefit:</strong> Always matches your computer's local date</p>
+        </div>
+    </div>
+    
+    <div class="test-result">
+        <h3>Comparison Results:</h3>
+        <div id="comparisonResult"></div>
+    </div>
+    
+    <div class="test-result">
+        <h3>System Information:</h3>
+        <p><strong>Your Computer Time:</strong> <span id="computerTime"></span></p>
+        <p><strong>Timezone:</strong> <span id="timezone"></span></p>
+        <p><strong>UTC Time:</strong> <span id="utcTime"></span></p>
+    </div>
+
+    <script>
+        // Function to get today's date in local timezone (YYYY-MM-DD format) - FIXED VERSION
+        function getTodayLocalDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Run the test
+        function runDateTest() {
+            const now = new Date();
+            
+            // Old method (UTC-based)
+            const oldMethod = now.toISOString().split('T')[0];
+            
+            // New method (local timezone)
+            const newMethod = getTodayLocalDate();
+            
+            // Display results
+            document.getElementById('oldMethod').textContent = oldMethod;
+            document.getElementById('newMethod').textContent = newMethod;
+            document.getElementById('computerTime').textContent = now.toString();
+            document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('utcTime').textContent = now.toUTCString();
+            
+            // Compare results
+            const comparisonDiv = document.getElementById('comparisonResult');
+            if (oldMethod === newMethod) {
+                comparisonDiv.innerHTML = `
+                    <p style="color: #28a745;"><strong>✅ Both methods return the same date:</strong> ${newMethod}</p>
+                    <p>The timezone difference is not affecting the date today.</p>
+                `;
+            } else {
+                comparisonDiv.innerHTML = `
+                    <p style="color: #dc3545;"><strong>⚠️ Methods return different dates!</strong></p>
+                    <p><strong>UTC-based:</strong> ${oldMethod}</p>
+                    <p><strong>Local-based:</strong> ${newMethod}</p>
+                    <p><strong>Issue:</strong> This is why the sales history was showing the wrong "today" date!</p>
+                    <p><strong>Solution:</strong> The new method (${newMethod}) correctly matches your computer's date.</p>
+                `;
+            }
+        }
+
+        // Run test when page loads
+        document.addEventListener('DOMContentLoaded', runDateTest);
+    </script>
+</body>
+</html>

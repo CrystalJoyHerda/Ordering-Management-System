@@ -47,11 +47,17 @@ try {
 
     // Log the request for debugging
     error_log("Orders API called - Method: " . $_SERVER['REQUEST_METHOD']);
-    error_log("Request body: " . file_get_contents('php://input'));
-
-    // Handle request based on HTTP method
+    error_log("Request body: " . file_get_contents('php://input'));    // Handle request based on HTTP method
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
+            // Auto-cancel old pending orders before any lookup operation
+            try {
+                $cancelResult = $order->autoCancelOldPendingOrders();
+                error_log("Auto-cancellation executed: " . json_encode($cancelResult));
+            } catch (Exception $e) {
+                error_log("Auto-cancellation failed: " . $e->getMessage());
+            }
+            
             if (isset($_GET['order_number'])) {
                 $result = $order->getByOrderNumber($_GET['order_number']);
             } elseif (isset($_GET['id'])) {

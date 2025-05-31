@@ -511,6 +511,71 @@ class OrderModel extends BaseModel {
                 'message' => 'Failed to delete order: ' . $e->getMessage()
             ];
         }
+    }    /**
+     * Auto-cancel pending orders that are older than the current date
+     * @return array Result of the auto-cancellation process
+     */
+    public function autoCancelOldPendingOrders() {
+        try {
+            $currentDate = date('Y-m-d');
+            
+            // Find pending orders that are older than today
+            $findQuery = "SELECT id, order_number, created_at, total_amount 
+                         FROM {$this->table} 
+                         WHERE status = 'pending' 
+                         AND DATE(created_at) < :current_date";
+            
+            $findStmt = $this->conn->prepare($findQuery);
+            $findStmt->bindValue(':current_date', $currentDate);
+            $findStmt->execute();
+            $oldOrders = $findStmt->fetchAll();
+            
+            if (empty($oldOrders)) {
+                return [
+                    'status' => 'success',
+                    'message' => 'No old pending orders found to cancel',
+                    'cancelled_count' => 0,
+                    'cancelled_orders' => []
+                ];
+            }
+            
+            $this->conn->beginTransaction();
+            
+            // Update the status of old pending orders to 'cancelled'
+            $updateQuery = "UPDATE {$this->table} 
+                           SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP 
+                           WHERE status = 'pending' 
+                           AND DATE(created_at) < :current_date";
+            
+            $updateStmt = $this->conn->prepare($updateQuery);
+            $updateStmt->bindValue(':current_date', $currentDate);
+            $updateStmt->execute();
+            
+            $cancelledCount = $updateStmt->rowCount();
+            
+            $this->conn->commit();
+            
+            // Log the auto-cancellation for audit purposes
+            error_log("Auto-cancelled {$cancelledCount} old pending orders on {$currentDate}");
+            
+            return [
+                'status' => 'success',
+                'message' => "Successfully cancelled {$cancelledCount} old pending orders",
+                'cancelled_count' => $cancelledCount,
+                'cancelled_orders' => $oldOrders,
+                'current_date' => $currentDate
+            ];
+            
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            error_log("Auto-cancel old orders error: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Failed to auto-cancel old orders: ' . $e->getMessage()
+            ];
+        }
     }
 
     private function getProductIdByName($productName) {
