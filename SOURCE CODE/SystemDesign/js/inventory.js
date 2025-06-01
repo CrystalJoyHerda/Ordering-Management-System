@@ -229,9 +229,92 @@ function checkAuth() {
 
 // Function to handle logout
 function handleLogout() {
-    localStorage.removeItem('auth_token');
-    window.location.href = '../pages/loginInterface.html';
+    // Show the modal first - NEVER directly redirect
+    const logoutModal = document.getElementById('logout-modal');
+    if (logoutModal) {
+        logoutModal.style.display = 'flex';
+    } else {
+        // Only use confirm as fallback if modal doesn't exist
+        handleLogoutFallback();
+    }
 }
+
+// Improved fallback function that uses confirmation dialog
+function handleLogoutFallback() {
+    if (confirm('Are you sure you want to logout?')) {
+        performLogoutAction();
+    }
+    // If user clicks Cancel, do nothing - remain on the page
+}
+
+// Separated logout action function to avoid code duplication
+function performLogoutAction() {
+    // Clear JWT token and user data
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    sessionStorage.removeItem('user');
+    
+    // Attempt to call server-side logout
+    fetch(`${API_CONFIG.baseUrl}/auth.php?action=logout`, {
+        method: 'GET'
+    }).catch(error => {
+        console.error('Logout API error:', error);
+    }).finally(() => {
+        // Only redirect after explicit confirmation
+        const pathname = window.location.pathname.toLowerCase();
+        if (pathname.includes('/pages/')) {
+            window.location.href = 'loginInterface.html';
+        } else {
+            window.location.href = 'pages/loginInterface.html';
+        }
+    });
+}
+
+// Logout Modal Functionality - make sure this runs only once
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutModal = document.getElementById('logout-modal');
+    const logoutBtn = document.querySelector('.logout-btn');
+    const confirmLogoutBtn = document.getElementById('confirm-logout');
+    const cancelLogoutBtn = document.getElementById('cancel-logout');
+    
+    // Replace direct action with our modal-first approach
+    if (logoutBtn) {
+        logoutBtn.removeEventListener('click', handleLogout); // Remove any existing listener
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Only show the modal - do nothing else
+            if (logoutModal) {
+                logoutModal.style.display = 'flex';
+            }
+        });
+    }
+    
+    // Only logout when confirm button is clicked
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', function() {
+            // First hide the modal
+            logoutModal.style.display = 'none';
+            
+            // Only then perform the actual logout with redirect
+            performLogoutAction();
+        });
+    }
+    
+    // Just close modal when cancel is clicked
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', function() {
+            logoutModal.style.display = 'none';
+        });
+    }
+    
+    // Just close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === logoutModal) {
+            logoutModal.style.display = 'none';
+        }
+    });
+});
 
 // Function to load products from API
 async function loadProducts() {
@@ -856,33 +939,84 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// Fallback logout function if the shared handler is not available
+// Improved logout fallback function that uses modal first
 function handleLogoutFallback() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Clear JWT token and user data
-        localStorage.removeItem('auth_token');
-        sessionStorage.removeItem('user');
-        
-        // Attempt to call server-side logout
-        fetch(`${API_CONFIG.baseUrl}/auth.php?action=logout`, {
-            method: 'GET'
-        }).catch(error => {
-            console.error('Logout API error:', error);
-            // Continue with logout regardless of API result
-        }).finally(() => {
-            // Redirect to login page using path detection
-            const pathname = window.location.pathname.toLowerCase();
-            
-            if (pathname.includes('/pages/')) {
-                // We're in the pages directory
-                window.location.href = 'loginInterface.html';
-            } else {
-                // We're in the root directory
-                window.location.href = 'pages/loginInterface.html';
-            }
-        });
+    // Show modal first instead of immediate confirm dialog
+    const logoutModal = document.getElementById('logout-modal');
+    if (logoutModal) {
+        logoutModal.style.display = 'flex';
+    } else {
+        // Only use confirm as fallback if modal doesn't exist
+        if (confirm('Are you sure you want to logout?')) {
+            performLogoutAction();
+        }
     }
 }
+
+// Separated logout action function to avoid code duplication
+function performLogoutAction() {
+    // Clear JWT token and user data
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    sessionStorage.removeItem('user');
+    
+    // Attempt to call server-side logout
+    fetch(`${API_CONFIG.baseUrl}/auth.php?action=logout`, {
+        method: 'GET'
+    }).catch(error => {
+        console.error('Logout API error:', error);
+    }).finally(() => {
+        // Redirect to login page using path detection
+        const pathname = window.location.pathname.toLowerCase();
+        if (pathname.includes('/pages/')) {
+            window.location.href = 'loginInterface.html';
+        } else {
+            window.location.href = 'pages/loginInterface.html';
+        }
+    });
+}
+
+// Logout Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutModal = document.getElementById('logout-modal');
+    const logoutBtn = document.querySelector('.logout-btn');
+    const confirmLogoutBtn = document.getElementById('confirm-logout');
+    const cancelLogoutBtn = document.getElementById('cancel-logout');
+    
+    // Show modal when logout button is clicked
+    if (logoutBtn && logoutModal) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Just show the modal - no logout or redirect yet
+            logoutModal.style.display = 'flex';
+        });
+    }
+    
+    // Only logout when confirm button is clicked
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', function() {
+            // First hide the modal
+            logoutModal.style.display = 'none';
+            
+            // Then perform actual logout action
+            performLogoutAction();
+        });
+    }
+    
+    // Just close modal when cancel is clicked - no logout or redirect
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', function() {
+            logoutModal.style.display = 'none';
+        });
+    }
+    
+    // Just close modal when clicking outside - no logout or redirect
+    window.onclick = function(event) {
+        if (event.target === logoutModal) {
+            logoutModal.style.display = 'none';
+        }
+    };
+});
 
 // Function to setup image upload preview
 // Function to add image preview events (hover and click)
