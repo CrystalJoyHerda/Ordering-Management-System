@@ -4,6 +4,8 @@
     <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales History</title>
     <link rel="stylesheet" href="../css/saleshistoryinter.css">
+    <link rel="icon" href="../assets/images/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -20,11 +22,11 @@
                     <li><a href="cashierdashboard.html">Dashboard</a></li>
                     <li><a href="cashiering.html">Cashiering</a></li>
                     <li><a href="stockscashier.html">Stocks</a></li>
-                    <li><a href="saleshistoryinter.html" class="active">Sales History</a></li>
+                    <li class="active"><a href="saleshistorycashier.html">Sales History</a></li>
                 </ul>
             </nav>
               <div class="logout-section">
-                <button class="logout-btn">Log Out</button>
+                <button class="logout-btn" id="logout-button">Log Out</button>
             </div>
         </div>        <!-- Main Content -->
         <div class="main-content">            <div class="header">
@@ -71,7 +73,21 @@
                 </div>
             </div>
         </div>
-    </div>    <script>
+    </div>    
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to log out?</p>
+            <div class="logout-modal-buttons">
+                <button id="confirm-logout" class="confirm-logout">Yes, Logout</button>
+                <button id="cancel-logout" class="cancel-logout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
         // Function to handle logout
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
@@ -115,12 +131,65 @@
             return localDate;
         }// Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Logout button functionality
-            const logoutBtn = document.querySelector('.logout-btn');
+            // FIXED: Direct logout button event listener
+            const logoutBtn = document.getElementById('logout-button');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', handleLogout);
+                // Remove old event listener if it exists
+                logoutBtn.removeEventListener('click', handleLogout);
+                
+                // Add new event listener for showing the modal
+                logoutBtn.addEventListener('click', function() {
+                    const logoutModal = document.getElementById('logout-modal');
+                    if (logoutModal) {
+                        logoutModal.style.display = 'flex';
+                    }
+                });
             }
-              // Date picker functionality
+            
+            // Setup modal buttons
+            const logoutModal = document.getElementById('logout-modal');
+            const confirmLogoutBtn = document.getElementById('confirm-logout');
+            const cancelLogoutBtn = document.getElementById('cancel-logout');
+            
+            // Confirm logout action
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', function() {
+                    if (logoutModal) logoutModal.style.display = 'none';
+                    
+                    // Use the original logout logic
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    sessionStorage.removeItem('user');
+                    
+                    fetch('http://localhost/SOURCE_CODE/Employee/public/api/auth.php?action=logout', {
+                        method: 'GET'
+                    }).catch(error => {
+                        console.error('Logout API error:', error);
+                    }).finally(() => {
+                        const pathname = window.location.pathname.toLowerCase();
+                        window.location.href = pathname.includes('/pages/') ? 
+                            'loginInterface.html' : 'pages/loginInterface.html';
+                    });
+                });
+            }
+            
+            // Cancel logout
+            if (cancelLogoutBtn) {
+                cancelLogoutBtn.addEventListener('click', function() {
+                    if (logoutModal) logoutModal.style.display = 'none';
+                });
+            }
+            
+            // Close when clicking outside
+            if (logoutModal) {
+                window.addEventListener('click', function(event) {
+                    if (event.target === logoutModal) {
+                        logoutModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Date picker functionality
             const datePicker = document.getElementById('datePicker');
             if (datePicker) {
                 // Set default date to today using local timezone
