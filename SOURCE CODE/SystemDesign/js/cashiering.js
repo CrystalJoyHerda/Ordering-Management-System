@@ -265,12 +265,24 @@ async function lookupOrderInternal() {
         }
         
         const result = await response.json();
-        console.log('📋 Order lookup result:', result);
-
-        if (result.status === 'success' && result.order) {
+        console.log('📋 Order lookup result:', result);        if (result.status === 'success' && result.order) {
             console.log('✅ Order found successfully!');
             const order = result.order;
             console.log('📦 Order details:', order);
+            
+            // Check if order is already completed
+            if (order.status === 'completed') {
+                console.log('⚠️ Order is already completed, cannot edit');
+                showOrderCompletedModal();
+                return;
+            }
+            
+            // Check if order was auto-cancelled due to being old
+            if (order.status === 'cancelled') {
+                console.log('⚠️ Order was automatically cancelled due to being from a previous date');
+                showOrderCancelledModal();
+                return;
+            }
             
             // Store the order ID for database synchronization
             currentOrderId = order.id;
@@ -1902,6 +1914,70 @@ function showInvalidQuantityModal() {
 function closeInvalidQuantityModal() {
     const modal = document.getElementById('invalidQuantityModal');
     modal.classList.remove('show');
+}
+
+// Show order completed modal
+function showOrderCompletedModal() {
+    const modal = document.getElementById('orderCompletedModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Force a reflow to ensure display change takes effect
+        modal.offsetHeight;
+        // Add the show class for animation
+        modal.classList.add('show');
+    }
+}
+
+// Enhanced modal close function to prevent flickering
+function closeOrderCompletedModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const modal = document.getElementById('orderCompletedModal');
+    if (modal && modal.classList.contains('show')) {
+        // Remove the show class to trigger CSS transition
+        modal.classList.remove('show');
+        
+        // Use a timeout to match the CSS transition duration
+        setTimeout(() => {
+            if (!modal.classList.contains('show')) {
+                modal.style.display = 'none';
+            }
+        }, 300);
+    }    return false; // Prevent any default action
+}
+
+// Show order cancelled modal (for auto-cancelled orders)
+function showOrderCancelledModal() {
+    const modal = document.getElementById('orderCancelledModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Force a reflow to ensure display change takes effect
+        modal.offsetHeight;
+        // Add the show class for animation
+        modal.classList.add('show');
+    }
+}
+
+// Close order cancelled modal
+function closeOrderCancelledModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const modal = document.getElementById('orderCancelledModal');
+    if (modal && modal.classList.contains('show')) {
+        // Remove the show class to trigger CSS transition
+        modal.classList.remove('show');
+        // Use a timeout to match the CSS transition duration
+        setTimeout(() => {
+            if (!modal.classList.contains('show')) {
+                modal.style.display = 'none';
+            }
+        }, 300);
+    }
+    return false; // Prevent any default action
 }
 
 // Make functions globally accessible

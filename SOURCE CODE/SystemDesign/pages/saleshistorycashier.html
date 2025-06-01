@@ -100,24 +100,31 @@
             }
         }        // Database API configuration
         const API_BASE_URL = 'http://localhost/SOURCE_CODE/Employee/public/api';
-        
-        // Sales data structure
+          // Sales data structure
         let currentShiftSales = {
             sales: [],
             totalAmount: 0
-        };        // Initialize when DOM is loaded
+        };        // Function to get today's date in local timezone (YYYY-MM-DD format)
+        function getTodayLocalDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const localDate = `${year}-${month}-${day}`;
+            console.log('📅 Local today date:', localDate, '| Computer time:', now.toString());
+            return localDate;
+        }// Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             // Logout button functionality
             const logoutBtn = document.querySelector('.logout-btn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', handleLogout);
             }
-            
-            // Date picker functionality
+              // Date picker functionality
             const datePicker = document.getElementById('datePicker');
             if (datePicker) {
-                // Set default date to today
-                const today = new Date().toISOString().split('T')[0];
+                // Set default date to today using local timezone
+                const today = getTodayLocalDate();
                 datePicker.value = today;
                 
                 // Load data when date changes
@@ -147,9 +154,8 @@
         async function loadSalesData(selectedDate = null) {
             try {
                 showLoading();
-                
-                // Use selected date or default to today
-                const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+                  // Use selected date or default to today
+                const targetDate = selectedDate || getTodayLocalDate();
                 console.log('🔄 Loading sales data from database for date:', targetDate);
                 
                 // Update display to show selected date
@@ -236,9 +242,8 @@
             // Clear existing content
             donutChart.innerHTML = '';
             barGraph.innerHTML = '';
-            
-            // Determine if it's today or another date for display text
-            const today = new Date().toISOString().split('T')[0];
+              // Determine if it's today or another date for display text
+            const today = getTodayLocalDate();
             const isToday = selectedDate === today;
             const dateText = isToday ? 'Today' : formatDateDisplay(selectedDate);
             
@@ -333,13 +338,11 @@
                 weekday: 'long'
             };
             return date.toLocaleDateString('en-US', options);
-        }
-
-        // Function to update date display in the table header
+        }        // Function to update date display in the table header
         function updateDateDisplay(selectedDate) {
             const tableBox = document.querySelector('.table-box h2');
             if (tableBox) {
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayLocalDate();
                 const isToday = selectedDate === today;
                 if (isToday) {
                     tableBox.textContent = "Today's Sales";

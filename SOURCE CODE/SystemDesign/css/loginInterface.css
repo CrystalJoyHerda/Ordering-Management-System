@@ -10,7 +10,8 @@ body {
     justify-content: center;
     align-items: center; /* Center content vertically */
     height: 100vh; /* Full viewport height */
-    background-color: #f0f0f0;
+    background: url('../../../RESOURCES/Orderspictures/coffeeshopbg.png') no-repeat center center fixed;
+    background-size: cover;
     text-align: center;
     overflow: hidden; /* Prevent scrolling */
 }
@@ -19,83 +20,104 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Center the content vertically */
-    width: 100%; /* Full width */
-    max-width: 500px; /* Increased width for responsiveness */
-    padding: 30px; /* Increased padding for spacing */
-    background-color: white; /* Optional: Add a background color */
-    border-radius: 20px; /* Optional: Rounded corners */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Optional: Add shadow for better visibility */
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 30px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 h1 {
+    color: #3b2a1f;
+    margin-bottom: 10px;
+    text-align: center;
     font-size: 28px; /* Increased font size */
     font-weight: bold;
-    margin-bottom: 10px; /* Increased spacing */
 }
 
 .subtitle {
+    color: #000000;
+    margin-bottom: 30px;
+    font-style: italic;
     font-size: 16px; /* Increased font size */
-    color: #804000;
-    margin-bottom: 25px; /* Increased spacing */
 }
 
 .login-box {
-    background: gray;
-    padding: 40px; /* Increased padding */
-    border-radius: 20px; /* Slightly larger rounded corners */
+    background: rgba(255, 255, 255, 0.6);
+    padding: 30px; /* Increased padding */
+    border-radius: 10px; /* Slightly larger rounded corners */
     width: 100%; /* Full width of the container */
-    max-width: 350px; /* Increased max width */
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.15); /* Slightly larger shadow */
+    max-width: 400px; /* Increased max width */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Slightly larger shadow */
 }
 
 .login-box h2 {
+    color: #3b2a1f;
+    margin-bottom: 25px;
+    text-align: center;
     font-size: 24px; /* Increased font size */
     font-weight: bold;
-    margin-bottom: 20px; /* Increased spacing */
 }
 
 .login-box input {
     width: 100%;
-    padding: 15px; /* Increased padding */
-    margin: 15px 0; /* Increased spacing */
-    border: none;
-    border-radius: 12px; /* Slightly larger rounded corners */
+    padding: 12px 15px; /* Increased padding */
+    margin-bottom: 15px; /* Increased spacing */
+    border: 1px solid #d4c8b9;
+    border-radius: 6px; /* Slightly larger rounded corners */
     background: #fff7f7;
     text-align: center;
     font-size: 16px; /* Increased font size */
+    transition: border-color 0.3s;
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: #67503b;
+    box-shadow: 0 0 5px rgba(103, 80, 59, 0.2);
 }
 
 .login-box button {
     width: 100%;
-    padding: 15px; /* Increased padding */
-    background: white;
-    color: black;
+    padding: 12px; /* Increased padding */
+    background-color: #67503b;
+    color: white;
     font-weight: bold;
     border: none;
-    border-radius: 25px; /* Slightly larger rounded corners */
+    border-radius: 6px; /* Slightly larger rounded corners */
     cursor: pointer;
     margin-top: 15px; /* Increased spacing */
     font-size: 16px; /* Increased font size */
+    transition: background-color 0.3s;
 }
 
 .login-box button:hover {
-    background: lightgray;
+    background-color: #4a3422;
+}
+
+.login-box button:disabled {
+    background-color: #a67c52;
+    cursor: not-allowed;
 }
 
 .forgot-password {
     display: block;
-    margin-top: 20px; /* Increased spacing */
-    font-size: 16px; /* Increased font size */
-    color: black;
+    margin-top: 15px; /* Increased spacing */
+    font-size: 14px; /* Increased font size */
+    color: #67503b;
     text-decoration: none;
     text-align: center; /* Center the text */
+    transition: color 0.3s;
 }
 
 .forgot-password:hover {
+    color: #4a3422;
     text-decoration: underline;
 }
 
+/* Error message styles */
 #error-message {
     display: none;
     color: #ff0000;
@@ -115,21 +137,220 @@ h1 {
 .success-message {
     color: #155724;
     background-color: #d4edda;
-    border-color: #c3e6cb;
-    padding: 8px 12px;
-    margin: 10px 0;
-    border-radius: 4px;
+    border: 1px solid #c3e6cb;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 6px;
     text-align: center;
     font-weight: 500;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 .error-message {
     color: #721c24;
     background-color: #f8d7da;
-    border-color: #f5c6cb;
-    padding: 8px 12px;
-    margin: 10px 0;
-    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 6px;
     text-align: center;
     font-weight: 500;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    transition: all 0.3s ease-in-out;
+}
+
+.modal.show {
+    display: flex !important;
+    animation: modalFadeIn 0.3s ease-in-out;
+}
+
+@keyframes modalFadeIn {
+    from { 
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to { 
+        opacity: 1;
+        backdrop-filter: blur(3px);
+    }
+}
+
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform: scale(0.9);
+    animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: scale(0.9) translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    margin-bottom: 25px;
+    text-align: center;
+    position: relative;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.modal-header h2 {
+    color: #3b2a1f;
+    font-size: 1.6em;
+    margin: 0;
+    font-weight: 600;
+}
+
+.close {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    background: #f5f5f5;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.close:hover {
+    background: #e0e0e0;
+    color: #333;
+    transform: scale(1.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #3b2a1f;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #d4c8b9;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff7f7;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #67503b;
+    box-shadow: 0 0 8px rgba(103, 80, 59, 0.2);
+    background: #ffffff;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 25px;
+}
+
+.cancel-btn, .submit-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.submit-btn {
+    background: #67503b;
+    color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background: #4a3422;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn:disabled {
+    background: #a67c52;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.cancel-btn {
+    background: #eee;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.cancel-btn:hover {
+    background: #e0e0e0;
+    border-color: #ccc;
+    transform: translateY(-1px);
+}
+
+/* Loading state for buttons */
+.submit-btn:disabled::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

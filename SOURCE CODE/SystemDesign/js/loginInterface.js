@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
     const errorMessage = document.getElementById('error-message');
     const loginButton = document.getElementById('login-button');
+    const forgotPasswordLink = document.querySelector('.forgot-password');
     
     // Check if already logged in
     if (localStorage.getItem('auth_token')) {
@@ -113,6 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 800);
             } else {
                 showError(responseData.message || 'Login failed');
+                // Show forgot password link only on wrong password
+                forgotPasswordLink.style.display = responseData.message.includes('password') ? 'block' : 'none';
             }
         } catch (error) {
             console.error('Login error:', error);

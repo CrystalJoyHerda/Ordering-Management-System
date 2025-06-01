@@ -749,6 +749,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Order Completed Modal -->
+    <div class="order-completed-modal" id="orderCompletedModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">✅</span>
+                    Order Already Completed
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    This order has already been completed and cannot be processed again.
+                </p>
+                
+                
+            </div>            <div class="modal-footer">
+                <button type="button" class="ok-btn" onclick="closeOrderCompletedModal(event)">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Cancelled Modal -->
+    <div class="order-completed-modal" id="orderCancelledModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">❌</span>
+                    Order Automatically Cancelled
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="warning-message">
+                    This order has been automatically cancelled because it was from a previous date.
+                </p>
+        
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="ok-btn" onclick="closeOrderCancelledModal(event)">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
   </div><script>
     // Page initialization - let external cashiering.js handle all functions
     document.addEventListener('DOMContentLoaded', function() {
