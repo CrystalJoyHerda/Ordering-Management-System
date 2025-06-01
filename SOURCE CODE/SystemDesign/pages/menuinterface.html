@@ -25,6 +25,21 @@
       font-size: 18px;
       margin-bottom: 10px;
     }
+    
+    .addons-grid.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    .addon-circle.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .addons-title.disabled {
+      opacity: 0.5;
+      color: #999;
+    }
   </style>
 </head>
 <body>
@@ -566,6 +581,10 @@
   </div>
 
   <script>
+    // Global variable to track current selected item
+    let currentSelectedItem = null;
+    let currentSelectedCategory = null;
+    
     // Function to handle view order button click
     function viewAndConfirmOrder() {
       // Get all items with quantity > 0
@@ -618,6 +637,39 @@
       
       // Populate the order items in the modal
       populateOrderDetails();
+    }
+    
+    // Function to update selected item display and handle add-ons
+    function updateSelectedItem(itemElement) {
+      const itemName = itemElement.querySelector('.food-name').textContent;
+      const selectedItemDisplay = document.querySelector('.selected-item-name');
+      const addonsGrid = document.querySelector('.addons-grid');
+      const addonsTitle = document.querySelector('.addons-title');
+      
+      // Determine category based on parent grid
+      const coffeeGrid = itemElement.closest('.coffee-grid');
+      const snacksGrid = itemElement.closest('.snacks-grid');
+      
+      currentSelectedItem = itemName;
+      selectedItemDisplay.textContent = itemName;
+      
+      if (coffeeGrid) {
+        // Coffee item selected - enable add-ons
+        currentSelectedCategory = 'coffee';
+        addonsGrid.classList.remove('disabled');
+        addonsTitle.classList.remove('disabled');
+        document.querySelectorAll('.addon-circle').forEach(addon => {
+          addon.classList.remove('disabled');
+        });
+      } else if (snacksGrid) {
+        // Snacks item selected - disable add-ons
+        currentSelectedCategory = 'snacks';
+        addonsGrid.classList.add('disabled');
+        addonsTitle.classList.add('disabled');
+        document.querySelectorAll('.addon-circle').forEach(addon => {
+          addon.classList.add('disabled');
+        });
+      }
     }
     
     // Function to populate order details in the modal
@@ -747,6 +799,17 @@
       
       // Reset selected item display
       document.querySelector('.selected-item-name').textContent = 'Select an item first';
+      currentSelectedItem = null;
+      currentSelectedCategory = null;
+      
+      // Reset add-ons to enabled state
+      const addonsGrid = document.querySelector('.addons-grid');
+      const addonsTitle = document.querySelector('.addons-title');
+      addonsGrid.classList.remove('disabled');
+      addonsTitle.classList.remove('disabled');
+      document.querySelectorAll('.addon-circle').forEach(addon => {
+        addon.classList.remove('disabled');
+      });
     }
     
     // Close buttons for notification modals
@@ -773,12 +836,13 @@
       });
     });
     
-    // Initialize plus and minus buttons
+    // Initialize plus and minus buttons with item selection tracking
     document.querySelectorAll('.quantity-btn.plus').forEach(button => {
       button.addEventListener('click', function() {
         const container = this.closest('.quantity-scaler');
         const valueElement = container.querySelector('.quantity-value');
         const minusButton = container.querySelector('.quantity-btn.minus');
+        const foodItem = this.closest('.food-item');
         
         let value = parseInt(valueElement.textContent);
         value++;
@@ -787,6 +851,11 @@
         // Enable minus button when value > 0
         if (value > 0) {
           minusButton.disabled = false;
+        }
+        
+        // Update selected item display when quantity becomes 1
+        if (value === 1) {
+          updateSelectedItem(foodItem);
         }
       });
     });
@@ -805,6 +874,16 @@
           if (value === 0) {
             this.disabled = true;
           }
+        }
+      });
+    });
+    
+    // Add click handlers to food items for selection
+    document.querySelectorAll('.food-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        // Don't trigger if clicking on quantity buttons
+        if (!e.target.closest('.quantity-scaler')) {
+          updateSelectedItem(this);
         }
       });
     });

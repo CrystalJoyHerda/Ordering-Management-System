@@ -1,51 +1,69 @@
 <?php
 header('Access-Control-Allow-Origin: *');
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once '../config/database.php';
+// Clean output buffer to prevent any unwanted characters
+if (ob_get_level()) {
+    ob_clean();
+}
+
+require_once '../../src/config/database.php';
 
 try {
     $database = new Database();
-    $conn = $database->connect();
+    $conn = $database->getConnection();
     
-    $data = json_decode(file_get_contents("php://input"));
+    $input = file_get_contents("php://input");
+    $data = json_decode($input);
     
-    if (!isset($data->email)) {
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Invalid JSON input');
+    }
+    
+    if (!isset($data->email) || empty($data->email)) {
         throw new Exception('Email is required');
     }
     
-    $query = "SELECT emp_id, name FROM employees WHERE email = ?";
+    // Validate email format
+    if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception('Invalid email format');
+    }
+      $query = "SELECT emp_id, name, email, role FROM employees WHERE email = :email";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $data->email);
+    $stmt->bindParam(':email', $data->email);
     $stmt->execute();
-    $result = $stmt->get_result();
     
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-        echo json_encode([
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($user) {
+        $response = [
             'status' => 'success',
-            'message' => 'Email verified successfully',
+            'message' => 'Email verified successfully. You can now reset your password.',
             'data' => [
                 'emp_id' => $user['emp_id'],
-                'name' => $user['name']
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'role' => $user['role']
             ]
-        ]);
+        ];
     } else {
-        echo json_encode([
+        $response = [
             'status' => 'error',
-            'message' => 'Invalid email address'
-        ]);
+            'message' => 'No account found with this email address. Please check your email and try again.'
+        ];
     }
 
-    $stmt->close();
-    $conn->close();
-
 } catch (Exception $e) {
-    echo json_encode([
+    $response = [
         'status' => 'error',
         'message' => $e->getMessage()
-    ]);
+    ];
 }
+
+// Ensure clean JSON output
+header('Content-Length: ' . strlen(json_encode($response)));
+echo json_encode($response);
+exit;
 ?>
