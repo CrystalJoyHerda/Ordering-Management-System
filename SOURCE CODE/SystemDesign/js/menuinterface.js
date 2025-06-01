@@ -84,26 +84,31 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             
-            // Deselect any currently selected items
-            document.querySelectorAll('.food-item.selected').forEach(item => {
+            // Don't deselect items with quantities, only clear visual selection for add-ons
+            document.querySelectorAll('.food-item').forEach(item => {
                 item.classList.remove('selected');
             });
+            
+            // Reset and disable add-ons when switching categories
+            resetAddons();
+            disableAddons();
+            
+            // Clear selected item state for add-ons
+            orderState.selectedItem = null;
 
             // Show appropriate grid and toggle add-ons section
             if (button.textContent.toLowerCase() === 'coffee') {
                 coffeeGrid.classList.add('active');
                 snacksGrid.classList.remove('active');
-                rightSection.style.display = 'block'; // Show add-ons for coffee category
-                
-                // Update selected item display
-                const selectedItemName = document.querySelector('.selected-item-name');
-                selectedItemName.textContent = 'Select an item first';
-                selectedItemName.classList.add('none-selected');
+                rightSection.style.display = 'block';
             } else {
                 snacksGrid.classList.add('active');
                 coffeeGrid.classList.remove('active');
-                rightSection.style.display = 'none'; // Hide add-ons for snacks category
+                rightSection.style.display = 'none'; // Hide add-ons section for snacks
             }
+            
+            // Update selected item display
+            updateSelectedItemDisplay(null);
         });
     });
 
@@ -119,6 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
             quantityValue.textContent = '0';
             minusBtn.disabled = true;
 
+            // Remove any existing listeners first
+            item.removeEventListener('click', handleFoodItemClick);
+            
             item.addEventListener('click', (e) => {
                 // Don't trigger if clicking quantity buttons
                 if (e.target.closest('.quantity-btn')) {
@@ -126,94 +134,198 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const wasSelected = item.classList.contains('selected');
-                const currentQuantity = parseInt(quantityValue.textContent);
-                const foodName = item.querySelector('.food-name').textContent;
-
-                if (wasSelected) {
-                    // Immediately remove item when unselecting
-                    item.classList.remove('selected', 'in-order');
-                    quantityValue.textContent = '0';
-                    minusBtn.disabled = true;
-                    
-                    // Clear associated add-ons
-                    document.querySelectorAll('.addon-circle').forEach(addon => {
-                        if (addon.getAttribute('data-for-item') === foodName) {
-                            addon.classList.remove('selected');
-                            addon.removeAttribute('data-for-item');
-                        }
-                    });
-                    
-                    // Remove from order
-                    removeFromOrder(foodName);
-                    updateOrderSummary();
-                    
-                } else {
-                    // Select new item
-                    item.classList.add('selected');
-                    if (currentQuantity === 0) {
-                        quantityValue.textContent = '1';
-                        minusBtn.disabled = false;
-                        item.classList.add('in-order');
-                    }
-                    addToOrder(item);
-                }
-                
-                updateSelectedItemDisplay();
-            });
-
-            // Quantity controls with immediate removal
-            minusBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                let quantity = parseInt(quantityValue.textContent);
-                if (quantity > 0) {
-                    quantity--;
-                    quantityValue.textContent = quantity;
-                    
-                    if (quantity === 0) {
-                        // Immediately remove when quantity reaches 0
-                        item.classList.remove('selected', 'in-order');
-                        minusBtn.disabled = true;
-                        removeFromOrder(item.querySelector('.food-name').textContent);
-                    } else {
-                        updateOrderQuantity(item, quantity);
-                    }
-                    
-                    updateOrderSummary();
-                }
+                // Handle food item selection for add-ons
+                handleFoodItemClick(item);
             });
         });
     }
 
-    // Helper functions for order management
-    function removeFromOrder(itemName) {
-        // Remove from order array
-        currentOrder = currentOrder.filter(item => item.name !== itemName);
-        
-        // Clear associated add-ons
-        delete selectedAddons[itemName];
-        
-        // Update displays
-        updateOrderSummary();
-        updateSelectedItemDisplay();
-    }
+    // Add this near the top with other state variables
+    const orderState = {
+        selectedItem: null,
+        itemAddons: new Map(), // Stores item -> addons mapping
+    };
 
-    function updateOrderSummary() {
-        const total = currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        document.querySelector('.total-amount').textContent = `₱${total.toFixed(2)}`;
-    }
-
-    function updateSelectedItemDisplay() {
-        const selectedItem = document.querySelector('.food-item.selected');
-        const displayElement = document.querySelector('.selected-item-name');
+    // Replace the handleFoodItemClick function
+    function handleFoodItemClick(item) {
+        const category = item.closest('.coffee-grid') ? 'coffee' : 'snacks';
+        const foodName = item.querySelector('.food-name').textContent;
+        const quantityValue = item.querySelector('.quantity-value');
+        const minusBtn = item.querySelector('.minus');
         
-        if (selectedItem) {
-            const name = selectedItem.querySelector('.food-name').textContent;
-            displayElement.textContent = name;
-            displayElement.classList.remove('none-selected');
+        // Determine drink category based on the item name and grid location
+        const drinkCategory = getDrinkCategory(item, foodName);
+        
+        // Get current quantity
+        let currentQuantity = parseInt(quantityValue.textContent) || 0;
+        
+        if (currentQuantity === 0) {
+            // If quantity is 0, add 1
+            currentQuantity = 1;
+            quantityValue.textContent = currentQuantity;
+            minusBtn.disabled = false;
+            item.classList.add('selected', 'in-order');
+            
+            // Reset all add-ons first
+            resetAddons();
+            
+            // Enable/disable add-ons based on drink category
+            if (drinkCategory === 'hot-coffee' || drinkCategory === 'cold-coffee') {
+                // Deselect other items visually for add-ons selection
+                document.querySelectorAll('.food-item').forEach(foodItem => {
+                    if (foodItem !== item) {
+                        foodItem.classList.remove('selected');
+                    }
+                });
+                
+                // Update selected item state for add-ons
+                orderState.selectedItem = foodName;
+                enableAddons();
+                // Restore any previously selected add-ons for this item
+                restoreAddonSelections(foodName);
+                updateSelectedItemDisplay(foodName);
+            } else {
+                // For non-coffee items, disable add-ons and show warning
+                disableAddons();
+                orderState.selectedItem = null;
+                updateSelectedItemDisplay(null);
+                showAddonWarning();
+            }
         } else {
-            displayElement.textContent = 'Select an item first';
-            displayElement.classList.add('none-selected');
+            // If quantity > 0, remove the item (set to 0)
+            currentQuantity = 0;
+            quantityValue.textContent = currentQuantity;
+            minusBtn.disabled = true;
+            item.classList.remove('selected', 'in-order');
+            
+            // Remove add-ons for this item
+            orderState.itemAddons.delete(foodName);
+            
+            // If this was the selected item, clear selection
+            if (orderState.selectedItem === foodName) {
+                orderState.selectedItem = null;
+                updateSelectedItemDisplay(null);
+                disableAddons();
+            }
+        }
+        
+        // Show Add Item button when coffee item is selected
+        const addItemBtn = document.querySelector('.add-item-btn');
+        if (drinkCategory === 'hot-coffee' || drinkCategory === 'cold-coffee') {
+            addItemBtn.style.display = 'block';
+        } else {
+            addItemBtn.style.display = 'none';
+        }
+        
+        updateOrderSummary();
+    }
+
+    // New function to determine drink category
+    function getDrinkCategory(item, foodName) {
+        // Check if item is in coffee grid
+        if (item.closest('.coffee-grid')) {
+            // Determine if it's hot or cold coffee based on the section
+            const gridHeadings = document.querySelectorAll('.coffee-grid .grid-heading');
+            let currentCategory = 'hot-coffee'; // default
+            
+            for (let heading of gridHeadings) {
+                const headingText = heading.textContent.toLowerCase();
+                const itemElement = item;
+                
+                // Check if this item comes after a specific heading
+                let currentElement = heading.nextElementSibling;
+                while (currentElement && !currentElement.classList.contains('grid-heading')) {
+                    if (currentElement === itemElement) {
+                        if (headingText.includes('cold')) {
+                            return 'cold-coffee';
+                        } else if (headingText.includes('hot')) {
+                            return 'hot-coffee';
+                        } else if (headingText.includes('non')) {
+                            return 'non-coffee';
+                        }
+                        break;
+                    }
+                    currentElement = currentElement.nextElementSibling;
+                }
+            }
+            
+            // Additional check based on item name for more accuracy
+            const itemNameLower = foodName.toLowerCase();
+            if (itemNameLower.includes('iced') || itemNameLower.includes('cold') || itemNameLower.includes('frappuccino') || itemNameLower.includes('affogato')) {
+                return 'cold-coffee';
+            } else if (itemNameLower.includes('italian soda') || itemNameLower.includes('fizz') || itemNameLower.includes('spritzer') || itemNameLower.includes('cooler') || itemNameLower.includes('basil soda')) {
+                return 'non-coffee';
+            }
+            
+            return currentCategory;
+        } else {
+            // Items in snacks grid are non-coffee
+            return 'non-coffee';
+        }
+    }
+
+    // New function to show add-on warning
+    function showAddonWarning() {
+        const selectedItemName = document.querySelector('.selected-item-name');
+        if (selectedItemName) {
+            const originalText = selectedItemName.textContent;
+            selectedItemName.textContent = '⚠️ Add-ons only for Hot & Cold Coffee';
+            selectedItemName.style.color = '#f44336';
+            selectedItemName.style.animation = 'flash 0.5s 3';
+            
+            // Reset text after 3 seconds
+            setTimeout(() => {
+                selectedItemName.textContent = 'Select an item first';
+                selectedItemName.style.color = '';
+                selectedItemName.style.animation = '';
+            }, 3000);
+        }
+    }
+
+    function enableAddons() {
+        const addons = document.querySelectorAll('.addon-circle');
+        addons.forEach(addon => {
+            addon.classList.remove('disabled');
+            addon.style.opacity = '1';
+            addon.style.pointerEvents = 'auto';
+            addon.style.cursor = 'pointer';
+        });
+    }
+
+    function disableAddons() {
+        const addons = document.querySelectorAll('.addon-circle');
+        addons.forEach(addon => {
+            addon.classList.add('disabled');
+            addon.classList.remove('selected');
+            addon.style.opacity = '0.3';
+            addon.style.pointerEvents = 'none';
+            addon.style.cursor = 'not-allowed';
+        });
+    }
+
+    function resetAddons() {
+        const addons = document.querySelectorAll('.addon-circle');
+        addons.forEach(addon => {
+            addon.classList.remove('selected');
+        });
+    }
+
+    function restoreAddonSelections(itemName) {
+        resetAddons();
+        const itemAddons = orderState.itemAddons.get(itemName) || [];
+        itemAddons.forEach(addonName => {
+            const addon = document.querySelector(`.addon-circle[data-name="${addonName}"]`);
+            if (addon) {
+                addon.classList.add('selected');
+            }
+        });
+    }
+
+    function updateSelectedItemDisplay(itemName) {
+        const display = document.querySelector('.selected-item-name');
+        if (display) {
+            display.textContent = itemName || 'Select an item first';
+            display.classList.toggle('none-selected', !itemName);
         }
     }
 
@@ -228,53 +340,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });    // Add-on selection - improved to ensure proper item association and only for coffee items
     const addons = document.querySelectorAll('.addon-circle');
     addons.forEach(addon => {
-        addon.addEventListener('click', () => {
-            // Only allow add-ons to be selected if there's a food item selected
+        addon.addEventListener('click', function() {
+            if (this.classList.contains('disabled')) return;
+            
+            const addonName = this.getAttribute('data-name');
+            const itemName = orderState.selectedItem;
+            
+            if (!itemName) {
+                // Flash the selected item display if no item selected
+                const selectedItemName = document.querySelector('.selected-item-name');
+                selectedItemName.style.animation = 'flash 0.5s 2';
+                return;
+            }
+            
+            // Check if the selected item has quantity > 0
             const selectedFoodItem = document.querySelector('.food-item.selected');
-            if (!selectedFoodItem) {
-                // Make the "Select an item first" text flash to draw attention
+            const quantity = parseInt(selectedFoodItem.querySelector('.quantity-value').textContent);
+            
+            if (quantity === 0) {
+                // Flash message if item quantity is 0
                 const selectedItemName = document.querySelector('.selected-item-name');
-                selectedItemName.style.animation = 'none';
-                setTimeout(() => {
-                    selectedItemName.style.animation = 'flash 0.5s 2';
-                }, 10);
+                selectedItemName.style.animation = 'flash 0.5s 2';
                 return;
             }
             
-            // Check if the selected food item is in the coffee grid (add-ons only for coffee)
-            const isCoffeeItem = selectedFoodItem.closest('.coffee-grid') !== null;
-            if (!isCoffeeItem) {
-                // For non-coffee items, don't allow add-ons
-                const selectedItemName = document.querySelector('.selected-item-name');
-                selectedItemName.style.animation = 'none';
-                setTimeout(() => {
-                    selectedItemName.style.animation = 'flash 0.5s 2';
-                }, 10);
-                return;
-            }
+            this.classList.toggle('selected');
             
-            // Get the currently selected food item name
-            const foodName = selectedFoodItem.querySelector('.food-name').textContent;
-            
-            // Toggle selection for this specific food item
-            const isCurrentlySelected = addon.classList.contains('selected');
-            
-            if (isCurrentlySelected) {
-                // If it was selected and associated with this food item, remove the association
-                if (addon.getAttribute('data-for-item') === foodName) {
-                    console.log(`Removed add-on: ${addon.getAttribute('data-name')} from item: ${foodName}`);
-                    addon.removeAttribute('data-for-item');
-                    addon.classList.remove('selected');
+            // Update stored add-ons for this item
+            let itemAddons = orderState.itemAddons.get(itemName) || [];
+            if (this.classList.contains('selected')) {
+                if (!itemAddons.includes(addonName)) {
+                    itemAddons.push(addonName);
                 }
             } else {
-                // If it wasn't selected, associate it with this food item
-                addon.classList.add('selected');
-                addon.setAttribute('data-for-item', foodName);
-                console.log(`Associated add-on: ${addon.getAttribute('data-name')} with item: ${foodName}`);
+                itemAddons = itemAddons.filter(name => name !== addonName);
             }
+            orderState.itemAddons.set(itemName, itemAddons);
             
-            // Update the order summary to reflect the changes
-            updateOrderSummary();
+            console.log(`Item: ${itemName}, Add-ons:`, itemAddons);
         });
     });    // Add a flash animation for the selected item display and disable text selection globally
     const style = document.createElement('style');
@@ -427,29 +530,32 @@ document.addEventListener('DOMContentLoaded', () => {
         let itemsHtml = '<ul class="order-item-list">';
         
         orderItems.forEach(item => {
-            // Calculate item totals
             const basePrice = item.price * item.quantity;
             let addonTotal = 0;
+            let addonHtml = '';
             
-            // Calculate addon costs
-            if (item.addons && item.addons.length > 0) {
-                item.addons.forEach(addon => {
-                    addonTotal += addon.price * item.quantity;
+            // Get add-ons for this item
+            const itemAddons = orderState.itemAddons.get(item.name) || [];
+            if (itemAddons.length > 0) {
+                addonHtml = '<div class="item-addons">';
+                itemAddons.forEach(addonName => {
+                    const addon = document.querySelector(`.addon-circle[data-name="${addonName}"]`);
+                    if (addon) {
+                        const addonPrice = parseFloat(addon.getAttribute('data-price'));
+                        addonTotal += addonPrice * item.quantity;
+                        
+                        addonHtml += `
+                            <div class="addon-item">
+                                + ${addonName} (₱${addonPrice.toFixed(2)} × ${item.quantity})
+                            </div>
+                        `;
+                    }
                 });
+                addonHtml += '</div>';
             }
             
             const itemTotal = basePrice + addonTotal;
             total += itemTotal;
-            
-            // Create addon text if there are addons
-            let addonText = '';
-            if (item.addons && item.addons.length > 0) {
-                addonText = `<div class="item-addons">`;
-                item.addons.forEach(addon => {
-                    addonText += `<div class="addon-item">${addon.name} (₱${addon.price.toFixed(2)} × ${item.quantity})</div>`;
-                });
-                addonText += `</div>`;
-            }
             
             // Add the item to the HTML
             itemsHtml += `
@@ -459,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="item-name">${item.name}</span>
                         <span class="item-price">₱${basePrice.toFixed(2)}</span>
                     </div>
-                    ${addonText}
+                    ${addonHtml}
                     <div class="item-total">₱${itemTotal.toFixed(2)}</div>
                 </li>
             `;
@@ -482,31 +588,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // View order button click handler
     document.querySelector('.view-button').addEventListener('click', () => {
-        console.log("View order button clicked");
+        console.log("View order button clicked - MAIN HANDLER");
         
-        // Get current order items
-        const orderItems = updateOrderSummary();
+        // Get stored items (from Add Item button)
+        const storedItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+        console.log('Stored items from Add Button:', storedItems);
         
-        // Check if there are any items in the order
-        if (orderItems.length === 0) {
-            // Show empty order modal
-            console.log("No items in order, showing empty order modal");
+        // Get current quantity-based items (from +/- buttons directly)  
+        const quantityItems = getCurrentQuantityItems();
+        console.log('Current quantity items:', quantityItems);
+        
+        // Combine all items
+        const allOrderItems = [...storedItems, ...quantityItems];
+        console.log('Combined order items:', allOrderItems);
+        
+        if (allOrderItems.length === 0) {
+            console.log("No items in order, showing empty modal");
             document.getElementById('emptyOrderModal').style.display = 'flex';
             return;
         }
         
-        // Check if order type is selected
+        // Check order type
         const orderType = document.querySelector('.order-button.active');
         if (!orderType) {
-            // Show order type selection modal instead of alert
             console.log("No order type selected, showing order type modal");
             document.getElementById('orderTypeModal').style.display = 'flex';
             return;
         }
         
-        // Only if we have items and order type is selected, show the order modal
-        console.log("Order has items and type is selected, showing view order modal");
-        populateOrderModal();
+        // Show view order modal with all items
+        console.log("Showing order modal with items:", allOrderItems);
+        populateOrderModalWithAllItems(allOrderItems);
         document.getElementById('viewOrderModal').style.display = 'flex';
     });
 
@@ -575,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
-    // Function to remove item from order
+    // Update the removeItemFromOrder function
     function removeItemFromOrder(itemName) {
         // Find the item in the menu and reset its quantity
         document.querySelectorAll('.food-item').forEach(item => {
@@ -583,17 +695,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (name === itemName) {
                 item.querySelector('.quantity-value').textContent = '0';
                 item.querySelector('.quantity-btn.minus').disabled = true;
-                item.classList.remove('in-order');
-                
-                // Clean up any associated add-ons
-                document.querySelectorAll('.addon-circle').forEach(addon => {
-                    if (addon.getAttribute('data-for-item') === itemName) {
-                        addon.classList.remove('selected');
-                        addon.removeAttribute('data-for-item');
-                    }
-                });
+                item.classList.remove('in-order', 'selected');
             }
         });
+        
+        // Remove add-ons for this item
+        orderState.itemAddons.delete(itemName);
+        
+        // If this was the selected item, clear selection
+        if (orderState.selectedItem === itemName) {
+            orderState.selectedItem = null;
+            updateSelectedItemDisplay(null);
+            disableAddons();
+        }
         
         // Update order summary and repopulate the modal
         updateOrderSummary();
@@ -925,239 +1039,547 @@ document.addEventListener('DOMContentLoaded', () => {
             closeViewOrderModalAndReturn();
         }
     });
-});
+    
+    // FIXED: Add Item button click handler - Place it after other handlers
+    const addItemBtn = document.querySelector('.add-item-btn');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', function() {
+            console.log("Add Item button clicked");
+            
+            const currentItem = orderState.selectedItem;
+            if (!currentItem) {
+                console.log("No item selected");
+                return;
+            }
 
-// Function to close modal and return to menu
-function closeViewOrderModalAndReturn() {
-    const modal = document.getElementById('viewOrderModal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('show');
+            const selectedFoodItem = document.querySelector('.food-item.selected');
+            if (!selectedFoodItem) {
+                console.log("No selected food item found");
+                return;
+            }
+
+            // Get item details
+            const itemQuantity = parseInt(selectedFoodItem.querySelector('.quantity-value').textContent);
+            const itemPrice = parseFloat(selectedFoodItem.querySelector('.food-price').textContent.replace('₱', ''));
+
+            // Get currently selected add-ons and their prices
+            const selectedAddons = [...document.querySelectorAll('.addon-circle.selected')].map(addon => ({
+                name: addon.getAttribute('data-name'),
+                price: parseFloat(addon.getAttribute('data-price'))
+            }));
+
+            console.log(`Adding item: ${currentItem}, Quantity: ${itemQuantity}, Add-ons:`, selectedAddons);
+
+            // Calculate total price including add-ons
+            const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+            const totalPrice = (itemPrice + addonTotal) * itemQuantity;
+
+            // Create order item object
+            const orderItem = {
+                name: currentItem,
+                price: itemPrice,
+                quantity: itemQuantity,
+                addons: selectedAddons,
+                total: totalPrice,
+                source: 'add-button' // Mark this as added via button
+            };
+
+            // Get existing stored items from localStorage
+            const existingStoredItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+            existingStoredItems.push(orderItem);
+            
+            // Save updated stored items back to localStorage
+            localStorage.setItem('storedOrderItems', JSON.stringify(existingStoredItems));
+
+            // Build notification message
+            const addonText = selectedAddons.length > 0 
+                ? ` with ${selectedAddons.length} add-on${selectedAddons.length > 1 ? 's' : ''}` 
+                : '';
+            const message = `✓ Added ${currentItem}${addonText}`;
+
+            // Reset interface state for this item
+            selectedFoodItem.querySelector('.quantity-value').textContent = '0';
+            selectedFoodItem.querySelector('.minus').disabled = true;
+            selectedFoodItem.classList.remove('selected', 'in-order');
+            
+            // Reset add-ons
+            resetAddons();
+            disableAddons();
+            updateSelectedItemDisplay(null);
+            addItemBtn.style.display = 'none';
+            
+            // Clear the item's add-ons from orderState
+            orderState.itemAddons.delete(currentItem);
+            orderState.selectedItem = null;
+
+            // Show success notification
+            showSuccessNotification(message);
+
+            console.log('Item added to stored items:', orderItem);
+            console.log('Current stored items:', JSON.parse(localStorage.getItem('storedOrderItems') || '[]'));
+        });
     }
-    // Return to menu
-    goToMenu();
-}
 
-window.increaseQuantity = function(item) {
-    const quantityValue = item.querySelector('.quantity-value');
-    const minusBtn = item.querySelector('.quantity-btn.minus');
-    
-    // Get current quantity and increment by exactly 1
-    let currentQuantity = parseInt(quantityValue.textContent) || 0;
-    currentQuantity = currentQuantity + 1;
-    
-    // Update display
-    quantityValue.textContent = currentQuantity.toString();
-    minusBtn.disabled = false;
-    
-    // Update item state
-    item.classList.add('selected');
-    
-    // Update order
-    updateOrderItem(item, currentQuantity);
-}
-
-window.decreaseQuantity = function(item) {
-    const quantityValue = item.querySelector('.quantity-value');
-    const minusBtn = item.querySelector('.quantity-btn.minus');
-    
-    // Get current quantity
-    let currentQuantity = parseInt(quantityValue.textContent) || 0;
-    
-    if (currentQuantity > 0) {
-        // Decrease by exactly 1
-        currentQuantity = currentQuantity - 1;
+    // UPDATED: View order button click handler - Remove redundant empty check
+    document.querySelector('.view-button').addEventListener('click', () => {
+        console.log("View order button clicked - MAIN HANDLER");
         
-        // Update display
-        quantityValue.textContent = currentQuantity.toString();
-        minusBtn.disabled = currentQuantity === 0;
+        // Get stored items (from Add Item button)
+        const storedItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+        console.log('Stored items from Add Button:', storedItems);
         
-        if (currentQuantity === 0) {
-            item.classList.remove('selected');
-            removeFromOrder(item);
-        } else {
-            updateOrderItem(item, currentQuantity);
+        // Get current quantity-based items (from +/- buttons directly)  
+        const quantityItems = getCurrentQuantityItems();
+        console.log('Current quantity items:', quantityItems);
+        
+        // Combine all items
+        const allOrderItems = [...storedItems, ...quantityItems];
+        console.log('Combined order items:', allOrderItems);
+        
+        if (allOrderItems.length === 0) {
+            console.log("No items in order, showing empty modal");
+            document.getElementById('emptyOrderModal').style.display = 'flex';
+            return;
         }
-    }
-}
-
-function updateOrderItem(item, quantity) {
-    const name = item.querySelector('.food-name').textContent;
-    const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-    
-    // Find or create order item
-    let orderItem = currentOrder.find(order => order.name === name);
-    
-    if (orderItem) {
-        orderItem.quantity = quantity;
-        orderItem.total = price * quantity;
-    } else {
-        currentOrder.push({
-            name: name,
-            price: price,
-            quantity: quantity,
-            total: price * quantity
-        });
-    }
-    
-    updateOrderDisplay();
-}
-
-function removeFromOrder(item) {
-    const name = item.querySelector('.food-name').textContent;
-    currentOrder = currentOrder.filter(order => order.name !== name);
-    updateOrderDisplay();
-}
-
-function updateOrderDisplay() {
-    const totalAmount = currentOrder.reduce((sum, item) => sum + item.total, 0);
-    const totalItems = currentOrder.reduce((sum, item) => sum + item.quantity, 0);
-    
-    // Update total display
-    const totalElement = document.querySelector('.total-amount');
-    if (totalElement) {
-        totalElement.textContent = `₱${totalAmount.toFixed(2)}`;
-    }
-    
-    // Update item count
-    const itemCountElement = document.querySelector('.item-count');
-    if (itemCountElement) {
-        itemCountElement.textContent = totalItems;
-    }
-}
-
-// Initialize empty order array if not exists
-if (typeof currentOrder === 'undefined') {
-    let currentOrder = [];
-}
-
-// Initialize quantity controls with proper event handling
-document.addEventListener('DOMContentLoaded', function() {
-    setupQuantityControls();
-});
-
-function setupQuantityControls() {
-    const foodItems = document.querySelectorAll('.food-item');
-    
-    foodItems.forEach(item => {
-        const minusBtn = item.querySelector('.minus');
-        const plusBtn = item.querySelector('.plus');
-        const quantityValue = item.querySelector('.quantity-value');
         
-        // Initialize quantity to 0
-        quantityValue.textContent = '0';
-        minusBtn.disabled = true;
+        // Check order type
+        const orderType = document.querySelector('.order-button.active');
+        if (!orderType) {
+            console.log("No order type selected, showing order type modal");
+            document.getElementById('orderTypeModal').style.display = 'flex';
+            return;
+        }
         
-        // Remove any existing event listeners to prevent duplicates
-        const newPlusBtn = plusBtn.cloneNode(true);
-        const newMinusBtn = minusBtn.cloneNode(true);
-        plusBtn.parentNode.replaceChild(newPlusBtn, plusBtn);
-        minusBtn.parentNode.replaceChild(newMinusBtn, minusBtn);
-        
-        // Add fresh event listeners
-        newPlusBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            increaseQuantity(item);
-        });
-        
-        newMinusBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            decreaseQuantity(item);
-        });
+        // Show view order modal with all items
+        console.log("Showing order modal with items:", allOrderItems);
+        populateOrderModalWithAllItems(allOrderItems);
+        document.getElementById('viewOrderModal').style.display = 'flex';
     });
-}
 
-function increaseQuantity(item) {
-    const quantityValue = item.querySelector('.quantity-value');
-    const minusBtn = item.querySelector('.minus');
-    
-    // Get current quantity and increment by exactly 1
-    let currentQuantity = parseInt(quantityValue.textContent) || 0;
-    currentQuantity = currentQuantity + 1;
-    
-    // Update display
-    quantityValue.textContent = currentQuantity.toString();
-    minusBtn.disabled = false;
-    
-    // Update item state
-    item.classList.add('selected');
-    
-    // Update order
-    updateOrderItem(item, currentQuantity);
-}
+    // UPDATED: Confirm order to use combined items - Remove redundant empty check
+    document.querySelector('.confirm-modal-btn').addEventListener('click', async () => {
+        console.log("Confirm order button clicked");
+        
+        // Get all items (stored + quantity-based)
+        const storedItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+        const quantityItems = getCurrentQuantityItems();
+        const allOrderItems = [...storedItems, ...quantityItems];
+        
+        console.log("All order items for confirmation:", allOrderItems);
+        
+        // Check if order type is selected
+        const orderType = document.querySelector('.order-button.active');
+        if (!orderType) {
+            document.getElementById('viewOrderModal').style.display = 'none';
+            document.getElementById('orderTypeModal').style.display = 'flex';
+            return;
+        }
+        
+        // Disable confirm button to prevent double submission
+        const confirmBtn = document.querySelector('.confirm-modal-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Processing...';
+        
+        try {
+            // Submit order to database
+            const orderData = await submitOrderToDatabase(allOrderItems, orderType.textContent.trim());
+            
+            if (orderData.success) {
+                // Clear both stored items and quantity items after successful submission
+                localStorage.removeItem('storedOrderItems');
+                
+                // Reset quantity items in the interface
+                document.querySelectorAll('.food-item').forEach(item => {
+                    item.querySelector('.quantity-value').textContent = '0';
+                    const minusBtn = item.querySelector('.quantity-btn.minus');
+                    if (minusBtn) minusBtn.disabled = true;
+                    item.classList.remove('in-order', 'selected');
+                });
+                
+                // Clear all add-ons and selections
+                orderState.itemAddons.clear();
+                orderState.selectedItem = null;
+                resetAddons();
+                disableAddons();
+                updateSelectedItemDisplay(null);
+                
+                // Hide the add item button
+                const addItemBtn = document.querySelector('.add-item-btn');
+                if (addItemBtn) addItemBtn.style.display = 'none';
+                
+                // Save order data to localStorage
+                localStorage.setItem('orderType', orderType.textContent);
+                localStorage.setItem('lastOrderNumber', orderData.order_number);
+                
+                // Update order number in Thank You Modal
+                document.getElementById('orderNumber').textContent = orderData.order_number;
+                
+                // Close the view order modal and show the thank you modal
+                document.getElementById('viewOrderModal').style.display = 'none';
+                document.getElementById('thankYouModal').style.display = 'flex';
+                
+                console.log('Order submitted successfully:', orderData);
+            } else {
+                throw new Error(orderData.message || 'Failed to submit order');
+            }
+        } catch (error) {
+            console.error('Error submitting order:', error);
+            alert('Failed to submit order: ' + error.message + '\nPlease try again.');
+        } finally {
+            // Re-enable confirm button
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Order';
+        }
+    });
 
-function decreaseQuantity(item) {
-    const quantityValue = item.querySelector('.quantity-value');
-    const minusBtn = item.querySelector('.minus');
-    
-    // Get current quantity
-    let currentQuantity = parseInt(quantityValue.textContent) || 0;
-    
-    if (currentQuantity > 0) {
-        // Decrease by exactly 1
-        currentQuantity = currentQuantity - 1;
+    // UPDATED: Function to remove items based on their source - Fix indexing issue
+    function removeItemFromOrderBySource(itemName, itemIndex, itemSource) {
+        console.log(`Removing item: ${itemName}, index: ${itemIndex}, source: ${itemSource}`);
         
-        // Update display
-        quantityValue.textContent = currentQuantity.toString();
-        minusBtn.disabled = currentQuantity === 0;
+        if (itemSource === 'add-button') {
+            // Remove from stored items
+            let storedItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+            
+            // Find the correct index in the STORED items array, not the combined array
+            const storedItemIndex = storedItems.findIndex((item, idx) => 
+                item.name === itemName && idx.toString() === itemIndex.toString()
+            );
+            
+            if (storedItemIndex !== -1) {
+                storedItems.splice(storedItemIndex, 1);
+                localStorage.setItem('storedOrderItems', JSON.stringify(storedItems));
+                console.log('Updated stored items:', storedItems);
+            } else {
+                // Fallback: remove by name
+                storedItems = storedItems.filter(item => item.name !== itemName);
+                localStorage.setItem('storedOrderItems', JSON.stringify(storedItems));
+                console.log('Removed by name, updated stored items:', storedItems);
+            }
+        } else if (itemSource === 'quantity-buttons') {
+            // Remove from quantity-based items
+            document.querySelectorAll('.food-item').forEach(item => {
+                const name = item.querySelector('.food-name').textContent;
+                if (name === itemName) {
+                    item.querySelector('.quantity-value').textContent = '0';
+                    const minusBtn = item.querySelector('.quantity-btn.minus');
+                    if (minusBtn) minusBtn.disabled = true;
+                    item.classList.remove('in-order', 'selected');
+                }
+            });
+            
+            // Remove add-ons for this item
+            orderState.itemAddons.delete(itemName);
+            
+            // If this was the selected item, clear selection
+            if (orderState.selectedItem === itemName) {
+                orderState.selectedItem = null;
+                updateSelectedItemDisplay(null);
+                disableAddons();
+            }
+        }
         
-        if (currentQuantity === 0) {
-            item.classList.remove('selected');
-            removeFromOrder(item);
+        // Get updated items and repopulate modal
+        const storedItemsUpdated = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+        const quantityItems = getCurrentQuantityItems();
+        const allItems = [...storedItemsUpdated, ...quantityItems];
+        
+        console.log('All items after removal:', allItems);
+        
+        if (allItems.length === 0) {
+            document.getElementById('viewOrderModal').style.display = 'none';
+            document.getElementById('emptyOrderModal').style.display = 'flex';
         } else {
-            updateOrderItem(item, currentQuantity);
+            // Re-index the items properly for the modal
+            const reIndexedItems = allItems.map((item, newIndex) => ({
+                ...item,
+                modalIndex: newIndex
+            }));
+            populateOrderModalWithAllItems(reIndexedItems);
         }
     }
-}
 
-function updateOrderItem(item, quantity) {
-    const name = item.querySelector('.food-name').textContent;
-    const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-    
-    // Find or create order item
-    let orderItem = currentOrder.find(order => order.name === name);
-    
-    if (orderItem) {
-        orderItem.quantity = quantity;
-        orderItem.total = price * quantity;
-    } else {
-        currentOrder.push({
-            name: name,
-            price: price,
-            quantity: quantity,
-            total: price * quantity
+    // UPDATED: Function to populate modal with all items - Fix indexing
+    function populateOrderModalWithAllItems(orderItems) {
+        console.log('Populating order modal with all items:', orderItems);
+        
+        const orderTypeDisplay = document.querySelector('.order-type-display');
+        const orderItemsContainer = document.querySelector('.order-items');
+        const orderTotalContainer = document.querySelector('.order-total');
+        
+        if (!orderItemsContainer) {
+            console.error('Order items container not found');
+            return;
+        }
+        
+        // Clear previous content
+        orderItemsContainer.innerHTML = '';
+        
+        // Display the selected order type
+        const activeOrderType = document.querySelector('.order-button.active');
+        if (activeOrderType && orderTypeDisplay) {
+            const orderTypeText = activeOrderType.textContent.trim();
+            orderTypeDisplay.textContent = `Order Type: ${orderTypeText}`;
+        } else if (orderTypeDisplay) {
+            orderTypeDisplay.textContent = 'Please select an order type';
+        }
+        
+        // Add items to the container
+        let total = 0;
+        let itemsHtml = '<ul class="order-item-list" style="list-style: none; padding: 0; margin: 0;">';
+        
+        orderItems.forEach((item, index) => {
+            const basePrice = item.price * item.quantity;
+            let addonTotal = 0;
+            let addonHtml = '';
+            
+            // Handle add-ons
+            if (item.addons && item.addons.length > 0) {
+                addonHtml = '<div class="item-addons" style="margin-left: 15px; margin-top: 8px; background-color: #f9f9f9; padding: 8px; border-radius: 4px; border-left: 3px solid #4A2C1B;">';
+                item.addons.forEach(addon => {
+                    const addonCost = addon.price * item.quantity;
+                    addonTotal += addonCost;
+                    addonHtml += `
+                        <div class="addon-item" style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.9em; color: #666;">
+                            <span style="font-style: italic;">+ ${addon.name}</span>
+                            <span>₱${addonCost.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                addonHtml += '</div>';
+            }
+            
+            const itemTotal = basePrice + addonTotal;
+            total += itemTotal;
+            
+            // Add source indicator for debugging
+            const sourceText = item.source === 'add-button' ? ' (Added via Button)' : ' (Quantity Selector)';
+            
+            // Add the item to the HTML
+            itemsHtml += `
+                <li class="order-item" data-name="${item.name}" data-index="${index}" data-source="${item.source}" style="
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 15px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    border: 1px solid #eee;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">
+                    <div class="item-main" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="item-quantity" style="background: #4A2C1B; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">${item.quantity}x</span>
+                            <span class="item-name" style="font-weight: bold; color: #4A2C1B;">${item.name}</span>
+                            <span class="source-indicator" style="font-size: 0.7em; color: #999; font-style: italic;">${sourceText}</span>
+                        </div>
+                        <span class="item-price" style="color: #666; font-weight: 500;">₱${basePrice.toFixed(2)}</span>
+                    </div>
+                    ${addonHtml}
+                    <div class="item-total" style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #ccc; font-weight: bold; color: #4A2C1B;">
+                        <span>Subtotal:</span>
+                        <span>₱${itemTotal.toFixed(2)}</span>
+                    </div>
+                </li>
+            `;
         });
+        
+        itemsHtml += '</ul>';
+        orderItemsContainer.innerHTML = itemsHtml;
+        
+        if (orderTotalContainer) {
+            orderTotalContainer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; color: #4A2C1B; padding: 15px 0; border-top: 2px solid #4A2C1B;">
+                    <span>Total Amount:</span>
+                    <span>₱${total.toFixed(2)}</span>
+                </div>
+            `;
+        }
+        
+        // Add click handlers to remove items
+        document.querySelectorAll('.order-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const itemName = this.getAttribute('data-name');
+                const itemIndex = this.getAttribute('data-index');
+                const itemSource = this.getAttribute('data-source');
+                console.log(`Clicked to remove item: ${itemName} at index ${itemIndex} from source ${itemSource}`);
+                showRemoveConfirmationForItem(itemName, itemIndex, itemSource);
+            });
+            
+            // Add hover effect
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#fff8f8';
+                this.style.borderColor = '#ffcccc';
+                this.style.transform = 'scale(1.02)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'white';
+                this.style.borderColor = '#eee';
+                this.style.transform = 'scale(1)';
+            });
+        });
+        
+        console.log('Order modal populated successfully with', orderItems.length, 'items');
     }
-    
-    updateOrderDisplay();
-}
 
-function removeFromOrder(item) {
-    const name = item.querySelector('.food-name').textContent;
-    currentOrder = currentOrder.filter(order => order.name !== name);
-    updateOrderDisplay();
-}
-
-function updateOrderDisplay() {
-    const totalAmount = currentOrder.reduce((sum, item) => sum + item.total, 0);
-    const totalItems = currentOrder.reduce((sum, item) => sum + item.quantity, 0);
-    
-    // Update total display
-    const totalElement = document.querySelector('.total-amount');
-    if (totalElement) {
-        totalElement.textContent = `₱${totalAmount.toFixed(2)}`;
+    // UPDATED: Function to show confirmation for removing an item
+    function showRemoveConfirmationForItem(itemName, itemIndex, itemSource) {
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        
+        confirmationMessage.textContent = `Are you sure you want to remove "${itemName}" from your order?`;
+        confirmationModal.style.display = 'flex';
+        
+        // Set up buttons
+        document.getElementById('confirmYes').onclick = function() {
+            removeItemFromOrderBySource(itemName, itemIndex, itemSource);
+            confirmationModal.style.display = 'none';
+        };
+        
+        document.getElementById('confirmCancel').onclick = function() {
+            confirmationModal.style.display = 'none';
+        };
     }
-    
-    // Update item count
-    const itemCountElement = document.querySelector('.item-count');
-    if (itemCountElement) {
-        itemCountElement.textContent = totalItems;
-    }
-}
 
-// Initialize empty order array if not exists
-if (typeof currentOrder === 'undefined') {
-    let currentOrder = [];
-}
+    // UPDATED: Function to remove items based on their source
+    function removeItemFromOrderBySource(itemName, itemIndex, itemSource) {
+        console.log(`Removing item: ${itemName}, index: ${itemIndex}, source: ${itemSource}`);
+        
+        if (itemSource === 'add-button') {
+            // Remove from stored items
+            let storedItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+            if (itemIndex !== undefined) {
+                storedItems.splice(parseInt(itemIndex), 1);
+            } else {
+                storedItems = storedItems.filter(item => item.name !== itemName);
+            }
+            localStorage.setItem('storedOrderItems', JSON.stringify(storedItems));
+            console.log('Updated stored items:', storedItems);
+        } else if (itemSource === 'quantity-buttons') {
+            // Remove from quantity-based items
+            document.querySelectorAll('.food-item').forEach(item => {
+                const name = item.querySelector('.food-name').textContent;
+                if (name === itemName) {
+                    item.querySelector('.quantity-value').textContent = '0';
+                    const minusBtn = item.querySelector('.quantity-btn.minus');
+                    if (minusBtn) minusBtn.disabled = true;
+                    item.classList.remove('in-order', 'selected');
+                }
+            });
+            
+            // Remove add-ons for this item
+            orderState.itemAddons.delete(itemName);
+            
+            // If this was the selected item, clear selection
+            if (orderState.selectedItem === itemName) {
+                orderState.selectedItem = null;
+                updateSelectedItemDisplay(null);
+                disableAddons();
+            }
+        }
+        
+        // Get updated items and repopulate modal
+        const storedItemsUpdated = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+        const quantityItems = getCurrentQuantityItems();
+        const allItems = [...storedItemsUpdated, ...quantityItems];
+        
+        console.log('All items after removal:', allItems);
+        
+        if (allItems.length === 0) {
+            document.getElementById('viewOrderModal').style.display = 'none';
+            document.getElementById('emptyOrderModal').style.display = 'flex';
+        } else {
+            populateOrderModalWithAllItems(allItems);
+        }
+    }
+
+    // Function to close modal and return to menu
+    function closeViewOrderModalAndReturn() {
+        const modal = document.getElementById('viewOrderModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    }
+
+    // Function to show success notification
+    function showSuccessNotification(message) {
+        // Create notification element if it doesn't exist
+        let notification = document.querySelector('.success-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.className = 'success-notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set message and show
+        notification.textContent = message;
+        notification.style.display = 'block';
+        
+        // Hide after 2 seconds
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 2000);
+    }
+
+    // NEW: Function to get current quantity-based items (items with quantity > 0)
+    function getCurrentQuantityItems() {
+        const quantityItems = [];
+        
+        document.querySelectorAll('.food-item').forEach(item => {
+            const quantity = parseInt(item.querySelector('.quantity-value').textContent);
+            
+            if (quantity > 0) {
+                const name = item.querySelector('.food-name').textContent;
+                const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
+                
+                // Get add-ons for this item from orderState (stored add-ons)
+                let itemAddons = [];
+                const storedAddons = orderState.itemAddons.get(name) || [];
+                
+                // Convert stored addon names to full addon objects
+                storedAddons.forEach(addonName => {
+                    const addonElement = document.querySelector(`.addon-circle[data-name="${addonName}"]`);
+                    if (addonElement) {
+                        itemAddons.push({
+                            name: addonName,
+                            price: parseFloat(addonElement.getAttribute('data-price'))
+                        });
+                    }
+                });
+                
+                // If this is the currently selected item, also include visually selected add-ons
+                if (orderState.selectedItem === name) {
+                    const visuallySelected = [...document.querySelectorAll('.addon-circle.selected')].map(addon => ({
+                        name: addon.getAttribute('data-name'),
+                        price: parseFloat(addon.getAttribute('data-price'))
+                    }));
+                    
+                    // Merge with stored add-ons (avoid duplicates)
+                    visuallySelected.forEach(addon => {
+                        if (!itemAddons.find(existing => existing.name === addon.name)) {
+                            itemAddons.push(addon);
+                        }
+                    });
+                }
+                
+                console.log(`getCurrentQuantityItems - Item: ${name}, Add-ons:`, itemAddons);
+                
+                // Calculate total including add-ons
+                const addonTotal = itemAddons.reduce((sum, addon) => sum + addon.price, 0);
+                const totalPrice = (price + addonTotal) * quantity;
+                
+                quantityItems.push({
+                    name,
+                    price,
+                    quantity,
+                    addons: itemAddons,
+                    total: totalPrice,
+                    source: 'quantity-buttons'
+                });
+            }
+        });
+        
+        return quantityItems;
+    }
+});
