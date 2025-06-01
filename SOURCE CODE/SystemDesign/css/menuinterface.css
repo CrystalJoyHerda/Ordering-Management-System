@@ -467,6 +467,38 @@ body {
   border-color: #ffcccc;
 }
 
+/* Remove any hover effects that add × symbols to order items */
+.order-item:hover::after,
+.order-item:hover::before,
+.order-item::after,
+.order-item::before,
+.food-item:hover::after,
+.food-item:hover::before,
+.food-item.selected::after,
+.food-item.selected::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Ensure no cursor pointer effects on order items except for interactive elements */
+.order-item {
+    cursor: default !important;
+    pointer-events: none;
+}
+
+.order-item .quantity-controls,
+.order-item .remove-item-btn {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Remove any existing remove button styles that might be duplicated */
+.order-item .remove-btn,
+.order-item .delete-btn,
+.order-item .close-btn {
+    display: none !important;
+}
+
 .order-item:hover::after {
   content: '✕';
   position: absolute;

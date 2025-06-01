@@ -40,6 +40,29 @@
       opacity: 0.5;
       color: #999;
     }
+    
+    /* Update main layout to remove right section */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .center-section {
+      flex: 1;
+      margin-bottom: 80px; /* Add space for fixed footer */
+    }
+    
+    /* Add hover effects for add-on options */
+    .addon-option label:hover {
+      background-color: #f9f9f9;
+      border-color: #4A2C1B;
+    }
+    
+    .addon-option input[type="checkbox"]:checked + span {
+      color: #4A2C1B;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -447,128 +470,148 @@
         </div>
       </div>
 
-      <!-- Right Section -->
-      <div class="right-section">
-        <div class="selected-item-display">
-          <span class="selected-for-label">Add-ons for:</span>
-          <span class="selected-item-name">Select an item first</span>
-        </div>
-        <span class="addons-title">Add ons</span>
-        <div class="addons-grid">
-          <div class="addon-circle" data-name="Extra Milk" data-price="15">
-            <img src="../assets/images/milk.png" alt="Milk" class="addon-image">
-            <div class="addon-name">Extra Milk</div>
-            <div class="addon-price">₱15.00</div>
-          </div>
-          <div class="addon-circle" data-name="Extra Sugar" data-price="10">
-            <img src="../assets/images/sugar.png" alt="Sugar" class="addon-image">
-            <div class="addon-name">Extra Sugar</div>
-            <div class="addon-price">₱10.00</div>
-          </div>
-          <div class="addon-circle" data-name="Whipped Cream" data-price="20">
-            <img src="../assets/images/whip_cream.png" alt="Cream" class="addon-image">
-            <div class="addon-name">Whipped Cream</div>
-            <div class="addon-price">₱20.00</div>
-          </div>
-          <div class="addon-circle" data-name="Caramel Syrup" data-price="25">
-            <img src="../assets/images/caramel_syrup.png" alt="Caramel" class="addon-image">
-            <div class="addon-name">Caramel Syrup</div>
-            <div class="addon-price">₱25.00</div>
-          </div>
-        </div>
-      </div>
+      <!-- Remove the entire Right Section -->
+      <!-- <div class="right-section"> ... </div> -->
     </main>
     
-    <!-- View Order Modal -->
-    <div class="view-order-modal" id="viewOrderModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Order Details</h2>
-                <span class="close-modal">&times;</span>
+    <!-- Add-ons Modal -->
+    <div class="addons-modal" id="addonsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #4A2C1B; padding-bottom: 15px;">
+                <h2 style="color: #4A2C1B; margin: 0;">Customize Your <span class="addon-item-name" style="font-weight: bold;"></span></h2>
+                <span class="close-modal" style="font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="order-type-display"></div>
-                <div class="order-items"></div>
-                <div class="order-total"></div>
-                <div class="order-instructions">
-                    <small>* Click on any item to remove it from your order</small>
+                <h3 style="color: #4A2C1B; margin: 0 0 15px 0; font-size: 18px; font-weight: bold; text-align: center;">Add-ons</h3>
+                <div class="addon-options" style="padding: 20px 0;">
+                    <div class="addon-option" style="margin: 15px 0; font-size: 16px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 10px; border: 1px solid #ddd; border-radius: 5px; transition: background-color 0.2s;">
+                            <input type="checkbox" data-name="Extra Milk" data-price="15" style="margin-right: 15px; width: 18px; height: 18px;">
+                            <span style="flex: 1;">Extra Milk</span>
+                            <span style="font-weight: bold; color: #4A2C1B;">₱15.00</span>
+                        </label>
+                    </div>
+                    <div class="addon-option" style="margin: 15px 0; font-size: 16px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 10px; border: 1px solid #ddd; border-radius: 5px; transition: background-color 0.2s;">
+                            <input type="checkbox" data-name="Extra Sugar" data-price="10" style="margin-right: 15px; width: 18px; height: 18px;">
+                            <span style="flex: 1;">Extra Sugar</span>
+                            <span style="font-weight: bold; color: #4A2C1B;">₱10.00</span>
+                        </label>
+                    </div>
+                    <div class="addon-option" style="margin: 15px 0; font-size: 16px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 10px; border: 1px solid #ddd; border-radius: 5px; transition: background-color 0.2s;">
+                            <input type="checkbox" data-name="Whipped Cream" data-price="20" style="margin-right: 15px; width: 18px; height: 18px;">
+                            <span style="flex: 1;">Whipped Cream</span>
+                            <span style="font-weight: bold; color: #4A2C1B;">₱20.00</span>
+                        </label>
+                    </div>
+                    <div class="addon-option" style="margin: 15px 0; font-size: 16px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 10px; border: 1px solid #ddd; border-radius: 5px; transition: background-color 0.2s;">
+                            <input type="checkbox" data-name="Caramel Syrup" data-price="25" style="margin-right: 15px; width: 18px; height: 18px;">
+                            <span style="flex: 1;">Caramel Syrup</span>
+                            <span style="font-weight: bold; color: #4A2C1B;">₱25.00</span>
+                        </label>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="cancel-modal-btn">Cancel</button>
-                <button class="confirm-modal-btn">Confirm Order</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <button class="cancel-modal-btn" style="background: #f44336; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Cancel</button>
+                <button class="add-item-btn" style="background: #4A2C1B; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Add This Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Order Modal -->
+    <div class="view-order-modal" id="viewOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #4A2C1B; padding-bottom: 15px;">
+                <h2 style="color: #4A2C1B; margin: 0;">Order Details</h2>
+                <span class="close-modal" style="font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="order-type-display" style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #4A2C1B;"></div>
+                <div class="order-items"></div>
+                <div class="order-total"></div>
+                <div class="order-instructions" style="margin-top: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 5px;">
+                    <small style="color: #666;">* Use +/- buttons or type to change quantity • Click × to remove item completely</small>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <button class="cancel-modal-btn" style="background: #f44336; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Cancel</button>
+                <button class="confirm-modal-btn" style="background: #4A2C1B; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Confirm Order</button>
             </div>
         </div>
     </div>
 
     <!-- Thank You Modal -->
-    <div class="thank-you-modal" id="thankYouModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Thank You For Your Order!</h2>
+    <div class="thank-you-modal" id="thankYouModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; text-align: center;">
+            <div class="modal-header" style="margin-bottom: 20px;">
+                <h2 style="color: #4A2C1B; margin: 0;">Thank You For Your Order!</h2>
             </div>
             <div class="modal-body">
-                <p>Your order has been confirmed.</p>
-                <p>Order Number: <span id="orderNumber" class="queue-number"></span></p>
-                <div class="loading-spinner" id="loadingSpinner">
-                    <div class="spinner"></div>
-                    <p>Printing receipt...</p>
+                <p style="font-size: 18px; margin-bottom: 15px;">Your order has been confirmed.</p>
+                <p style="font-size: 16px; margin-bottom: 20px;">Order Number: <span id="orderNumber" class="queue-number"></span></p>
+                <div class="loading-spinner" id="loadingSpinner" style="margin: 20px 0;">
+                    <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #4A2C1B; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+                    <p style="margin-top: 15px;">Printing receipt...</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="close-thank-you-btn">OK</button>
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button class="close-thank-you-btn" style="background: #4A2C1B; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">OK</button>
             </div>
         </div>
     </div>
 
     <!-- Order Type Selection Modal -->
-    <div class="notification-modal" id="orderTypeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Order Type Required</h2>
-                <span class="close-notification-modal">&times;</span>
+    <div class="notification-modal" id="orderTypeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: #4A2C1B; margin: 0;">Order Type Required</h2>
+                <span class="close-notification-modal" style="font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="notification-icon">☕</div>
-                <p>Please select your order type:</p>
-                <div class="option-buttons">
-                    <button class="option-btn" data-type="Dine In">Dine In</button>
-                    <button class="option-btn" data-type="Take out">Take Out</button>
+                <div class="notification-icon" style="font-size: 48px; margin-bottom: 20px;">☕</div>
+                <p style="font-size: 16px; margin-bottom: 20px;">Please select your order type:</p>
+                <div class="option-buttons" style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="option-btn" data-type="Dine In" style="background: #4A2C1B; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Dine In</button>
+                    <button class="option-btn" data-type="Take out" style="background: #4A2C1B; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Take Out</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Empty Order Modal -->
-    <div class="notification-modal" id="emptyOrderModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Empty Order</h2>
+    <!-- Confirmation Modal (for removing items) -->
+    <div class="notification-modal" id="confirmationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
+            <div class="modal-header" style="margin-bottom: 20px;">
+                <h2 id="confirmationTitle" style="color: #4A2C1B; margin: 0;">Remove Item?</h2>
             </div>
             <div class="modal-body">
-                <div class="notification-icon">🛍️</div>
-                <p>Your order is empty</p>
-                <p class="subtitle">Please select items from our menu to proceed</p>
+                <div class="notification-icon" style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <p id="confirmationMessage" style="font-size: 16px; margin-bottom: 20px;">Are you sure you want to remove this item?</p>
             </div>
-            <div class="modal-footer">
-                <button class="notification-ok-btn">Continue Ordering</button>
+            <div class="modal-footer" style="display: flex; gap: 15px; justify-content: center;">
+                <button class="cancel-modal-btn" id="confirmCancel" style="background: #f44336; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Cancel</button>
+                <button class="confirm-modal-btn" id="confirmYes" style="background: #4A2C1B; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Yes, Remove</button>
             </div>
         </div>
     </div>
 
-    <!-- Confirmation Modal (for removing items) -->
-    <div class="notification-modal" id="confirmationModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="confirmationTitle">Remove Item?</h2>
+    <!-- Empty Order Modal -->
+    <div class="notification-modal" id="emptyOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: #4A2C1B; margin: 0;">Empty Order</h2>
+                <span class="close-notification-modal" style="font-size: 24px; cursor: pointer; color: #666;">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="notification-icon">⚠️</div>
-                <p id="confirmationMessage">Are you sure you want to remove this item?</p>
+                <div class="notification-icon" style="font-size: 64px; text-align: center; margin-bottom: 20px;">🛍️</div>
+                <p style="text-align: center; font-size: 18px; margin-bottom: 10px; color: #4A2C1B; font-weight: bold;">Your order is empty</p>
+                <p class="subtitle" style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">Please select items from our menu to proceed with your order</p>
             </div>
-            <div class="modal-footer">
-                <button class="cancel-modal-btn" id="confirmCancel">Cancel</button>
-                <button class="confirm-modal-btn" id="confirmYes">Yes, Remove</button>
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button class="notification-ok-btn" style="background: #4A2C1B; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">Continue Ordering</button>
             </div>
         </div>
     </div>
@@ -576,317 +619,8 @@
     <!-- Footer Section -->
     <footer class="footer">
       <button class="cancel-button">Cancel Order</button>
-      <button class="view-button" onclick="viewAndConfirmOrder()">View Order</button>
+      <button class="view-button">View Order</button>
     </footer>
   </div>
-
-  <script>
-    // Global variable to track current selected item
-    let currentSelectedItem = null;
-    let currentSelectedCategory = null;
-    
-    // Function to handle view order button click
-    function viewAndConfirmOrder() {
-      // Get all items with quantity > 0
-      const items = document.querySelectorAll('.food-item');
-      let hasItems = false;
-      
-      items.forEach(item => {
-        const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-        if (quantity > 0) {
-          hasItems = true;
-        }
-      });
-      
-      if (!hasItems) {
-        // Show empty order modal if no items selected
-        document.getElementById('emptyOrderModal').style.display = 'flex';
-        return;
-      }
-      
-      // Check if order type is selected
-      const orderType = document.querySelector('.order-button.active');
-      if (!orderType) {
-        // Show order type selection modal
-        document.getElementById('orderTypeModal').style.display = 'flex';
-        return;
-      }
-      
-      // Only proceed to show the order details modal if we have both items and an order type
-      const viewOrderModal = document.getElementById('viewOrderModal');
-      viewOrderModal.style.display = 'flex';
-      
-      // Set up confirmation button to proceed to thank you modal
-      const confirmBtn = viewOrderModal.querySelector('.confirm-modal-btn');
-      confirmBtn.onclick = function() {
-        viewOrderModal.style.display = 'none';
-        showThankYouModal();
-      };
-      
-      // Set up close and cancel buttons
-      const closeBtn = viewOrderModal.querySelector('.close-modal');
-      const cancelBtn = viewOrderModal.querySelector('.cancel-modal-btn');
-      
-      closeBtn.onclick = function() {
-        viewOrderModal.style.display = 'none';
-      };
-      
-      cancelBtn.onclick = function() {
-        viewOrderModal.style.display = 'none';
-      };
-      
-      // Populate the order items in the modal
-      populateOrderDetails();
-    }
-    
-    // Function to update selected item display and handle add-ons
-    function updateSelectedItem(itemElement) {
-      const itemName = itemElement.querySelector('.food-name').textContent;
-      const selectedItemDisplay = document.querySelector('.selected-item-name');
-      const addonsGrid = document.querySelector('.addons-grid');
-      const addonsTitle = document.querySelector('.addons-title');
-      
-      // Determine category based on parent grid
-      const coffeeGrid = itemElement.closest('.coffee-grid');
-      const snacksGrid = itemElement.closest('.snacks-grid');
-      
-      currentSelectedItem = itemName;
-      selectedItemDisplay.textContent = itemName;
-      
-      if (coffeeGrid) {
-        // Coffee item selected - enable add-ons
-        currentSelectedCategory = 'coffee';
-        addonsGrid.classList.remove('disabled');
-        addonsTitle.classList.remove('disabled');
-        document.querySelectorAll('.addon-circle').forEach(addon => {
-          addon.classList.remove('disabled');
-        });
-      } else if (snacksGrid) {
-        // Snacks item selected - disable add-ons
-        currentSelectedCategory = 'snacks';
-        addonsGrid.classList.add('disabled');
-        addonsTitle.classList.add('disabled');
-        document.querySelectorAll('.addon-circle').forEach(addon => {
-          addon.classList.add('disabled');
-        });
-      }
-    }
-    
-    // Function to populate order details in the modal
-    function populateOrderDetails() {
-      const orderItems = document.querySelector('.order-items');
-      const orderTotal = document.querySelector('.order-total');
-      const orderTypeDisplay = document.querySelector('.order-type-display');
-      
-      // Clear previous content
-      orderItems.innerHTML = '';
-      
-      // Get selected order type
-      const selectedOrderType = document.querySelector('.order-button.active') ? 
-                               document.querySelector('.order-button.active').textContent : 
-                               'Dine In'; // Default to Dine In if none selected
-      
-      orderTypeDisplay.textContent = `Order Type: ${selectedOrderType}`;
-      
-      // Calculate total and display items
-      let total = 0;
-      let itemsHtml = '<ul class="order-item-list">';
-      
-      document.querySelectorAll('.food-item').forEach(item => {
-        const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-        if (quantity > 0) {
-          const name = item.querySelector('.food-name').textContent;
-          const price = parseFloat(item.querySelector('.food-price').textContent.replace('₱', ''));
-          const itemTotal = quantity * price;
-          
-          total += itemTotal;
-          
-          itemsHtml += `
-            <li class="order-item" data-name="${name}">
-              <span class="item-quantity">${quantity}x</span>
-              <span class="item-name">${name}</span>
-              <span class="item-price">₱${itemTotal.toFixed(2)}</span>
-            </li>
-          `;
-        }
-      });
-      
-      itemsHtml += '</ul>';
-      orderItems.innerHTML = itemsHtml;
-      orderTotal.textContent = `Total: ₱${total.toFixed(2)}`;
-      
-      // Add click handlers to remove items
-      document.querySelectorAll('.order-item').forEach(item => {
-        item.addEventListener('click', function() {
-          const itemName = this.getAttribute('data-name');
-          showRemoveConfirmation(itemName);
-        });
-      });
-    }
-    
-    // Function to show confirmation for removing an item
-    function showRemoveConfirmation(itemName) {
-      const confirmationModal = document.getElementById('confirmationModal');
-      const confirmationMessage = document.getElementById('confirmationMessage');
-      
-      confirmationMessage.textContent = `Are you sure you want to remove "${itemName}" from your order?`;
-      confirmationModal.style.display = 'flex';
-      
-      // Set up buttons
-      document.getElementById('confirmYes').onclick = function() {
-        removeItemFromOrder(itemName);
-        confirmationModal.style.display = 'none';
-      };
-      
-      document.getElementById('confirmCancel').onclick = function() {
-        confirmationModal.style.display = 'none';
-      };
-    }
-    // Function to handle addon selection 
-    // Function to remove item from order
-    function removeItemFromOrder(itemName) {
-      // Find the item in the menu and reset its quantity
-      document.querySelectorAll('.food-item').forEach(item => {
-        const name = item.querySelector('.food-name').textContent;
-        if (name === itemName) {
-          item.querySelector('.quantity-value').textContent = '0';
-          item.querySelector('.quantity-btn.minus').disabled = true;
-        }
-      });
-      
-      // Refresh the order details
-      populateOrderDetails();
-    }
-    
-    // Function to show thank you modal with order number and receipt printing
-    function showThankYouModal() {
-      const thankYouModal = document.getElementById('thankYouModal');
-      const orderNumberSpan = document.getElementById('orderNumber');
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      
-      // Generate random order number (4 digits)
-      const orderNum = Math.floor(1000 + Math.random() * 9000);
-      orderNumberSpan.textContent = orderNum;
-      
-      // Show the modal and loading spinner
-      thankYouModal.style.display = 'flex';
-      loadingSpinner.style.display = 'block';
-      
-      // Simulate receipt printing (hide spinner after 3 seconds)
-      setTimeout(() => {
-        loadingSpinner.style.display = 'none';
-      }, 3000);
-      
-      // Set up close button
-      const closeBtn = thankYouModal.querySelector('.close-thank-you-btn');
-      closeBtn.onclick = function() {
-        thankYouModal.style.display = 'none';
-        // Optionally reset the form or redirect
-        resetOrderForm();
-      };
-    }
-    
-    // Function to reset the order form
-    function resetOrderForm() {
-      // Reset all quantities to zero
-      const quantityValues = document.querySelectorAll('.quantity-value');
-      const minusButtons = document.querySelectorAll('.quantity-btn.minus');
-      
-      quantityValues.forEach((value, index) => {
-        value.textContent = '0';
-        minusButtons[index].disabled = true;
-      });
-      
-      // Reset selected item display
-      document.querySelector('.selected-item-name').textContent = 'Select an item first';
-      currentSelectedItem = null;
-      currentSelectedCategory = null;
-      
-      // Reset add-ons to enabled state
-      const addonsGrid = document.querySelector('.addons-grid');
-      const addonsTitle = document.querySelector('.addons-title');
-      addonsGrid.classList.remove('disabled');
-      addonsTitle.classList.remove('disabled');
-      document.querySelectorAll('.addon-circle').forEach(addon => {
-        addon.classList.remove('disabled');
-      });
-    }
-    
-    // Close buttons for notification modals
-    document.querySelectorAll('.notification-ok-btn').forEach(btn => {
-      btn.onclick = function() {
-        this.closest('.notification-modal').style.display = 'none';
-      };
-    });
-    
-    document.querySelector('.close-notification-modal').onclick = function() {
-      this.closest('.notification-modal').style.display = 'none';
-    };
-    
-    // Initialize order type buttons
-    document.querySelectorAll('.order-button').forEach(button => {
-      button.addEventListener('click', function() {
-        // Remove active class from all buttons
-        document.querySelectorAll('.order-button').forEach(btn => {
-          btn.classList.remove('active');
-        });
-        
-        // Add active class to clicked button
-        this.classList.add('active');
-      });
-    });
-    
-    // Initialize plus and minus buttons with item selection tracking
-    document.querySelectorAll('.quantity-btn.plus').forEach(button => {
-      button.addEventListener('click', function() {
-        const container = this.closest('.quantity-scaler');
-        const valueElement = container.querySelector('.quantity-value');
-        const minusButton = container.querySelector('.quantity-btn.minus');
-        const foodItem = this.closest('.food-item');
-        
-        let value = parseInt(valueElement.textContent);
-        value++;
-        valueElement.textContent = value;
-        
-        // Enable minus button when value > 0
-        if (value > 0) {
-          minusButton.disabled = false;
-        }
-        
-        // Update selected item display when quantity becomes 1
-        if (value === 1) {
-          updateSelectedItem(foodItem);
-        }
-      });
-    });
-    
-    document.querySelectorAll('.quantity-btn.minus').forEach(button => {
-      button.addEventListener('click', function() {
-        const container = this.closest('.quantity-scaler');
-        const valueElement = container.querySelector('.quantity-value');
-        
-        let value = parseInt(valueElement.textContent);
-        if (value > 0) {
-          value--;
-          valueElement.textContent = value;
-          
-          // Disable minus button when value is 0
-          if (value === 0) {
-            this.disabled = true;
-          }
-        }
-      });
-    });
-    
-    // Add click handlers to food items for selection
-    document.querySelectorAll('.food-item').forEach(item => {
-      item.addEventListener('click', function(e) {
-        // Don't trigger if clicking on quantity buttons
-        if (!e.target.closest('.quantity-scaler')) {
-          updateSelectedItem(this);
-        }
-      });
-    });
-  </script>
 </body>
 </html>
