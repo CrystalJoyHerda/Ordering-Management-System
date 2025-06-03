@@ -183,6 +183,9 @@ document.getElementById('printBtn').addEventListener('click', async function() {
                 console.log('✅ Order status updated successfully!');
                 btn.textContent = 'Status Updated - Redirecting...';
                 
+                // Increment queue number after successful order completion
+                incrementQueueNumberAfterCompletion();
+                
                 // Clear the order data from localStorage since it's completed
                 localStorage.removeItem('receiptData');
                 localStorage.removeItem('currentOrder');
@@ -217,6 +220,41 @@ document.getElementById('printBtn').addEventListener('click', async function() {
         }, 1000);
     }
 });
+
+/**
+ * Function to increment queue number after order completion
+ * This ensures the next order gets the next queue number
+ */
+function incrementQueueNumberAfterCompletion() {
+    console.log('🔢 Incrementing queue number after order completion...');
+    
+    try {
+        // Get current queue number from the unified system
+        let currentQueueNumber = parseInt(localStorage.getItem('queueNumber') || '1');
+        
+        // Increment the queue number
+        currentQueueNumber = currentQueueNumber + 1;
+        
+        // Reset to 1 if it reaches 10000 (4-digit limit)
+        if (currentQueueNumber >= 10000) {
+            currentQueueNumber = 1;
+        }
+        
+        // Store the new queue number
+        localStorage.setItem('queueNumber', currentQueueNumber.toString());
+        
+        console.log('✅ Queue number incremented to:', currentQueueNumber, 'for next order');
+        
+        // Clean up old queueCount system if it exists
+        if (localStorage.getItem('queueCount')) {
+            localStorage.removeItem('queueCount');
+            console.log('🧹 Cleaned up old queueCount system');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error incrementing queue number:', error);
+    }
+}
 
 /**
  * Updates the order status in the database

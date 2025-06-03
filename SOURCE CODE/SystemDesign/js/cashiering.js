@@ -139,20 +139,40 @@ function checkForDateChange(currentDate) {
 
 // Initialize queue number
 function initializeQueueNumber() {
-    // Check if queue number exists in localStorage
+    console.log('🔢 Initializing queue number system...');
+    
+    // Check for date change first
+    checkForDateChange(new Date());
+    
+    // Get queue number from localStorage
     let queueNumber = localStorage.getItem('queueNumber');
     if (!queueNumber) {
         queueNumber = '1';
         localStorage.setItem('queueNumber', queueNumber);
+        console.log('📝 Created new queue number:', queueNumber);
     }
     
-    // Display queue number
-    document.getElementById('queueNumber').value = queueNumber;
+    // Display queue number with 4-digit padding
+    const queueNumberElement = document.getElementById('queueNumber');
+    if (queueNumberElement) {
+        queueNumberElement.value = queueNumber.padStart(4, '0');
+        console.log('📺 Queue number displayed as:', queueNumber.padStart(4, '0'));
+    }
     
     // Initialize last date if not set
     if (!localStorage.getItem('lastDate')) {
-        localStorage.setItem('lastDate', new Date().toLocaleDateString());
+        const today = new Date().toLocaleDateString();
+        localStorage.setItem('lastDate', today);
+        console.log('📅 Initialized last date as:', today);
     }
+    
+    // Clean up old queueCount system if it exists
+    if (localStorage.getItem('queueCount')) {
+        console.log('🧹 Cleaning up old queueCount system...');
+        localStorage.removeItem('queueCount');
+    }
+    
+    console.log('✅ Queue number system initialized successfully');
 }
 
 // Cancel order function - now checks if order is empty
@@ -218,13 +238,39 @@ function confirmCancelOrder() {
     console.log('Order cancelled and reset');
 }
 
-// Queue number generator
+// Queue number generator - DEPRECATED: Use incrementQueueNumber() instead
 function generateQueueNumber() {
-    let currentCount = parseInt(localStorage.getItem('queueCount') || '0');
-    currentCount = (currentCount + 1) % 10000;
-    localStorage.setItem('queueCount', currentCount);
-    const queueNumber = String(currentCount).padStart(4, '0');
-    document.getElementById('queueNumber').value = queueNumber;
+    // This function is kept for backward compatibility but should not be used
+    console.warn('generateQueueNumber() is deprecated. Use incrementQueueNumber() instead.');
+    incrementQueueNumber();
+}
+
+// Function to increment queue number after order completion
+function incrementQueueNumber() {
+    console.log('🔢 Incrementing queue number...');
+    
+    // Get current queue number from the unified system
+    let currentQueueNumber = parseInt(localStorage.getItem('queueNumber') || '1');
+    
+    // Increment the queue number
+    currentQueueNumber = currentQueueNumber + 1;
+    
+    // Reset to 1 if it reaches 10000 (4-digit limit)
+    if (currentQueueNumber >= 10000) {
+        currentQueueNumber = 1;
+    }
+    
+    // Store the new queue number
+    localStorage.setItem('queueNumber', currentQueueNumber.toString());
+    
+    // Update the display
+    const queueNumberInput = document.getElementById('queueNumber');
+    if (queueNumberInput) {
+        queueNumberInput.value = currentQueueNumber.toString().padStart(4, '0');
+    }
+    
+    console.log('✅ Queue number incremented to:', currentQueueNumber);
+    return currentQueueNumber;
 }
 
 // Sample orders data
@@ -256,10 +302,9 @@ async function lookupOrderInternal() {
         showOrderNumberRequiredModal();
         return;
     }
-    
-    try {
+      try {
         // Show loading state
-        const lookupButton = document.querySelector('button[onclick="lookupOrder()"]');
+        const lookupButton = document.querySelector('button[onclick="lookupOrderInternal()"]');
         const originalText = lookupButton.textContent;
         lookupButton.textContent = 'Looking up...';        lookupButton.disabled = true;
         
@@ -285,6 +330,21 @@ async function lookupOrderInternal() {
             console.log('✅ Order found successfully!');
             const order = result.order;
             console.log('📦 Order details:', order);
+            
+            // Check if order is cancelled or completed - prevent lookup
+            if (order.status === 'cancelled') {
+                console.log('❌ Order is cancelled - showing cancelled modal');
+                showOrderCancelledModal();
+                return;
+            }
+            
+            if (order.status === 'completed') {
+                console.log('❌ Order is completed - showing completed modal');
+                showOrderCompletedModal();
+                return;
+            }
+            
+            console.log('✅ Order status is valid for lookup:', order.status);
             
             // Store the order ID for database synchronization
             currentOrderId = order.id;
@@ -325,11 +385,10 @@ async function lookupOrderInternal() {
         }
     } catch (error) {
         console.error('🚨 Error looking up order:', error);
-        showLookupErrorModal('Error looking up order: ' + error.message);
-    } finally {
+        showLookupErrorModal('Error looking up order: ' + error.message);    } finally {
         // Restore button state
         console.log('🔄 Restoring button state');
-        const lookupButton = document.querySelector('button[onclick="lookupOrder()"]');
+        const lookupButton = document.querySelector('button[onclick="lookupOrderInternal()"]');
         if (lookupButton) {
             lookupButton.textContent = 'Look Up';
             lookupButton.disabled = false;
@@ -543,21 +602,90 @@ function handleConfirm() {
             price: totalPrice / qty, // Unit price
             totalPrice: totalPrice   // Total price for this line
         });
+    }    // Handle order creation/updating based on whether we're editing an existing order
+    if (currentOrderId) {
+        // Editing existing order - include the order ID
+        const orderData = {
+            items: orderItems,
+            total: total.replace('Total Amount: ₱', ''),
+            queueNumber: queueNum,
+            orderType: orderTypeText,
+            datetime: document.getElementById('datetime').textContent,
+            itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+            orderId: currentOrderId  // Include order ID for existing orders
+        };
+
+        console.log('Sending existing order data to confirmation:', orderData);
+        localStorage.setItem('currentOrder', JSON.stringify(orderData));
+        window.location.href = 'orderconfirm.html';
+    } else {
+        // Creating new order - need to save to database first to get order ID
+        console.log('Creating new order in database before confirmation...');
+        createNewOrderInDatabase(orderItems, total.replace('Total Amount: ₱', ''), queueNum, orderTypeText);
     }
+}
 
-    // Create complete order data object
-    const orderData = {
-        items: orderItems,
-        total: total.replace('Total Amount: ₱', ''),
-        queueNumber: queueNum,
-        orderType: orderTypeText,
-        datetime: document.getElementById('datetime').textContent,
-        itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0)
-    };
+// Function to create new order in database and get order ID
+async function createNewOrderInDatabase(orderItems, totalAmount, queueNumber, orderType) {
+    try {
+        // Prepare order data for API
+        const orderData = {
+            order_type: orderType.toLowerCase().replace(' ', '_'),
+            customer_name: null,
+            items: orderItems.map(item => ({
+                product_name: item.name,
+                quantity: item.quantity,
+                unit_price: item.price,
+                total_price: item.totalPrice,
+                addons: item.addons || []
+            }))
+        };
 
-    console.log('Sending order data to confirmation:', orderData);
-    localStorage.setItem('currentOrder', JSON.stringify(orderData));
-    window.location.href = 'orderconfirm.html';
+        console.log('📤 Sending new order to database:', orderData);
+
+        // Send POST request to create order
+        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('📥 Database creation result:', result);
+
+        if (result.status === 'success' && result.data && result.data.id) {
+            // Store the new order ID
+            currentOrderId = result.data.id;
+            console.log('✅ New order created with ID:', currentOrderId);
+
+            // Create complete order data object with the new order ID
+            const confirmationData = {
+                items: orderItems,
+                total: totalAmount,
+                queueNumber: queueNumber,
+                orderType: orderType,
+                datetime: document.getElementById('datetime').textContent,
+                itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+                orderId: currentOrderId  // Include the new order ID
+            };
+
+            console.log('Sending new order data to confirmation:', confirmationData);
+            localStorage.setItem('currentOrder', JSON.stringify(confirmationData));
+            window.location.href = 'orderconfirm.html';
+        } else {
+            throw new Error(result.message || 'Failed to create order in database');
+        }
+    } catch (error) {
+        console.error('🚨 Error creating order in database:', error);
+        alert('Error creating order: ' + error.message + '\nPlease try again.');
+    }
 }
 
 // Show no items warning modal
@@ -604,7 +732,7 @@ function selectOrderTypeFromModal(orderType) {
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateDateTime, 1000);
-    generateQueueNumber();
+    initializeQueueNumber();  // Use initializeQueueNumber instead of generateQueueNumber
     updateDateTime();
 
     // Add event listeners for buttons
@@ -2041,5 +2169,37 @@ function showInvalidQuantityModal() {
 // Close invalid quantity modal
 function closeInvalidQuantityModal() {
     const modal = document.getElementById('invalidQuantityModal');
+    modal.classList.remove('show');
+}
+
+// Show order completed modal (prevents lookup)
+function showOrderCompletedModal() {
+    const modal = document.getElementById('orderCompletedModal');
+    modal.classList.add('show');
+}
+
+// Close order completed modal
+function closeOrderCompletedModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const modal = document.getElementById('orderCompletedModal');
+    modal.classList.remove('show');
+}
+
+// Show order cancelled modal (prevents lookup)
+function showOrderCancelledModal() {
+    const modal = document.getElementById('orderCancelledModal');
+    modal.classList.add('show');
+}
+
+// Close order cancelled modal
+function closeOrderCancelledModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const modal = document.getElementById('orderCancelledModal');
     modal.classList.remove('show');
 }

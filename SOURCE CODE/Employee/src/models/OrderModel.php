@@ -514,12 +514,32 @@ class OrderModel extends BaseModel {
     }    /**
      * Auto-cancel pending orders that are older than the current date
      * @return array Result of the auto-cancellation process
-     */
-    public function autoCancelOldPendingOrders() {
+     */    public function autoCancelOldPendingOrders() {
         try {
-            $currentDate = date('Y-m-d');
+            // IMPORTANT: Do NOT change timezone here to avoid timezone mismatch issues
+            // Use the same timezone context as when orders were created
+            // If orders were created in local time, use local time for comparison
+            // If orders were created in Manila time, use Manila time for comparison
             
-            // Find pending orders that are older than today
+            // Get current date in the same timezone context as the database
+            // Check the database timezone setting first
+            $timezoneQuery = "SELECT @@session.time_zone as session_tz, @@global.time_zone as global_tz";
+            $tzStmt = $this->conn->prepare($timezoneQuery);
+            $tzStmt->execute();
+            $tzInfo = $tzStmt->fetch();
+              // For consistency, we'll use the database's current date/time
+            // This ensures the comparison uses the same timezone context
+            $currentDateQuery = "SELECT CURDATE() as `current_date`, NOW() as `current_datetime`";
+            $dateStmt = $this->conn->prepare($currentDateQuery);
+            $dateStmt->execute();
+            $dateInfo = $dateStmt->fetch();
+            $currentDate = $dateInfo['current_date'];
+            $currentDateTime = $dateInfo['current_datetime'];
+            
+            // Log the auto-cancellation attempt for debugging
+            error_log("Auto-cancellation running at $currentDateTime with current date: $currentDate");
+            error_log("Database timezone info - Session: {$tzInfo['session_tz']}, Global: {$tzInfo['global_tz']}");
+              // Find pending orders that are older than today
             $findQuery = "SELECT id, order_number, created_at, total_amount 
                          FROM {$this->table} 
                          WHERE status = 'pending' 
@@ -529,6 +549,16 @@ class OrderModel extends BaseModel {
             $findStmt->bindValue(':current_date', $currentDate);
             $findStmt->execute();
             $oldOrders = $findStmt->fetchAll();
+            
+            // Log which orders would be cancelled for debugging
+            if (!empty($oldOrders)) {
+                error_log("Auto-cancellation found " . count($oldOrders) . " old pending orders:");
+                foreach ($oldOrders as $oldOrder) {
+                    error_log("  - Order #{$oldOrder['order_number']} (ID: {$oldOrder['id']}) created at {$oldOrder['created_at']}");
+                }
+            } else {
+                error_log("Auto-cancellation: No old pending orders found to cancel");
+            }
             
             if (empty($oldOrders)) {
                 return [
