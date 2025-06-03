@@ -58,7 +58,7 @@
                 </div>                <!-- Right box with table -->
                 <div class="table-box">
                     <h2>Today's Sales</h2>
-                    <table class="sales-table">
+                    <table class="sales-table" style="vertical-align: top;">
                         <thead>
                             <tr>
                                 <th>PRODUCT</th>
@@ -66,7 +66,7 @@
                                 <th>TOTAL</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody style="vertical-align: top;">
                             <!-- Table data will be populated dynamically -->
                         </tbody>
                     </table>
@@ -334,7 +334,7 @@
                 barGraph.innerHTML = `
                     <div style="display: flex; flex-direction: column; height: 100%; padding: 8px;">
                         <h4 style="margin: 0 0 12px 0; color: #67503b; text-align: center; font-size: 16px;">Orders ${isToday ? 'Today' : 'on ' + formatDateDisplay(selectedDate)}</h4>
-                        <div style="flex: 1; overflow-y: auto; height: 100%; min-height: 0;">
+                        <div style="flex: 1; overflow-y: auto; max-height: calc(100% - 40px); border: 1px solid #eee; border-radius: 4px; padding: 8px;">
                             ${orders.slice(0, 20).map(order => {
                                 const statusColor = order.status === 'completed' ? '#28a745' : 
                                                   order.status === 'pending' ? '#ffc107' : 
@@ -344,7 +344,7 @@
                                                    order.status === 'cancelled' ? '❌' : '❓';
                                 
                                 return `
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 6px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${statusColor};">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 6px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${statusColor}; flex-shrink: 0;">
                                         <div style="display: flex; flex-direction: column;">
                                             <span style="font-weight: bold; font-size: 14px; color: #333;">Order #${order.order_number || order.id}</span>
                                             <span style="font-size: 11px; color: #666;">${formatDateDisplay(order.created_at.split(' ')[0])}</span>

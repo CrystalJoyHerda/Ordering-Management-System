@@ -63,6 +63,20 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: fit-content;
+    max-height: 70vh;
+}
+
+.chart-box {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 70vh;
+    max-height: 70vh;
 }
 
 h2 {
@@ -75,30 +89,35 @@ h2 {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 30px;  /* Increased gap between charts */
-    padding: 15px;  /* Added padding around charts */
+    gap: 20px;
+    padding: 15px;
     overflow: hidden;
+    height: 100%;
 }
 
 .donut-chart {
-    height: 200px;
+    height: 180px;
+    min-height: 180px;
     border: 1px solid #eee;
     border-radius: 8px;
 }
 
 .bar-graph {
     flex: 1;
-    min-height: 300px;
+    min-height: 250px;
     border: 1px solid #eee;
     border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .sales-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    height: 100%;
-    overflow: auto;
+    height: auto;
+    overflow: visible;
 }
 
 .sales-table th {
@@ -122,6 +141,15 @@ h2 {
 .sales-table td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
+}
+
+.sales-table tbody {
+    display: table-row-group;
+    height: auto;
+}
+
+.sales-table tr {
+    height: auto;
 }
 
 /* Sidebar Styles */

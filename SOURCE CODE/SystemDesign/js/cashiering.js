@@ -301,12 +301,26 @@ async function lookupOrderInternal() {
     if (!orderNum) {
         showOrderNumberRequiredModal();
         return;
-    }
-      try {
-        // Show loading state
-        const lookupButton = document.querySelector('button[onclick="lookupOrderInternal()"]');
-        const originalText = lookupButton.textContent;
-        lookupButton.textContent = 'Looking up...';        lookupButton.disabled = true;
+    }    try {
+        // Show loading state - use a more robust selector
+        const lookupButton = document.querySelector('button[onclick="lookupOrder()"]') || 
+                           document.querySelector('.lookup-btn') ||
+                           document.querySelector('button:contains("Look Up")');
+        
+        let originalText = 'Look Up';
+        if (lookupButton) {
+            originalText = lookupButton.textContent || lookupButton.innerText || 'Look Up';
+            lookupButton.textContent = 'Looking up...';
+            lookupButton.disabled = true;
+            
+            // Reset button after 5 seconds as a safety measure
+            setTimeout(() => {
+                if (lookupButton) {
+                    lookupButton.textContent = originalText;
+                    lookupButton.disabled = false;
+                }
+            }, 5000);
+        }
         
         const apiUrl = `http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=${orderNum}`;
         console.log('🌐 Fetching from URL:', apiUrl);
@@ -906,43 +920,10 @@ document.querySelectorAll('.type-btn').forEach(btn => {
     });
 });
 
-// Order lookup functionality
+// Order lookup functionality - calls the database lookup function
 function lookupOrder() {
-    const orderNumber = document.getElementById('orderNumber').value;
-    if (!orderNumber) {
-        showOrderNumberRequiredModal();
-        return;
-    }
-
-    // Get order details from localStorage
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = orders.find(o => o.orderNumber === orderNumber);
-
-    if (order) {
-        showOrderInfo(order);
-    } else {
-        showOrderNotFoundModal('Order not found');
-    }
-}
-
-function showOrderInfo(order) {
-    // Create info display element
-    const display = document.createElement('div');
-    display.className = 'order-info-display';
-    display.innerHTML = `
-        <h3>Order #${order.orderNumber}</h3>
-        <p>Type: ${order.type}</p>
-        <p>Items: ${order.items.map(item => `${item.name} x${item.quantity}`).join(', ')}</p>
-        <p>Total: ₱${order.total.toFixed(2)}</p>
-    `;
-
-    document.body.appendChild(display);
-    display.style.display = 'block';
-
-    // Remove after animation
-    setTimeout(() => {
-        display.remove();
-    }, 3000);
+    console.log('🔍 lookupOrder() wrapper called, delegating to lookupOrderInternal()');
+    lookupOrderInternal();
 }
 
 // Add type button functionality
@@ -954,45 +935,6 @@ document.querySelectorAll('.type-button').forEach(button => {
         localStorage.setItem('orderType', button.dataset.type);
     });
 });
-
-// Enhance lookupOrder function
-function lookupOrder() {
-    const orderNumber = document.getElementById('orderNumber').value;
-    if (!orderNumber) {
-        showOrderNumberRequiredModal();
-        return;
-    }
-
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = orders.find(o => o.orderNumber === orderNumber);
-
-    if (order) {
-        showOrderDetails(order);
-    } else {
-        showOrderNotFoundModal('Order not found');
-    }
-}
-
-function showOrderDetails(order) {
-    // Create flash element
-    const flash = document.createElement('div');
-    flash.className = 'order-details-flash';
-    flash.innerHTML = `
-        <h3>Order #${order.orderNumber}</h3>
-        <p>Type: ${order.type}</p>
-        <p>Items: ${order.items.map(item => 
-            `${item.name} x${item.quantity}`).join(', ')}</p>
-        <p>Total: ₱${order.total.toFixed(2)}</p>
-    `;
-
-    document.body.appendChild(flash);
-    flash.style.display = 'block';
-
-    // Remove after animation
-    setTimeout(() => {
-        flash.remove();
-    }, 3000);
-}
 
 // Add this function to restrict input to numbers only
 function onlyNumbers(e) {
