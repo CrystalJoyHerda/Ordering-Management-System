@@ -94,7 +94,179 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize stored order items
-    let storedOrderItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
+    let storedOrderItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');    // Function to check and update product availability - REAL DATABASE SYNC
+    function updateProductAvailability() {
+        console.log("=== CHECKING PRODUCT AVAILABILITY (DATABASE SYNC) ===");
+        
+        // Fetch real product data from the database API
+        fetchProductsFromDatabase()
+            .then(products => {
+                console.log(`Found ${products.length} products from database:`, products);
+                
+                const productStatuses = {};
+                products.forEach(product => {
+                    const key = product.name.toLowerCase().trim();
+                    productStatuses[key] = product.status;
+                    console.log(`📦 Product: "${product.name}" -> Status: ${product.status}`);
+                });
+                
+                console.log("Product status map from database:", productStatuses);
+                
+                // Get all food items on the page
+                const foodItems = document.querySelectorAll('.food-item');
+                console.log(`Found ${foodItems.length} food items on page`);
+                
+                // Update each food item based on its status
+                foodItems.forEach((item, index) => {
+                    const foodNameElement = item.querySelector('.food-name');
+                    if (!foodNameElement) {
+                        console.log(`⚠️ Item ${index} has no .food-name element`);
+                        return;
+                    }
+                    
+                    const foodName = foodNameElement.textContent.trim();
+                    const productKey = foodName.toLowerCase().trim();
+                    
+                    console.log(`🔍 Checking item ${index}: "${foodName}" (key: "${productKey}")`);
+                    
+                    // Check for exact match first - NO PARTIAL MATCHING TO AVOID ERRORS
+                    let status = productStatuses[productKey];
+                    
+                    console.log(`📊 Product "${foodName}" status: ${status || 'NOT FOUND'}`);
+                    
+                    // ONLY apply out-of-stock if we have an exact match AND status is inactive
+                    if (status === 'inactive') {
+                        item.classList.add('out-of-stock');
+                        console.log(`❌ ${foodName} marked as OUT OF STOCK`);
+                    } else {
+                        item.classList.remove('out-of-stock');
+                        console.log(`✅ ${foodName} marked as available (status: ${status || 'not found - defaulting to active'})`);
+                    }
+                });
+                
+                console.log("=== PRODUCT AVAILABILITY CHECK COMPLETE ===");
+                
+            })
+            .catch(error => {
+                console.error("Failed to fetch products from database:", error);
+                console.log("Falling back to demo data...");
+                // Fall back to demo data if API is not available
+                initializeDemoInventoryData();
+            });
+    }
+
+    // Function to fetch products from the database API
+    async function fetchProductsFromDatabase() {
+        try {
+            console.log("🌐 Fetching products from database API...");
+            
+            const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log("🔗 Database API response:", result);
+            
+            if (result.status === 'success' && Array.isArray(result.data)) {
+                // Store the fetched data in localStorage for offline access
+                localStorage.setItem('products', JSON.stringify(result.data));
+                console.log("✅ Products data synced from database and cached locally");
+                return result.data;
+            } else {
+                throw new Error('Invalid response format from products API');
+            }
+            
+        } catch (error) {
+            console.error("❌ Error fetching products from database:", error);
+            
+            // Try to use cached data from localStorage as fallback
+            const cachedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            if (cachedProducts.length > 0) {
+                console.log("📱 Using cached product data as fallback");
+                return cachedProducts;
+            }
+            
+            throw error; // Re-throw if no cached data available
+        }
+    }// Function to initialize demo inventory data for testing
+    function initializeDemoInventoryData() {
+        console.log("=== INITIALIZING DEMO INVENTORY DATA ===");
+          const demoProducts = [
+            // Hot Coffee
+            { name: "Espresso", status: "active", category: "Hot Coffee", price: 120.00, stock_quantity: 15, low_stock_threshold: 5 },
+            { name: "Cappuccino", status: "active", category: "Hot Coffee", price: 150.00, stock_quantity: 12, low_stock_threshold: 3 },
+            { name: "Americano", status: "active", category: "Hot Coffee", price: 130.00, stock_quantity: 20, low_stock_threshold: 5 },
+            { name: "Latte", status: "active", category: "Hot Coffee", price: 140.00, stock_quantity: 8, low_stock_threshold: 2 },
+            { name: "Macha", status: "active", category: "Hot Coffee", price: 145.00, stock_quantity: 5, low_stock_threshold: 2 },
+            
+            // Cold Coffee
+            { name: "Iced Latte", status: "active", category: "Cold Coffee", price: 140.00, stock_quantity: 10, low_stock_threshold: 3 },
+            { name: "Iced Americano", status: "active", category: "Cold Coffee", price: 130.00, stock_quantity: 25, low_stock_threshold: 5 },
+            { name: "Cold Brew", status: "active", category: "Cold Coffee", price: 140.00, stock_quantity: 18, low_stock_threshold: 4 },
+            { name: "Frappuccino", status: "active", category: "Cold Coffee", price: 160.00, stock_quantity: 3, low_stock_threshold: 1 },
+            { name: "Affogato", status: "active", category: "Cold Coffee", price: 155.00, stock_quantity: 7, low_stock_threshold: 2 },
+            
+            // Non Coffee (refreshers/sodas)
+            { name: "Strawberry Italian Soda", status: "active", category: "Non Coffee", price: 120.00, stock_quantity: 15, low_stock_threshold: 5 },
+            { name: "Lemon-Lime Fizz", status: "active", category: "Non Coffee", price: 110.00, stock_quantity: 30, low_stock_threshold: 8 },
+            { name: "Raspberry Spritzer", status: "active", category: "Non Coffee", price: 115.00, stock_quantity: 22, low_stock_threshold: 6 },
+            { name: "Cucumber Mint Cooler", status: "active", category: "Non Coffee", price: 125.00, stock_quantity: 12, low_stock_threshold: 4 },
+            { name: "Blueberry Basil Soda", status: "active", category: "Non Coffee", price: 120.00, stock_quantity: 16, low_stock_threshold: 4 },
+            
+            // Pastries
+            { name: "Donut", status: "active", category: "Pastry", price: 80.00, stock_quantity: 2, low_stock_threshold: 1 },
+            { name: "Apple Pie", status: "active", category: "Pastry", price: 90.00, stock_quantity: 4, low_stock_threshold: 1 },
+            { name: "Cinnamon Roll", status: "active", category: "Pastry", price: 70.00, stock_quantity: 6, low_stock_threshold: 2 },
+            { name: "Sugar Cookie", status: "active", category: "Pastry", price: 60.00, stock_quantity: 10, low_stock_threshold: 3 },
+            { name: "Brownie", status: "active", category: "Pastry", price: 75.00, stock_quantity: 8, low_stock_threshold: 2 },
+            
+            // Sandwiches
+            { name: "BLT (Bacon, Lettuce, Tomato)", status: "active", category: "Sandwich", price: 180.00, stock_quantity: 5, low_stock_threshold: 1 },
+            { name: "Club Sandwich", status: "active", category: "Sandwich", price: 200.00, stock_quantity: 3, low_stock_threshold: 1 },
+            { name: "Grilled Cheese", status: "active", category: "Sandwich", price: 120.00, stock_quantity: 12, low_stock_threshold: 3 },
+            { name: "Ham and Swiss", status: "active", category: "Sandwich", price: 160.00, stock_quantity: 7, low_stock_threshold: 2 },
+            { name: "Turkey Avocado", status: "active", category: "Sandwich", price: 190.00, stock_quantity: 4, low_stock_threshold: 1 },
+            
+            // Cakes - ONLY these two should be out of stock
+            { name: "Chocolate Cake", status: "active", category: "Cake", price: 200.00, stock_quantity: 2, low_stock_threshold: 1 },
+            { name: "Cheesecake", status: "active", category: "Cake", price: 220.00, stock_quantity: 1, low_stock_threshold: 1 },
+            { name: "Carrot Cake", status: "active", category: "Cake", price: 190.00, stock_quantity: 3, low_stock_threshold: 1 },
+            { name: "Black Forest Cake", status: "inactive", category: "Cake", price: 210.00, stock_quantity: 0, low_stock_threshold: 1 }, // OUT OF STOCK
+            { name: "Red Velvet Cake", status: "inactive", category: "Cake", price: 215.00, stock_quantity: 0, low_stock_threshold: 1 } // OUT OF STOCK
+        ];
+        
+        console.log(`📝 Creating ${demoProducts.length} demo products:`);
+        demoProducts.forEach(product => {
+            console.log(`   - ${product.name}: ${product.status}`);
+        });
+        
+        // Store demo products in localStorage
+        localStorage.setItem('products', JSON.stringify(demoProducts));
+        console.log("✅ Demo inventory data stored in localStorage");
+        
+        // Update availability after initialization
+        setTimeout(() => {
+            console.log("🔄 Running updateProductAvailability after demo data initialization");
+            updateProductAvailability();
+        }, 100);
+        
+        console.log("=== DEMO INVENTORY INITIALIZATION COMPLETE ===");
+    }    // Call the function to check availability when page loads
+    console.log("Initializing product availability system with DATABASE SYNC...");
+    
+    // Check availability immediately from database
+    updateProductAvailability();
+
+    // Check availability every 10 seconds to keep it updated with database changes
+    setInterval(updateProductAvailability, 10000); // Reduced from 30 seconds for faster sync
 
     // Replace the existing food item click handlers
     document.querySelectorAll('.food-item').forEach(item => {
@@ -109,6 +281,16 @@ document.addEventListener('DOMContentLoaded', () => {
         item.style.cursor = 'pointer';
         
         item.addEventListener('click', function(e) {
+            // Don't handle click if item is out of stock
+            if (this.classList.contains('out-of-stock')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const foodName = this.querySelector('.food-name').textContent;
+                showOutOfStockNotification(foodName);
+                console.log(`🚫 Blocked click on out-of-stock item: ${foodName}`);
+                return false;
+            }
+            
             // Don't handle click if clicking quantity buttons
             if (e.target.closest('.quantity-scaler')) {
                 return;
@@ -197,11 +379,24 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.setAttribute('data-item-price', itemPrice);
         
         console.log('Modal displayed successfully');
-    }
-
-    // Function to add item directly (for snacks)
-    function addItemDirectly(itemName, itemPrice) {
+    }    // Function to add item directly (for snacks)
+    async function addItemDirectly(itemName, itemPrice) {
         console.log(`Adding item directly: ${itemName}`);
+        
+        // Check stock limit before adding
+        const currentQuantityInOrder = storedOrderItems
+            .filter(item => item.name === itemName)
+            .reduce((sum, item) => sum + item.quantity, 0);
+        
+        const stockLimit = await getProductStockLimit(itemName);
+        console.log(`📊 Stock limit for "${itemName}": ${stockLimit}, current in order: ${currentQuantityInOrder}`);
+        
+        if (stockLimit !== null && (currentQuantityInOrder + 1) > stockLimit) {
+            console.log(`🚫 Cannot add "${itemName}" - would exceed stock limit (${currentQuantityInOrder + 1} > ${stockLimit})`);
+            showStockLimitNotification(itemName, stockLimit);
+            return; // Don't add if it would exceed stock limit
+        }
+        
         const orderItem = {
             name: itemName,
             price: itemPrice,
@@ -212,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         storedOrderItems.push(orderItem);
         localStorage.setItem('storedOrderItems', JSON.stringify(storedOrderItems));
+        console.log(`✅ Added "${itemName}" to order successfully`);
         showSuccessNotification(`Added ${itemName} to order`);
     }
 
@@ -234,13 +430,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 addonsModal.style.display = 'none';
             });
         }
-        
-        // Add to order button
+          // Add to order button
         const addBtn = addonsModal.querySelector('.add-item-btn');
         if (addBtn) {
-            addBtn.addEventListener('click', () => {
+            addBtn.addEventListener('click', async () => {
                 const itemName = addonsModal.getAttribute('data-item-name');
                 const itemPrice = parseFloat(addonsModal.getAttribute('data-item-price'));
+                
+                // Check stock limit before adding
+                const currentQuantityInOrder = storedOrderItems
+                    .filter(item => item.name === itemName)
+                    .reduce((sum, item) => sum + item.quantity, 0);
+                
+                const stockLimit = await getProductStockLimit(itemName);
+                console.log(`📊 MODAL: Stock limit for "${itemName}": ${stockLimit}, current in order: ${currentQuantityInOrder}`);
+                
+                if (stockLimit !== null && (currentQuantityInOrder + 1) > stockLimit) {
+                    console.log(`🚫 MODAL: Cannot add "${itemName}" - would exceed stock limit (${currentQuantityInOrder + 1} > ${stockLimit})`);
+                    showStockLimitNotification(itemName, stockLimit);
+                    return; // Don't add if it would exceed stock limit
+                }
                 
                 // Get selected add-ons (no need to exclude "No Add-ons" since it's removed)
                 const selectedAddons = [...addonsModal.querySelectorAll('input[type="checkbox"]:checked')].map(cb => ({
@@ -267,6 +476,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Close modal and show success
                 addonsModal.style.display = 'none';
+                
+                console.log(`✅ MODAL: Added "${itemName}" with ${selectedAddons.length} add-ons to order successfully`);
                 
                 // Create appropriate success message
                 let successMessage;
@@ -453,22 +664,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-    }
-
-    // Function to add quantity control listeners
+    }    // Function to add quantity control listeners with stock limit checking
     function addQuantityControlListeners(groupedItems) {
         const groupedItemsArray = Object.values(groupedItems);
         
-        // Plus button listeners
+        // Plus button listeners with stock limit checking
         document.querySelectorAll('.qty-plus').forEach(button => {
-            button.addEventListener('click', function(e) {
+            button.addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const itemKey = parseInt(this.getAttribute('data-item-key'));
+                const item = groupedItemsArray[itemKey];
                 const qtyInput = document.querySelector(`.qty-input[data-item-key="${itemKey}"]`);
                 let currentQty = parseInt(qtyInput.value);
-                currentQty++;
-                qtyInput.value = currentQty;
-                updateItemQuantity(itemKey, currentQty, groupedItemsArray);
+                const newQty = currentQty + 1;
+                
+                console.log(`🔍 MODAL: Checking stock limit for ${item.name} - Current qty: ${currentQty}, Requested qty: ${newQty}`);
+                
+                // Get stock limit for this item
+                const stockLimit = await getProductStockLimit(item.name);
+                console.log(`📊 MODAL: Stock limit for ${item.name}: ${stockLimit}`);
+                
+                if (stockLimit !== null && newQty > stockLimit) {
+                    console.log(`🚫 MODAL: Stock limit exceeded for ${item.name}. Max: ${stockLimit}, Requested: ${newQty}`);
+                    showStockLimitNotification(item.name, stockLimit);
+                    return;
+                }
+                
+                console.log(`✅ MODAL: Stock limit check passed for ${item.name}`);
+                qtyInput.value = newQty;
+                updateItemQuantity(itemKey, newQty, groupedItemsArray);
             });
         });
         
@@ -487,17 +711,41 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        // Input field listeners
+        // Input field listeners with stock limit checking
         document.querySelectorAll('.qty-input').forEach(input => {
-            input.addEventListener('change', function(e) {
+            input.addEventListener('change', async function(e) {
                 e.stopPropagation();
                 const itemKey = parseInt(this.getAttribute('data-item-key'));
+                const item = groupedItemsArray[itemKey];
                 let newQty = parseInt(this.value);
+                const originalQty = parseInt(this.getAttribute('data-original-value') || this.defaultValue || 1);
+                
                 if (isNaN(newQty) || newQty < 1) {
                     newQty = 1;
                     this.value = 1;
                 }
+                
+                console.log(`🔍 MODAL INPUT: Checking stock limit for ${item.name} - Input qty: ${newQty}`);
+                
+                // Get stock limit for this item
+                const stockLimit = await getProductStockLimit(item.name);
+                console.log(`📊 MODAL INPUT: Stock limit for ${item.name}: ${stockLimit}`);
+                
+                if (stockLimit !== null && newQty > stockLimit) {
+                    console.log(`🚫 MODAL INPUT: Stock limit exceeded for ${item.name}. Max: ${stockLimit}, Requested: ${newQty}`);
+                    showStockLimitNotification(item.name, stockLimit);
+                    // Restore previous valid value
+                    this.value = Math.min(originalQty, stockLimit);
+                    return;
+                }
+                
+                console.log(`✅ MODAL INPUT: Stock limit check passed for ${item.name}`);
                 updateItemQuantity(itemKey, newQty, groupedItemsArray);
+            });
+            
+            // Store original value for rollback
+            input.addEventListener('focus', function(e) {
+                this.setAttribute('data-original-value', this.value);
             });
             
             // Prevent form submission on Enter key
@@ -508,39 +756,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-    }
-
-    // Function to update item quantity
+    }// Function to update item quantity
     function updateItemQuantity(itemKey, newQuantity, groupedItemsArray) {
         const item = groupedItemsArray[itemKey];
         const currentStoredItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
         
-        // Calculate the difference in quantity
-        const originalItemCount = item.originalIndexes.length;
-        const quantityDiff = newQuantity - originalItemCount;
-        
-        if (quantityDiff > 0) {
-            // Add more items
-            for (let i = 0; i < quantityDiff; i++) {
-                const newItem = {
-                    name: item.name,
-                    price: item.price,
-                    quantity: 1,
-                    addons: [...item.addons],
-                    total: item.price + item.addons.reduce((sum, addon) => sum + addon.price, 0)
-                };
-                currentStoredItems.push(newItem);
+        // Remove all existing instances of this item
+        const indexesToRemove = item.originalIndexes.sort((a, b) => b - a);
+        indexesToRemove.forEach(index => {
+            if (index < currentStoredItems.length) {
+                currentStoredItems.splice(index, 1);
             }
-        } else if (quantityDiff < 0) {
-            // Remove items (from the end)
-            const itemsToRemove = Math.abs(quantityDiff);
-            const indexesToRemove = item.originalIndexes.slice(-itemsToRemove).sort((a, b) => b - a);
-            
-            indexesToRemove.forEach(index => {
-                if (index < currentStoredItems.length) {
-                    currentStoredItems.splice(index, 1);
-                }
-            });
+        });
+        
+        // Add back a single consolidated item with the correct quantity
+        if (newQuantity > 0) {
+            const consolidatedItem = {
+                name: item.name,
+                price: item.price,
+                quantity: newQuantity,
+                addons: [...item.addons],
+                total: (item.price + item.addons.reduce((sum, addon) => sum + addon.price, 0)) * newQuantity
+            };
+            currentStoredItems.push(consolidatedItem);
         }
         
         // Update localStorage
@@ -588,12 +826,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalElement) {
             totalElement.textContent = `₱${grandTotal.toFixed(2)}`;
         }
-    }
-
-    // Modal control buttons - Fix the order confirmation flow
+    }    // Modal control buttons - Fix the order confirmation flow
     document.querySelector('.confirm-modal-btn').addEventListener('click', async () => {
-        console.log("Confirm order button clicked");
-        
         // Get the current stored items
         const currentStoredItems = JSON.parse(localStorage.getItem('storedOrderItems') || '[]');
         
@@ -648,28 +882,83 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Confirm Order';
         }
-    });
-
-    // Function to submit order to database
+    });    // Function to submit order to database
     async function submitOrderToDatabase(orderItems, orderType) {
         try {
-            // Prepare order data for backend
-            const orderData = {
-                order_type: orderType.toLowerCase(),
-                customer_name: null, // Can be extended later to capture customer name
-                items: orderItems.map(item => ({
-                    product_name: item.name,
-                    product_id: null, // Will be resolved by backend
+            console.log('🔄 Starting order submission process...');
+            console.log('Order items received:', orderItems);
+            
+            // Step 1: Fetch all products from database to get product IDs
+            const productsResponse = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!productsResponse.ok) {
+                throw new Error(`Failed to fetch products: ${productsResponse.status}`);
+            }
+            
+            const productsResult = await productsResponse.json();
+            console.log('📦 Products API response:', productsResult);
+            
+            if (productsResult.status !== 'success' || !Array.isArray(productsResult.data)) {
+                throw new Error('Invalid products API response');
+            }
+            
+            const products = productsResult.data;
+            
+            // Step 2: Create a mapping of product names to IDs
+            const productMap = {};
+            products.forEach(product => {
+                const nameKey = product.name.toLowerCase().trim();
+                productMap[nameKey] = {
+                    id: product.id,
+                    name: product.name,
+                    price: parseFloat(product.price)
+                };
+                console.log(`📋 Mapped: "${nameKey}" -> ID: ${product.id}`);
+            });
+            
+            console.log('🗺️ Product mapping created:', productMap);
+            
+            // Step 3: Map order items to include product IDs
+            const mappedItems = [];
+            for (const item of orderItems) {
+                const itemNameKey = item.name.toLowerCase().trim();
+                const product = productMap[itemNameKey];
+                
+                if (!product) {
+                    console.error(`❌ Product not found in database: "${item.name}" (key: "${itemNameKey}")`);
+                    console.log('Available products:', Object.keys(productMap));
+                    throw new Error(`Product "${item.name}" not found in database`);
+                }
+                
+                const mappedItem = {
+                    product_name: product.name, // Use exact name from database
+                    product_id: product.id,     // Include resolved product ID
                     quantity: item.quantity,
                     unit_price: item.price,
                     total_price: item.total,
                     addons: item.addons || []
-                }))
+                };
+                
+                mappedItems.push(mappedItem);
+                console.log(`✅ Mapped item: "${item.name}" -> ID: ${product.id}, Price: ₱${item.price}`);
+            }
+            
+            // Step 4: Prepare order data for backend
+            const orderData = {
+                order_type: orderType.toLowerCase(),
+                customer_name: null, // Can be extended later to capture customer name
+                items: mappedItems
             };
 
-            console.log('Submitting order to database:', orderData);
+            console.log('📤 Submitting order to database:', orderData);
 
-            // Submit to backend API (XAMPP htdocs path)
+            // Step 5: Submit to backend API
             const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
                 method: 'POST',
                 headers: {
@@ -680,13 +969,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('HTTP Error Response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
             
             const result = await response.json();
-            console.log('Backend response:', result);
+            console.log('📥 Backend response:', result);
             
             if (result.status === 'success') {
+                console.log('✅ Order submitted successfully!');
                 return {
                     success: true,
                     order_number: result.data.order_number,
@@ -698,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
         } catch (error) {
-            console.error('Error submitting order to database:', error);
+            console.error('❌ Error submitting order to database:', error);
             throw error;
         }
     }
@@ -963,28 +1255,115 @@ document.addEventListener('DOMContentLoaded', () => {
                     value--;
                     valueSpan.textContent = value;
                     minusBtn.disabled = value === 0;
-                    
                     if (value === 0) {
                         foodItem.classList.remove('selected');
                         foodItem.classList.remove('in-order');
                     }
-                    
-                    updateOrderSummary();
+                    // Re-enable plus button if quantity is now below stock limit
+                    const foodName = foodItem.querySelector('.food-name').textContent.trim();
+                    getProductStockLimit(foodName).then(stockLimit => {
+                        if (stockLimit !== null && value < stockLimit) {
+                            scaler.querySelector('.plus').disabled = false;
+                        }
+                    });                    updateOrderSummary();
                 }
             });
-
-            plusBtn.addEventListener('click', (e) => {
+              plusBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 let value = parseInt(valueSpan.textContent);
+                
+                // Check stock limit before incrementing
+                const foodName = foodItem.querySelector('.food-name').textContent.trim();
+                console.log(`➕ Plus button clicked for "${foodName}", current quantity: ${value}`);
+                
+                const stockLimit = await getProductStockLimit(foodName);
+                console.log(`📊 Stock limit for "${foodName}": ${stockLimit}`);
+                
+                if (stockLimit !== null && value >= stockLimit) {
+                    console.log(`🚫 Cannot increment "${foodName}" - stock limit reached (${value} >= ${stockLimit})`);
+                    showStockLimitNotification(foodName, stockLimit);
+                    plusBtn.disabled = true;
+                    return; // Don't increment if at stock limit
+                }
+                
+                // Increment value
                 value++;
+                console.log(`✅ Incrementing "${foodName}" to ${value}`);
                 valueSpan.textContent = value;
                 minusBtn.disabled = false;
                 foodItem.classList.add('selected');
                 foodItem.classList.add('in-order');
                 updateOrderSummary();
+                
+                // Disable plus if now at stock limit
+                if (stockLimit !== null && value >= stockLimit) {
+                    console.log(`🔒 Disabling plus button for "${foodName}" - stock limit reached (${value} >= ${stockLimit})`);
+                    plusBtn.disabled = true;
+                } else {
+                    plusBtn.disabled = false;
+                }
             });
         }
-    });
+    });    // Helper: Get product stock limit by name (from localStorage cache)
+    async function getProductStockLimit(productName) {
+        console.log(`🔍 Getting stock limit for: "${productName}"`);
+        
+        // Try to get from localStorage cache (synced every 10s)
+        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const product = products.find(p => p.name && p.name.toLowerCase() === productName.toLowerCase());
+        
+        if (product && typeof product.stock_quantity === 'number') {
+            console.log(`📦 Found stock limit for "${productName}": ${product.stock_quantity}`);
+            return product.stock_quantity;
+        }
+        
+        console.log(`❓ No stock data found in localStorage for "${productName}"`);
+        
+        // If not found, fallback to fetching from DB (rare)
+        try {
+            console.log(`🌐 Fetching fresh data from database for "${productName}"`);
+            const dbProducts = await fetchProductsFromDatabase();
+            const dbProduct = dbProducts.find(p => p.name && p.name.toLowerCase() === productName.toLowerCase());
+            if (dbProduct && typeof dbProduct.stock_quantity === 'number') {
+                console.log(`📦 Found stock limit from DB for "${productName}": ${dbProduct.stock_quantity}`);
+                return dbProduct.stock_quantity;
+            }
+        } catch (e) {
+            console.error(`❌ Error fetching from database for "${productName}":`, e);
+            // Ignore fetch error, treat as unlimited
+        }
+        
+        console.log(`⚠️ No stock limit found for "${productName}" - treating as unlimited`);
+        return null; // No limit found
+    }
+
+    // Helper: Show notification when stock limit is reached
+    function showStockLimitNotification(productName, stockLimit) {
+        let notification = document.querySelector('.stock-limit-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.className = 'stock-limit-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 60px;
+                right: 20px;
+                background: #e53935;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 10000;
+                font-size: 16px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                display: none;
+            `;
+            document.body.appendChild(notification);
+        }
+        notification.textContent = `Cannot add more than ${stockLimit} for ${productName} (stock limit reached)`;
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 2500);
+    }
 
     // Function to show success notification
     function showSuccessNotification(message) {
@@ -1014,5 +1393,102 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             notification.style.display = 'none';
         }, 3000);
+    }    // Function to show out of stock notification
+    function showOutOfStockNotification(productName) {
+        let notification = document.querySelector('.out-of-stock-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.className = 'out-of-stock-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+                color: white;
+                padding: 25px 35px;
+                border-radius: 15px;
+                z-index: 15000;
+                font-size: 18px;
+                box-shadow: 
+                    0 10px 30px rgba(220, 20, 60, 0.4),
+                    0 5px 15px rgba(0, 0, 0, 0.3),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+                display: none;
+                font-weight: bold;
+                text-align: center;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                backdrop-filter: blur(10px);
+                animation: outOfStockNotificationPulse 0.5s ease-out;
+                max-width: 400px;
+                min-width: 320px;
+            `;
+            document.body.appendChild(notification);
+        }
+        
+        notification.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <div style="font-size: 48px; margin-bottom: 5px;">🚫</div>
+                <div>
+                    <div style="font-size: 22px; margin-bottom: 8px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">ITEM UNAVAILABLE</div>
+                    <div style="font-size: 16px; opacity: 0.95; line-height: 1.4;">"${productName}" is currently out of stock</div>
+                    <div style="font-size: 14px; opacity: 0.85; margin-top: 8px; font-style: italic;">Please choose another item</div>
+                </div>
+            </div>
+        `;
+        
+        // Add CSS animation keyframes if not already present
+        if (!document.querySelector('#outOfStockAnimationStyles')) {
+            const style = document.createElement('style');
+            style.id = 'outOfStockAnimationStyles';
+            style.textContent = `
+                @keyframes outOfStockNotificationPulse {
+                    0% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.8); 
+                    }
+                    50% { 
+                        opacity: 0.8; 
+                        transform: translate(-50%, -50%) scale(1.05); 
+                    }
+                    100% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1); 
+                    }
+                }
+                
+                @keyframes outOfStockNotificationFadeOut {
+                    0% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.9); 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        notification.style.display = 'block';
+        notification.style.animation = 'outOfStockNotificationPulse 0.5s ease-out';
+        
+        // Add click-to-dismiss functionality
+        const dismissHandler = () => {
+            notification.style.animation = 'outOfStockNotificationFadeOut 0.3s ease-in';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 300);
+            notification.removeEventListener('click', dismissHandler);
+        };
+        notification.addEventListener('click', dismissHandler);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (notification.style.display !== 'none') {
+                dismissHandler();
+            }
+        }, 5000);
     }
 });

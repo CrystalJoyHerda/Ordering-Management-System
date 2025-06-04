@@ -992,11 +992,158 @@ function showAddItemModal() {
     // Reset modal state
     resetModalState();
     
+    // Check and update product availability in the modal
+    updateModalProductAvailability();
+    
     // Initialize modal functionality only once
     if (!modalInitialized) {
         initializeModalFunctionality();
         modalInitialized = true;
     }
+}
+
+// Function to check and update product availability in the modal
+function updateModalProductAvailability() {
+    console.log("🔍 Checking product availability in add item modal...");
+    
+    try {
+        // Get product statuses from localStorage (synced from inventory)
+        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const productStatuses = {};
+        products.forEach(product => {
+            productStatuses[product.name.toLowerCase().trim()] = product.status;
+        });
+        
+        console.log("📊 Product statuses loaded:", productStatuses);
+        
+        // Check each food item in the modal
+        const foodItems = document.querySelectorAll('#addItemModal .food-item');
+        foodItems.forEach((item, index) => {
+            const foodNameElement = item.querySelector('.food-name');
+            if (!foodNameElement) {
+                console.log(`⚠️ Modal item ${index} has no .food-name element`);
+                return;
+            }
+            
+            const foodName = foodNameElement.textContent.trim();
+            const productKey = foodName.toLowerCase().trim();
+            const status = productStatuses[productKey];
+            
+            console.log(`🔍 Checking modal item: "${foodName}" (status: ${status || 'NOT FOUND'})`);
+            
+            // Apply out-of-stock styling if product is inactive
+            if (status === 'inactive') {
+                item.classList.add('out-of-stock');
+                console.log(`❌ ${foodName} marked as OUT OF STOCK in modal`);
+            } else {
+                item.classList.remove('out-of-stock');
+                console.log(`✅ ${foodName} marked as available in modal`);
+            }
+        });
+        
+        console.log("=== MODAL PRODUCT AVAILABILITY CHECK COMPLETE ===");
+          } catch (error) {
+        console.error("Failed to check product availability in modal:", error);
+    }
+}
+
+// Function to show out-of-stock notification for cashiering modal
+function showCashieringOutOfStockNotification(productName) {
+    let notification = document.querySelector('.cashiering-out-of-stock-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.className = 'cashiering-out-of-stock-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+            color: white;
+            padding: 25px 35px;
+            border-radius: 15px;
+            z-index: 15000;
+            font-size: 18px;
+            box-shadow: 
+                0 10px 30px rgba(220, 20, 60, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            display: none;
+            font-weight: bold;
+            text-align: center;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            animation: cashieringOutOfStockPulse 0.5s ease-out;
+            max-width: 400px;
+            min-width: 320px;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    notification.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <div style="font-size: 48px; margin-bottom: 5px;">🚫</div>
+            <div>
+                <div style="font-size: 22px; margin-bottom: 8px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">ITEM UNAVAILABLE</div>
+                <div style="font-size: 16px; opacity: 0.95; line-height: 1.4;">"${productName}" is currently out of stock</div>
+                <div style="font-size: 14px; opacity: 0.85; margin-top: 8px; font-style: italic;">Please choose another item</div>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS animation keyframes if not already present
+    if (!document.querySelector('#cashieringOutOfStockAnimationStyles')) {
+        const style = document.createElement('style');
+        style.id = 'cashieringOutOfStockAnimationStyles';
+        style.textContent = `
+            @keyframes cashieringOutOfStockPulse {
+                0% { 
+                    opacity: 0; 
+                    transform: translate(-50%, -50%) scale(0.8); 
+                }
+                50% { 
+                    opacity: 0.8; 
+                    transform: translate(-50%, -50%) scale(1.05); 
+                }
+                100% { 
+                    opacity: 1; 
+                    transform: translate(-50%, -50%) scale(1); 
+                }
+            }
+            
+            @keyframes cashieringOutOfStockFadeOut {
+                0% { 
+                    opacity: 1; 
+                    transform: translate(-50%, -50%) scale(1); 
+                }
+                100% { 
+                    opacity: 0; 
+                    transform: translate(-50%, -50%) scale(0.9); 
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    notification.style.display = 'block';
+    notification.style.animation = 'cashieringOutOfStockPulse 0.5s ease-out';
+    
+    // Add click-to-dismiss functionality
+    const dismissHandler = () => {
+        notification.style.animation = 'cashieringOutOfStockFadeOut 0.3s ease-in';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 300);
+        notification.removeEventListener('click', dismissHandler);
+    };
+    notification.addEventListener('click', dismissHandler);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (notification.style.display !== 'none') {
+            dismissHandler();
+        }
+    }, 5000);
 }
 
 // Close the add item modal
@@ -1135,6 +1282,14 @@ function showCategory(category) {
 
 // Select food item
 function selectFoodItem(item) {
+    // Check if item is out of stock first
+    if (item.classList.contains('out-of-stock')) {
+        const foodName = item.querySelector('.food-name').textContent;
+        showCashieringOutOfStockNotification(foodName);
+        console.log(`🚫 Blocked click on out-of-stock item in modal: ${foodName}`);
+        return;
+    }
+    
     // Get current quantity and UI elements
     const quantityValue = item.querySelector('.quantity-value');
     const minusBtn = item.querySelector('.quantity-btn.minus');
@@ -1226,6 +1381,14 @@ function isHotOrColdCoffeeItem(item) {
 
 // Increase quantity
 function increaseQuantity(item, valueSpan, minusBtn) {
+    // Check if item is out of stock first
+    if (item.classList.contains('out-of-stock')) {
+        const foodName = item.querySelector('.food-name').textContent;
+        showCashieringOutOfStockNotification(foodName);
+        console.log(`🚫 Blocked quantity increase on out-of-stock item in modal: ${foodName}`);
+        return;
+    }
+    
     let value = parseInt(valueSpan.textContent);
     value++;
     valueSpan.textContent = value;
@@ -1248,6 +1411,14 @@ function increaseQuantity(item, valueSpan, minusBtn) {
 
 // Decrease quantity
 function decreaseQuantity(item, valueSpan, minusBtn) {
+    // Check if item is out of stock first
+    if (item.classList.contains('out-of-stock')) {
+        const foodName = item.querySelector('.food-name').textContent;
+        showCashieringOutOfStockNotification(foodName);
+        console.log(`🚫 Blocked quantity decrease on out-of-stock item in modal: ${foodName}`);
+        return;
+    }
+    
     let value = parseInt(valueSpan.textContent);
     if (value > 0) {
         value--;
@@ -1533,21 +1704,32 @@ function removeModalOrderItem(item) {
 function addSelectedItems() {
     const itemsToAdd = Object.values(modalOrderItems);
     
+    console.log('🔄 DEBUG: addSelectedItems called');
+    console.log('📊 Items to add:', itemsToAdd);
+    
     if (itemsToAdd.length === 0) {
+        console.log('❌ No items selected');
         showNoItemsSelectedModal();
         return;
     }
     
     // Add items to the main order
-    itemsToAdd.forEach(item => {
+    itemsToAdd.forEach((item, index) => {
+        console.log(`🔍 Processing item ${index + 1}:`, {
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            addons: item.addons
+        });
+        
         // Use the calculated price that already includes add-ons
         const totalPrice = item.price;
         
-        // Add each quantity as a separate item (matching the database structure)
-        for (let i = 0; i < item.quantity; i++) {
-            // Add to grid with same structure as database items
-            addItemToGrid(item.name, totalPrice, item.addons);
-        }
+        // Add item with its actual quantity (fix for quantity duplication issue)
+        console.log(`📝 Calling addItemToGridWithQuantity with quantity: ${item.quantity}`);
+        addItemToGridWithQuantity(item.name, totalPrice, item.addons, item.quantity);
+        
+        console.log(`✅ Item ${item.name} added to grid`);
     });
     
     // Update total
@@ -1643,6 +1825,104 @@ function addItemToGrid(name, price, addons = []) {
         
         // Step 4: Set price display (quantity is 1 for new items)
         priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
+        
+        itemsContainer.appendChild(itemDiv);
+        namesContainer.appendChild(nameDiv);
+        addonsContainer.appendChild(addonsDiv);
+        pricesContainer.appendChild(priceDiv);
+        
+        // Recalculate total using the updated calculation logic
+        updateTotal();
+    }
+}
+
+// Add item to the main cashiering grid with specified quantity (fix for quantity duplication)
+function addItemToGridWithQuantity(name, unitPrice, addons = [], quantity = 1) {
+    console.log(`🎯 DEBUG addItemToGridWithQuantity called:`, {
+        name,
+        unitPrice,
+        addons,
+        quantity
+    });
+    
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Format add-ons for comparison
+    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
+        ? addons.map(a => a.name || a).join(', ') 
+        : '-';
+    
+    // Check for existing item with same name and add-ons
+    let existingRowIndex = -1;
+    for (let i = 0; i < namesContainer.children.length; i++) {
+        const existingName = namesContainer.children[i].textContent;
+        const existingAddons = addonsContainer.children[i].textContent;
+        
+        if (existingName === name && existingAddons === addonsText) {
+            existingRowIndex = i;
+            break;
+        }
+    }
+    
+    if (existingRowIndex !== -1) {
+        // Update existing item quantity
+        const quantityElement = itemsContainer.children[existingRowIndex];
+          // Extract current quantity
+        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
+        const newQuantity = currentQuantity + quantity;
+        
+        // Update quantity display with buttons
+        quantityElement.innerHTML = `${newQuantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        console.log(`📈 Updated existing item ${name}: old qty=${currentQuantity}, added=${quantity}, new total=${newQuantity}`);
+        
+        // Let updateTotal() recalculate with correct pricing logic
+        updateTotal();
+    } else {
+        // Create new row with specified quantity
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = itemStyle;
+        itemDiv.innerHTML = `${quantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        console.log(`🆕 Created new item ${name} with quantity: ${quantity}`);
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = itemStyle;
+        nameDiv.textContent = name;
+        
+        const addonsDiv = document.createElement('div');
+        addonsDiv.style.cssText = itemStyle;
+        addonsDiv.textContent = addonsText;
+        
+        const priceDiv = document.createElement('div');
+        priceDiv.style.cssText = itemStyle;
+        
+        // Calculate pricing
+        const originalPrice = getBasePrice(name);
+        let totalAddOnsPrice = 0;
+        
+        if (addons && Array.isArray(addons) && addons.length > 0) {
+            totalAddOnsPrice = addons.reduce((sum, addon) => {
+                const addonName = addon.name || addon;
+                return sum + getAddonPrice(addonName);
+            }, 0);
+        }
+        
+        // Calculate unit price = original + total add-ons
+        const calculatedUnitPrice = originalPrice + totalAddOnsPrice;
+        
+        // Use the provided unit price or calculated price
+        const finalUnitPrice = unitPrice || calculatedUnitPrice;
+        
+        // Display unit price (not total price)
+        priceDiv.textContent = `₱${finalUnitPrice.toFixed(2)}`;
         
         itemsContainer.appendChild(itemDiv);
         namesContainer.appendChild(nameDiv);

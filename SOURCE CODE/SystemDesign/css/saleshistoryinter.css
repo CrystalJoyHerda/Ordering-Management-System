@@ -112,6 +112,15 @@ h2 {
     flex-direction: column;
 }
 
+/* Add these new styles for the table container */
+.table-container {
+    max-height: calc(70vh - 80px); /* Adjusted to account for the heading */
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
 .sales-table {
     width: 100%;
     border-collapse: separate;
@@ -125,7 +134,9 @@ h2 {
     color: white;
     padding: 12px;
     text-align: left;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .sales-table th:not(:last-child)::after {

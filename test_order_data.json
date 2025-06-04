@@ -1,0 +1,22 @@
+{
+    "order_type": "dine-in",
+    "customer_name": null,
+    "items": [
+        {
+            "product_name": "Espresso",
+            "product_id": 1,
+            "quantity": 2,
+            "unit_price": 120.00,
+            "total_price": 240.00,
+            "addons": []
+        },
+        {
+            "product_name": "Americano",
+            "product_id": 3,
+            "quantity": 1,
+            "unit_price": 130.00,
+            "total_price": 130.00,
+            "addons": []
+        }
+    ]
+}

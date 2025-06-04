@@ -7,6 +7,144 @@
   <link rel="stylesheet" type="text/css" href="../css/menuinterface.css">
   <script type="text/javascript" src="../js/menuinterface.js" defer></script>
   
+  <!-- Add inventory status checker -->
+  <script>
+    // Load inventory data when page loads
+    window.addEventListener('load', function() {
+      console.log("Page loaded - checking inventory status...");
+      
+      // Try to load inventory functions from the inventory page context
+      try {
+        // Check if inventory page functions are available
+        if (typeof window.getProductStatuses === 'undefined') {
+          console.log("Creating local inventory functions...");
+          
+          // Load basic inventory data from localStorage if functions not available
+          const products = JSON.parse(localStorage.getItem('products') || '[]');
+          
+          // Create the functions locally if not available globally
+          window.getProductStatuses = function() {
+            const currentProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            const statusMap = {};
+            currentProducts.forEach(product => {
+              statusMap[product.name.toLowerCase()] = product.status;
+            });
+            console.log("Generated status map:", statusMap);
+            return statusMap;
+          };
+          
+          window.isProductOutOfStock = function(productName) {
+            const currentProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            const product = currentProducts.find(p => p.name.toLowerCase() === productName.toLowerCase());
+            return product ? product.status === 'inactive' : false;
+          };
+          
+          console.log("Local inventory functions created successfully");
+        }
+      } catch (error) {
+        console.error('Could not load inventory data:', error);
+      }
+      
+      // Add debug functionality
+      if (window.location.hash === '#debug') {
+        addDebugControls();
+      }
+    });
+    
+    // Debug function to add manual controls
+    function addDebugControls() {
+      const debugPanel = document.createElement('div');
+      debugPanel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #fff;
+        border: 2px solid #4A2C1B;
+        padding: 15px;
+        border-radius: 8px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+      `;
+        debugPanel.innerHTML = `
+        <h4 style="margin: 0 0 10px 0; color: #4A2C1B;">Debug Controls</h4>
+        <button onclick="testOutOfStock()" style="display: block; width: 100%; margin: 5px 0; padding: 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Out of Stock</button>
+        <button onclick="clearAll()" style="display: block; width: 100%; margin: 5px 0; padding: 8px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear All & Reset</button>
+        <button onclick="clearInventory()" style="display: block; width: 100%; margin: 5px 0; padding: 8px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear Inventory</button>
+        <button onclick="refreshAvailability()" style="display: block; width: 100%; margin: 5px 0; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Status</button>
+      `;
+        document.body.appendChild(debugPanel);
+      
+      // Add debug functions to window      window.testOutOfStock = function() {
+        const products = [
+          // Hot Coffee - with stock quantities for testing
+          { name: "Espresso", status: "active", category: "Hot Coffee", price: 120.00, stock_quantity: 15, low_stock_threshold: 5 },
+          { name: "Cappuccino", status: "active", category: "Hot Coffee", price: 150.00, stock_quantity: 2, low_stock_threshold: 3 },
+          { name: "Americano", status: "active", category: "Hot Coffee", price: 130.00, stock_quantity: 20, low_stock_threshold: 5 },
+          { name: "Latte", status: "active", category: "Hot Coffee", price: 140.00, stock_quantity: 1, low_stock_threshold: 2 },
+          { name: "Macha", status: "active", category: "Hot Coffee", price: 145.00, stock_quantity: 5, low_stock_threshold: 2 },
+          
+          // Cold Coffee
+          { name: "Iced Latte", status: "active", category: "Cold Coffee", price: 140.00, stock_quantity: 3, low_stock_threshold: 3 },
+          { name: "Iced Americano", status: "active", category: "Cold Coffee", price: 130.00, stock_quantity: 25, low_stock_threshold: 5 },
+          { name: "Cold Brew", status: "active", category: "Cold Coffee", price: 140.00, stock_quantity: 18, low_stock_threshold: 4 },
+          { name: "Frappuccino", status: "active", category: "Cold Coffee", price: 160.00, stock_quantity: 1, low_stock_threshold: 1 },
+          { name: "Affogato", status: "active", category: "Cold Coffee", price: 155.00, stock_quantity: 7, low_stock_threshold: 2 },
+          
+          // Non Coffee
+          { name: "Strawberry Italian Soda", status: "active", category: "Non Coffee", price: 120.00, stock_quantity: 15, low_stock_threshold: 5 },
+          { name: "Lemon-Lime Fizz", status: "active", category: "Non Coffee", price: 110.00, stock_quantity: 30, low_stock_threshold: 8 },
+          { name: "Raspberry Spritzer", status: "active", category: "Non Coffee", price: 115.00, stock_quantity: 22, low_stock_threshold: 6 },
+          { name: "Cucumber Mint Cooler", status: "active", category: "Non Coffee", price: 125.00, stock_quantity: 12, low_stock_threshold: 4 },
+          { name: "Blueberry Basil Soda", status: "active", category: "Non Coffee", price: 120.00, stock_quantity: 16, low_stock_threshold: 4 },
+          
+          // Pastries - with low stock limits for easy testing
+          { name: "Donut", status: "active", category: "Pastry", price: 80.00, stock_quantity: 2, low_stock_threshold: 1 },
+          { name: "Apple Pie", status: "active", category: "Pastry", price: 90.00, stock_quantity: 1, low_stock_threshold: 1 },
+          { name: "Cinnamon Roll", status: "active", category: "Pastry", price: 70.00, stock_quantity: 3, low_stock_threshold: 2 },
+          { name: "Sugar Cookie", status: "active", category: "Pastry", price: 60.00, stock_quantity: 5, low_stock_threshold: 3 },
+          { name: "Brownie", status: "active", category: "Pastry", price: 75.00, stock_quantity: 8, low_stock_threshold: 2 },
+          
+          // Cakes - ONLY these two should be out of stock
+          { name: "Chocolate Cake", status: "active", category: "Cake", price: 200.00, stock_quantity: 2, low_stock_threshold: 1 },
+          { name: "Cheesecake", status: "active", category: "Cake", price: 220.00, stock_quantity: 1, low_stock_threshold: 1 },
+          { name: "Carrot Cake", status: "active", category: "Cake", price: 190.00, stock_quantity: 3, low_stock_threshold: 1 },
+          { name: "Black Forest Cake", status: "inactive", category: "Cake", price: 210.00, stock_quantity: 0, low_stock_threshold: 1 }, // OUT OF STOCK
+          { name: "Red Velvet Cake", status: "inactive", category: "Cake", price: 215.00, stock_quantity: 0, low_stock_threshold: 1 } // OUT OF STOCK
+        ];
+        localStorage.setItem('products', JSON.stringify(products));
+        console.log("Test products saved with stock quantities:", products);
+        setTimeout(() => window.location.reload(), 500);
+      };
+        window.clearInventory = function() {
+        localStorage.removeItem('products');
+        console.log("Inventory cleared");
+        setTimeout(() => window.location.reload(), 500);
+      };
+      
+      window.clearAll = function() {
+        // Clear all localStorage
+        localStorage.clear();
+        // Remove any existing out-of-stock classes
+        document.querySelectorAll('.food-item').forEach(item => {
+          item.classList.remove('out-of-stock');
+        });
+        console.log("All localStorage cleared and out-of-stock classes removed");
+        setTimeout(() => window.location.reload(), 500);
+      };
+      
+      window.refreshAvailability = function() {
+        console.log("Manually refreshing availability...");
+        if (typeof updateProductAvailability === 'function') {
+          updateProductAvailability();
+        } else {
+          console.error("updateProductAvailability function not found");
+        }
+      };
+    
+  </script>
+  
   <style>
     .queue-number {
       font-size: 24px;
@@ -62,6 +200,23 @@
     .addon-option input[type="checkbox"]:checked + span {
       color: #4A2C1B;
       font-weight: bold;
+    }
+    
+    /* Footer z-index fix */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100; /* Lower z-index so modals appear above */
+    }
+    
+    /* Ensure all modals have higher z-index than footer */
+    .addons-modal,
+    .view-order-modal,
+    .thank-you-modal,
+    .notification-modal {
+      z-index: 1000 !important;
     }
   </style>
 </head>
@@ -522,7 +677,7 @@
     </div>
 
     <!-- View Order Modal -->
-    <div class="view-order-modal" id="viewOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="view-order-modal" id="viewOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #4A2C1B; padding-bottom: 15px;">
                 <h2 style="color: #4A2C1B; margin: 0;">Order Details</h2>
@@ -544,7 +699,7 @@
     </div>
 
     <!-- Thank You Modal -->
-    <div class="thank-you-modal" id="thankYouModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="thank-you-modal" id="thankYouModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%; text-align: center;">
             <div class="modal-header" style="margin-bottom: 20px;">
                 <h2 style="color: #4A2C1B; margin: 0;">Thank You For Your Order!</h2>
@@ -564,7 +719,7 @@
     </div>
 
     <!-- Order Type Selection Modal -->
-    <div class="notification-modal" id="orderTypeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="notification-modal" id="orderTypeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: #4A2C1B; margin: 0;">Order Type Required</h2>
@@ -582,7 +737,7 @@
     </div>
 
     <!-- Confirmation Modal (for removing items) -->
-    <div class="notification-modal" id="confirmationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="notification-modal" id="confirmationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
             <div class="modal-header" style="margin-bottom: 20px;">
                 <h2 id="confirmationTitle" style="color: #4A2C1B; margin: 0;">Remove Item?</h2>
@@ -599,7 +754,7 @@
     </div>
 
     <!-- Empty Order Modal -->
-    <div class="notification-modal" id="emptyOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="notification-modal" id="emptyOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; justify-content: center; align-items: center;">
         <div class="modal-content" style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: #4A2C1B; margin: 0;">Empty Order</h2>

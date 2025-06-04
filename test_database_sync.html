@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Database Sync Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .active { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .inactive { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .low { background-color: #fff3cd; border: 1px solid #ffeaa7; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Database Sync Test</h1>
+    
+    <button onclick="testDatabaseSync()">Test Database Sync</button>
+    <button onclick="testProductAvailability()">Test Product Availability Function</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testDatabaseSync() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Testing Database Sync...</h2>';
+            
+            try {
+                console.log("🌐 Fetching products from database API...");
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log("🔗 Database API response:", result);
+                
+                if (result.status === 'success' && Array.isArray(result.data)) {
+                    let html = '<h2>✅ Database Sync Successful</h2>';
+                    html += `<p>Found ${result.data.length} products in database</p>`;
+                    
+                    // Check specific products we care about
+                    const cappuccino = result.data.find(p => p.name.toLowerCase() === 'cappuccino');
+                    const espresso = result.data.find(p => p.name.toLowerCase() === 'espresso');
+                    const americano = result.data.find(p => p.name.toLowerCase() === 'americano');
+                    
+                    html += '<h3>Key Product Status:</h3>';
+                    
+                    if (cappuccino) {
+                        html += `<div class="status ${cappuccino.status}">
+                            <strong>Cappuccino:</strong> Status = ${cappuccino.status}, Stock = ${cappuccino.stock_quantity}
+                        </div>`;
+                    }
+                    
+                    if (espresso) {
+                        html += `<div class="status ${espresso.status}">
+                            <strong>Espresso:</strong> Status = ${espresso.status}, Stock = ${espresso.stock_quantity}
+                        </div>`;
+                    }
+                    
+                    if (americano) {
+                        html += `<div class="status ${americano.status}">
+                            <strong>Americano:</strong> Status = ${americano.status}, Stock = ${americano.stock_quantity}
+                        </div>`;
+                    }
+                    
+                    // Show all inactive products
+                    const inactiveProducts = result.data.filter(p => p.status === 'inactive');
+                    if (inactiveProducts.length > 0) {
+                        html += '<h3>🚫 Inactive Products (Should Show Out-of-Stock):</h3>';
+                        inactiveProducts.forEach(product => {
+                            html += `<div class="status inactive">
+                                <strong>${product.name}:</strong> Status = ${product.status}, Stock = ${product.stock_quantity}
+                            </div>`;
+                        });
+                    }
+                    
+                    // Show all low stock products
+                    const lowProducts = result.data.filter(p => p.status === 'low');
+                    if (lowProducts.length > 0) {
+                        html += '<h3>⚠️ Low Stock Products:</h3>';
+                        lowProducts.forEach(product => {
+                            html += `<div class="status low">
+                                <strong>${product.name}:</strong> Status = ${product.status}, Stock = ${product.stock_quantity}
+                            </div>`;
+                        });
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    throw new Error('Invalid response format from products API');
+                }
+                
+            } catch (error) {
+                console.error("❌ Error fetching products from database:", error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h2>❌ Database Sync Failed</h2>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testProductAvailability() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Testing Product Availability Function...</h2>';
+            
+            try {
+                // This simulates the updateProductAvailability function from menuinterface.js
+                console.log("=== CHECKING PRODUCT AVAILABILITY (DATABASE SYNC) ===");
+                
+                // Fetch real product data from the database API
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                const products = result.data;
+                
+                console.log(`Found ${products.length} products from database:`, products);
+                
+                const productStatuses = {};
+                products.forEach(product => {
+                    const key = product.name.toLowerCase().trim();
+                    productStatuses[key] = product.status;
+                    console.log(`📦 Product: "${product.name}" -> Status: ${product.status}`);
+                });
+                
+                console.log("Product status map from database:", productStatuses);
+                
+                let html = '<h2>✅ Product Availability Test Complete</h2>';
+                html += '<h3>Product Status Mapping:</h3>';
+                html += '<pre>' + JSON.stringify(productStatuses, null, 2) + '</pre>';
+                
+                // Test specific products
+                html += '<h3>Status Check Results:</h3>';
+                
+                const testProducts = ['cappuccino', 'espresso', 'americano', 'latte'];
+                testProducts.forEach(productName => {
+                    const status = productStatuses[productName];
+                    html += `<div class="status ${status || 'error'}">
+                        <strong>${productName}:</strong> ${status || 'NOT FOUND'} 
+                        ${status === 'inactive' ? '(Should show OUT OF STOCK overlay)' : ''}
+                    </div>`;
+                });
+                
+                resultsDiv.innerHTML = html;
+                console.log("=== PRODUCT AVAILABILITY CHECK COMPLETE ===");
+                
+            } catch (error) {
+                console.error("Failed to test product availability:", error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h2>❌ Product Availability Test Failed</h2>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -300,15 +300,16 @@ class ProductModel extends BaseModel {    public function __construct() {
                     'message' => 'Valid stock quantity is required'
                 ];
             }
-            
-            $stockQuantity = (int)$data['stock_quantity'];
+              $stockQuantity = (int)$data['stock_quantity'];
             $reason = isset($data['reason']) ? $data['reason'] : 'ADJUSTMENT';
             $notes = isset($data['notes']) ? $data['notes'] : '';
             $updatedBy = isset($data['updated_by']) ? $data['updated_by'] : 1;
             
-            // Start transaction
-            $this->conn->beginTransaction();
-            $transactionStarted = true;
+            // Start transaction only if one is not already active
+            if (!$this->conn->inTransaction()) {
+                $this->conn->beginTransaction();
+                $transactionStarted = true;
+            }
             
             // First, check if the product exists and get current stock
             $checkQuery = "SELECT stock_quantity, low_stock_threshold FROM {$this->table} WHERE id = :id";
@@ -381,12 +382,14 @@ class ProductModel extends BaseModel {    public function __construct() {
                     $historyStmt->execute();
                 } catch (PDOException $historyError) {
                     // Log the error but continue - stock update is more important than history
-                    error_log("Failed to record stock history: " . $historyError->getMessage());
-                }
+                    error_log("Failed to record stock history: " . $historyError->getMessage());                }
             }
             
-            $this->conn->commit();
-            $transactionStarted = false;
+            // Only commit if this method started the transaction
+            if ($transactionStarted) {
+                $this->conn->commit();
+                $transactionStarted = false;
+            }
             
             return [
                 'status' => 'success',

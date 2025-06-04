@@ -311,29 +311,12 @@ class OrderModel extends BaseModel {
     }    public function updateOrder($id, $data) {
         try {
             $this->conn->beginTransaction();
-            
-            // Handle simple status update (from receipt printing)
+              // Handle simple status update (from receipt printing)
             if (isset($data['status']) && count($data) == 2 && isset($data['id'])) {
-                // This is a simple status update
-                $query = "UPDATE {$this->table} SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindValue(':status', $data['status']);
-                $stmt->bindValue(':id', $id);
-                $stmt->execute();
-                
-                if ($stmt->rowCount() > 0) {
-                    $this->conn->commit();
-                    return [
-                        'status' => 'success',
-                        'message' => 'Order status updated successfully'
-                    ];
-                } else {
-                    $this->conn->rollBack();
-                    return [
-                        'status' => 'error',
-                        'message' => 'Order not found or no changes made'
-                    ];
-                }
+                // This is a simple status update - use the updateStatus method for consistency
+                // and to ensure inventory deduction happens when status changes to 'completed'
+                $this->conn->rollBack(); // Rollback the transaction started here
+                return $this->updateStatus($id, $data['status']);
             }
             
             // Handle complete order update from cashier interface
@@ -443,19 +426,66 @@ class OrderModel extends BaseModel {
     // Add a dedicated method for status updates
     public function updateStatus($id, $status) {
         try {
+            // Begin transaction to ensure atomicity
+            $this->conn->beginTransaction();
+            
+            // Check if this is a status change to 'completed' to trigger inventory deduction
+            $needsInventoryDeduction = false;
+            if ($status === 'completed') {
+                // Get current order status
+                $currentStatusQuery = "SELECT status FROM {$this->table} WHERE id = :id";
+                $currentStmt = $this->conn->prepare($currentStatusQuery);
+                $currentStmt->bindValue(':id', $id);
+                $currentStmt->execute();
+                $currentStatus = $currentStmt->fetchColumn();
+                
+                // Only deduct inventory if status is changing to completed (not already completed)
+                if ($currentStatus && $currentStatus !== 'completed') {
+                    $needsInventoryDeduction = true;
+                }
+            }
+            
             $query = "UPDATE {$this->table} SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':status', $status);
             $stmt->bindValue(':id', $id);
             $stmt->execute();
-            
-            if ($stmt->rowCount() > 0) {
+              if ($stmt->rowCount() > 0) {
+                // If status changed to completed, attempt to deduct inventory
+                $inventoryDeducted = false;
+                if ($needsInventoryDeduction) {
+                    $inventoryResult = $this->deductInventoryForOrder($id);
+                    if ($inventoryResult['status'] === 'success') {
+                        $inventoryDeducted = true;
+                        error_log("Inventory successfully deducted for order {$id}");
+                    } else {
+                        // Log the inventory failure but don't fail the entire operation
+                        // This allows legacy orders or orders with inventory issues to still be completed
+                        error_log("Inventory deduction failed for order {$id}: " . $inventoryResult['message']);
+                        error_log("Order status will still be updated to completed despite inventory issue");
+                    }
+                }
+                
+                $this->conn->commit();
+                
+                $responseMessage = 'Order status updated successfully';
+                if ($inventoryDeducted) {
+                    $responseMessage .= ' and inventory deducted';
+                } elseif ($needsInventoryDeduction) {
+                    $responseMessage .= ' (inventory deduction skipped due to errors)';
+                }
+                
                 return [
                     'status' => 'success',
-                    'message' => 'Order status updated successfully',
-                    'data' => ['id' => $id, 'new_status' => $status]
+                    'message' => $responseMessage,
+                    'data' => [
+                        'id' => $id, 
+                        'new_status' => $status,
+                        'inventory_deducted' => $inventoryDeducted
+                    ]
                 ];
             } else {
+                $this->conn->rollBack();
                 return [
                     'status' => 'error',
                     'message' => 'Order not found or no changes made'
@@ -463,6 +493,9 @@ class OrderModel extends BaseModel {
             }
             
         } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
             error_log("Update order status error: " . $e->getMessage());
             return [
                 'status' => 'error',
@@ -471,47 +504,156 @@ class OrderModel extends BaseModel {
         }
     }
 
-    public function deleteOrder($id) {
+    /**
+     * Deduct inventory quantities for all items in an order
+     * @param int $orderId The ID of the order
+     * @return array Result of the inventory deduction process
+     */
+    private function deductInventoryForOrder($orderId) {
         try {
-            $this->conn->beginTransaction();
+            // Get ProductModel instance for inventory operations
+            require_once 'ProductModel.php';
+            $productModel = new ProductModel();
             
-            // Delete order items first (due to foreign key constraint)
-            $query = "DELETE FROM order_items WHERE order_id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindValue(':id', $id);
-            $stmt->execute();
+            // Get order items
+            $itemsQuery = "SELECT product_name, quantity FROM order_items WHERE order_id = :order_id";
+            $itemsStmt = $this->conn->prepare($itemsQuery);
+            $itemsStmt->bindValue(':order_id', $orderId);
+            $itemsStmt->execute();
+            $orderItems = $itemsStmt->fetchAll();
             
-            // Delete order
-            $query = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindValue(':id', $id);
-            $stmt->execute();
-            
-            if ($stmt->rowCount() > 0) {
-                $this->conn->commit();
-                return [
-                    'status' => 'success',
-                    'message' => 'Order deleted successfully'
-                ];
-            } else {
-                $this->conn->rollBack();
+            if (empty($orderItems)) {
                 return [
                     'status' => 'error',
-                    'message' => 'Order not found'
+                    'message' => 'No items found for order'
+                ];
+            }
+            
+            $deductionResults = [];
+            $successCount = 0;
+            $errorCount = 0;
+            
+            // Process each item
+            foreach ($orderItems as $item) {
+                $productName = $item['product_name'];
+                $quantity = (int)$item['quantity'];
+                
+                // Get product ID by name
+                $productId = $this->getProductIdByName($productName);
+                
+                if (!$productId) {
+                    $errorCount++;
+                    $deductionResults[] = [
+                        'product_name' => $productName,
+                        'quantity' => $quantity,
+                        'status' => 'error',
+                        'message' => 'Product not found in inventory'
+                    ];
+                    error_log("Inventory deduction: Product '{$productName}' not found");
+                    continue;
+                }
+                
+                // Get current stock quantity
+                $stockQuery = "SELECT stock_quantity FROM products WHERE id = :id";
+                $stockStmt = $this->conn->prepare($stockQuery);
+                $stockStmt->bindValue(':id', $productId);
+                $stockStmt->execute();
+                $currentStock = $stockStmt->fetchColumn();
+                
+                if ($currentStock === false) {
+                    $errorCount++;
+                    $deductionResults[] = [
+                        'product_name' => $productName,
+                        'quantity' => $quantity,
+                        'status' => 'error',
+                        'message' => 'Could not retrieve current stock'
+                    ];
+                    continue;
+                }
+                
+                $currentStock = (int)$currentStock;
+                $newStock = max(0, $currentStock - $quantity); // Ensure stock doesn't go negative
+                
+                // Update stock using ProductModel's updateStock method
+                $stockUpdateData = [
+                    'stock_quantity' => $newStock,
+                    'reason' => 'SOLD',
+                    'notes' => "Order #{$orderId} completed - deducted {$quantity} units",
+                    'updated_by' => 1 // System/auto deduction
+                ];
+                
+                $updateResult = $productModel->updateStock($productId, $stockUpdateData);
+                
+                if ($updateResult['status'] === 'success') {
+                    $successCount++;
+                    $deductionResults[] = [
+                        'product_name' => $productName,
+                        'product_id' => $productId,
+                        'quantity_deducted' => $quantity,
+                        'old_stock' => $currentStock,
+                        'new_stock' => $newStock,
+                        'status' => 'success'
+                    ];
+                    error_log("Inventory deduction: {$productName} (ID: {$productId}) - deducted {$quantity}, stock: {$currentStock} → {$newStock}");
+                } else {
+                    $errorCount++;
+                    $deductionResults[] = [
+                        'product_name' => $productName,
+                        'product_id' => $productId,
+                        'quantity' => $quantity,
+                        'status' => 'error',
+                        'message' => $updateResult['message']
+                    ];
+                    error_log("Inventory deduction failed: {$productName} - " . $updateResult['message']);
+                }
+            }
+            
+            // Determine overall result
+            if ($errorCount === 0) {
+                return [
+                    'status' => 'success',
+                    'message' => "Successfully deducted inventory for {$successCount} items",
+                    'details' => $deductionResults,
+                    'summary' => [
+                        'total_items' => count($orderItems),
+                        'successful_deductions' => $successCount,
+                        'failed_deductions' => $errorCount
+                    ]
+                ];
+            } else if ($successCount > 0) {
+                return [
+                    'status' => 'partial_success',
+                    'message' => "Partial success: {$successCount} items deducted, {$errorCount} failed",
+                    'details' => $deductionResults,
+                    'summary' => [
+                        'total_items' => count($orderItems),
+                        'successful_deductions' => $successCount,
+                        'failed_deductions' => $errorCount
+                    ]
+                ];
+            } else {
+                return [
+                    'status' => 'error',
+                    'message' => "Failed to deduct inventory for all {$errorCount} items",
+                    'details' => $deductionResults,
+                    'summary' => [
+                        'total_items' => count($orderItems),
+                        'successful_deductions' => $successCount,
+                        'failed_deductions' => $errorCount
+                    ]
                 ];
             }
             
         } catch (Exception $e) {
-            if ($this->conn->inTransaction()) {
-                $this->conn->rollBack();
-            }
-            error_log("Delete order error: " . $e->getMessage());
+            error_log("Inventory deduction error for order {$orderId}: " . $e->getMessage());
             return [
                 'status' => 'error',
-                'message' => 'Failed to delete order: ' . $e->getMessage()
+                'message' => 'Failed to deduct inventory: ' . $e->getMessage()
             ];
         }
-    }    /**
+    }
+
+    /**
      * Auto-cancel pending orders that are older than the current date
      * @return array Result of the auto-cancellation process
      */    public function autoCancelOldPendingOrders() {
@@ -606,11 +748,9 @@ class OrderModel extends BaseModel {
                 'message' => 'Failed to auto-cancel old orders: ' . $e->getMessage()
             ];
         }
-    }
-
-    private function getProductIdByName($productName) {
+    }    private function getProductIdByName($productName) {
         try {
-            $query = "SELECT id FROM products WHERE name = :name AND status = 'active'";
+            $query = "SELECT id FROM products WHERE name = :name AND status != 'inactive' AND status != 'deleted'";
             $stmt = $this->conn->prepare($query);
             $stmt->bindValue(':name', $productName);
             $stmt->execute();
@@ -621,6 +761,15 @@ class OrderModel extends BaseModel {
             error_log("Error getting product ID by name: " . $e->getMessage());
             return null;
         }
+    }
+    
+    /**
+     * Public wrapper for getProductIdByName for testing purposes
+     * @param string $productName Name of the product
+     * @return int|null Product ID or null if not found
+     */
+    public function getProductIdByNamePublic($productName) {
+        return $this->getProductIdByName($productName);
     }
 }
 ?>

@@ -302,15 +302,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate data is an array
         if (!data || !Array.isArray(data) || data.length === 0) {
-            console.log('No valid data available for timeframe:', timeframe, 'Using fallback data');
-            // Use fallback data if no real data available
-            const fallbackData = [60, 80, 40, 70, 90, 55, 75];
-            bars.forEach((bar, index) => {
-                if (fallbackData[index] !== undefined) {
-                    bar.style.height = `${fallbackData[index]}%`;
-                    bar.style.transition = 'height 0.5s ease';
-                }
-            });
+            console.log('No valid data available for timeframe:', timeframe, 'Using fallback data');        // Use fallback data if no real data available
+        const fallbackData = [60, 80, 40, 70, 90, 55, 75];
+        const fallbackAmounts = [15000, 25000, 12000, 20000, 30000, 18000, 22000];
+        bars.forEach((bar, index) => {
+            if (fallbackData[index] !== undefined) {
+                bar.style.height = `${fallbackData[index]}%`;
+                bar.style.transition = 'height 0.5s ease';
+                bar.setAttribute('data-value', `₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+                bar.setAttribute('title', `Demo data: ₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+            }
+        });
             return;
         }
         

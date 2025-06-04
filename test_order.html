@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Order Submission</title>
+</head>
+<body>
+    <h1>Test Order Submission</h1>
+    <button onclick="testOrder()">Test Order Submission</button>
+    <div id="result"></div>
+
+    <script>
+        async function testOrder() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing order submission...';
+            
+            try {
+                // Test order data - simulating items from the menu
+                const testOrderItems = [
+                    {
+                        name: "Espresso",
+                        quantity: 2,
+                        price: 120.00,
+                        total: 240.00,
+                        addons: []
+                    },
+                    {
+                        name: "Americano", 
+                        quantity: 1,
+                        price: 130.00,
+                        total: 130.00,
+                        addons: []
+                    }
+                ];
+                
+                console.log('🔄 Starting order submission process...');
+                console.log('Order items received:', testOrderItems);
+                
+                // Step 1: Fetch all products from database to get product IDs
+                const productsResponse = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/products.php', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!productsResponse.ok) {
+                    throw new Error(`Failed to fetch products: ${productsResponse.status}`);
+                }
+                
+                const productsResult = await productsResponse.json();
+                console.log('📦 Products API response:', productsResult);
+                
+                if (productsResult.status !== 'success' || !Array.isArray(productsResult.data)) {
+                    throw new Error('Invalid products API response');
+                }
+                
+                const products = productsResult.data;
+                
+                // Step 2: Create a mapping of product names to IDs
+                const productMap = {};
+                products.forEach(product => {
+                    const nameKey = product.name.toLowerCase().trim();
+                    productMap[nameKey] = {
+                        id: product.id,
+                        name: product.name,
+                        price: parseFloat(product.price)
+                    };
+                    console.log(`📋 Mapped: "${nameKey}" -> ID: ${product.id}`);
+                });
+                
+                console.log('🗺️ Product mapping created:', productMap);
+                
+                // Step 3: Map order items to include product IDs
+                const mappedItems = [];
+                for (const item of testOrderItems) {
+                    const itemNameKey = item.name.toLowerCase().trim();
+                    const product = productMap[itemNameKey];
+                    
+                    if (!product) {
+                        console.error(`❌ Product not found in database: "${item.name}" (key: "${itemNameKey}")`);
+                        console.log('Available products:', Object.keys(productMap));
+                        throw new Error(`Product "${item.name}" not found in database`);
+                    }
+                    
+                    const mappedItem = {
+                        product_name: product.name, // Use exact name from database
+                        product_id: product.id,     // Include resolved product ID
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        total_price: item.total,
+                        addons: item.addons || []
+                    };
+                    
+                    mappedItems.push(mappedItem);
+                    console.log(`✅ Mapped item: "${item.name}" -> ID: ${product.id}, Price: ₱${item.price}`);
+                }
+                
+                // Step 4: Prepare order data for backend
+                const orderData = {
+                    order_type: "dine-in",
+                    customer_name: null,
+                    items: mappedItems
+                };
+                
+                console.log('📤 Submitting order to database:', orderData);
+                
+                // Step 5: Submit to backend API
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error Response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('📥 Backend response:', result);
+                
+                if (result.status === 'success') {
+                    console.log('✅ Order submitted successfully!');
+                    resultDiv.innerHTML = `
+                        <h2>✅ Order Successful!</h2>
+                        <p><strong>Order Number:</strong> ${result.data.order_number}</p>
+                        <p><strong>Order ID:</strong> ${result.data.id}</p>
+                        <p><strong>Total Amount:</strong> ₱${result.data.total_amount}</p>
+                        <p>Check the console for detailed logs.</p>
+                    `;
+                } else {
+                    throw new Error(result.message || 'Unknown error occurred');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error submitting order:', error);
+                resultDiv.innerHTML = `
+                    <h2>❌ Order Failed</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Check the console for detailed logs.</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

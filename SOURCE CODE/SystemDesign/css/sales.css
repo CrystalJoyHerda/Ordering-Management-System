@@ -242,11 +242,12 @@
     left: 95px;
     right: 25px;
     top: 25px;
-    height: calc(100% - 80px);
+    height: calc(100% - 110px); /* Adjusted height to accommodate value labels */
     display: flex;
     align-items: flex-end;
     gap: 0;
     padding: 0 15px;
+    padding-top: 30px; /* Add padding to accommodate value labels */
 }
 
 .bar {
@@ -256,6 +257,33 @@
     background: linear-gradient(to top, #67503b, #a67c52);
     border-radius: 6px 6px 0 0;
     transform-origin: bottom;
+    position: relative;
+}
+
+/* Show bar value labels on hover or when data is present */
+.bar:hover::after,
+.bar[data-value]:not([data-value="₱0"])::after {
+    opacity: 1;
+}
+
+/* Bar value label positioned at the top of each bar */
+.bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #67503b;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 /* Products Table */
@@ -300,7 +328,7 @@
 
 /* Chart Labels and Description */
 .chart-placeholder {
-    height: 400px;
+    height: 450px; /* Increased height to accommodate value labels */
     position: relative;
     padding: 30px;
     background-color: #faf7f2;

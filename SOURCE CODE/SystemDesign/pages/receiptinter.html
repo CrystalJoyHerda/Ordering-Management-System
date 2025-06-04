@@ -151,8 +151,7 @@
                     status: status
                 };
                   console.log('📤 Request body:', JSON.stringify(requestBody));
-                console.log('🌐 Making API call to update order status...');
-                  const response = await fetch('http://localhost:3000/SOURCE%20CODE/Employee/public/api/orders.php', {
+                console.log('🌐 Making API call to update order status...');                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

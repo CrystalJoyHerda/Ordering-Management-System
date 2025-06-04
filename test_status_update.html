@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Status Update Test</title>
+</head>
+<body>
+    <h1>Order Status Update Test</h1>
+    <button onclick="testStatusUpdate()">Update Order 987 to Completed</button>
+    <button onclick="checkOrderStatus()">Check Order Status</button>
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        async function testStatusUpdate() {
+            try {
+                resultsDiv.innerHTML = '<p>Updating order status...</p>';
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: 90,
+                        status: 'completed'
+                    })
+                });
+
+                const result = await response.json();
+                resultsDiv.innerHTML += '<p>Update Response: ' + JSON.stringify(result, null, 2) + '</p>';
+                
+                // Check status after update
+                setTimeout(checkOrderStatus, 1000);
+                
+            } catch (error) {
+                resultsDiv.innerHTML += '<p>Error updating order: ' + error.message + '</p>';
+            }
+        }
+
+        async function checkOrderStatus() {
+            try {
+                resultsDiv.innerHTML += '<p>Checking order status...</p>';
+                
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php?order_number=987');
+                const result = await response.json();
+                
+                resultsDiv.innerHTML += '<p>Current Order Status: ' + JSON.stringify(result, null, 2) + '</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += '<p>Error checking order: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

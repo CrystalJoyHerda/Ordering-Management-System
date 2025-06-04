@@ -282,5 +282,29 @@
     <!-- Script reference for Live Server -->
     <script src="../js/rbac.js"></script>
     <script src="../js/inventory.js"></script>
+    
+    <!-- Add product status API script -->
+    <script>
+        // Function to get all product statuses - can be called by other pages
+        function getProductStatuses() {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const statusMap = {};
+            products.forEach(product => {
+                statusMap[product.name.toLowerCase()] = product.status;
+            });
+            return statusMap;
+        }
+        
+        // Function to check if a specific product is out of stock
+        function isProductOutOfStock(productName) {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
+            return product ? product.status === 'inactive' : false;
+        }
+        
+        // Store these functions globally
+        window.getProductStatuses = getProductStatuses;
+        window.isProductOutOfStock = isProductOutOfStock;
+    </script>
 </body>
 </html>
