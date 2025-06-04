@@ -1,7 +1,30 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded'); // Debug log
     loadOrderData();
     setupCashInputHandler();
+    updateDateTime();
+    setInterval(updateDateTime, 1000); // Update every second
 });
+
+function updateDateTime() {
+    const now = new Date();
+    
+    // Format: 6/4/2025 6:39:42 PM
+    const formattedDateTime = now.toLocaleString('en-US', {
+        month: 'numeric',
+        day: 'numeric', 
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    
+    const datetimeElement = document.getElementById('datetime');
+    if (datetimeElement) {
+        datetimeElement.textContent = formattedDateTime;
+    }
+}
 
 function loadOrderData() {
     const orderData = JSON.parse(localStorage.getItem('currentOrder'));
@@ -40,9 +63,17 @@ function loadOrderData() {
 }
 
 function setupCashInputHandler() {
+    console.log('Setting up cash input handler'); // Debug log
+    
     const cashInput = document.getElementById('cashInput');
     const changeAmount = document.getElementById('changeAmount');
     const totalAmount = document.getElementById('totalAmount');
+
+    console.log('Elements found:', {
+        cashInput: !!cashInput,
+        changeAmount: !!changeAmount,
+        totalAmount: !!totalAmount
+    }); // Debug log
 
     if (cashInput && changeAmount && totalAmount) {
         cashInput.addEventListener('input', function() {
@@ -61,66 +92,149 @@ function setupCashInputHandler() {
             }
         });
 
-        // Add validation for print button
-        const printBtn = document.querySelector('.print-btn');
-        if (printBtn) {
-            printBtn.addEventListener('click', function(e) {
-                const cash = parseFloat(cashInput.value) || 0;
-                const total = parseFloat(totalAmount.textContent.replace('₱', '')) || 0;
+        // Wait a bit for DOM to be fully ready
+        setTimeout(() => {
+            const printBtn = document.querySelector('.print-btn');
+            console.log('Print button found:', printBtn); // Debug log
+            
+            if (printBtn) {
+                // Clear any existing handlers
+                printBtn.replaceWith(printBtn.cloneNode(true));
+                const newPrintBtn = document.querySelector('.print-btn');
                 
-                if (cash < total) {
+                newPrintBtn.addEventListener('click', function(e) {
+                    console.log('=== Print button clicked ==='); // Debug log
                     e.preventDefault();
-                    alert('Please enter sufficient cash amount.');
-                    return;
-                }
+                    e.stopPropagation();
+                    
+                    const cashValue = cashInput.value.trim();
+                    const cash = parseFloat(cashValue);
+                    const total = parseFloat(totalAmount.textContent.replace('₱', '')) || 0;
+                    
+                    console.log('Validation data:', {
+                        cashValue: cashValue,
+                        cash: cash,
+                        total: total,
+                        isValidCash: !isNaN(cash) && cash > 0,
+                        isSufficient: cash >= total
+                    }); // Debug log
+                    
+                    // Check if cash input is empty or invalid
+                    if (!cashValue || isNaN(cash) || cash <= 0) {
+                        console.log('Validation failed: Invalid cash input');
+                        showInputAmountModal();
+                        return;
+                    }
+                    
+                    // Check if cash amount is less than total
+                    if (cash < total) {
+                        console.log('Validation failed: Insufficient cash');
+                        showInvalidAmountModal();
+                        return;
+                    }
+                    
+                    // All validations passed
+                    console.log('All validations passed, proceeding to receipt');
+                    proceedToReceipt();
+                });
                 
-                if (cash === 0) {
-                    e.preventDefault();
-                    alert('Please enter cash amount.');
-                    return;
-                }
-                
-                handlePrint();
-            });
-        }
+                console.log('Event listener attached successfully');
+            } else {
+                console.error('Print button still not found after timeout!');
+            }
+        }, 100);
+    } else {
+        console.error('Required elements not found!');
     }
 }
 
-function handlePrint() {
-    const orderData = JSON.parse(localStorage.getItem('currentOrder'));
-    const cashAmount = document.getElementById('cashInput').value;
-    const totalAmount = document.getElementById('totalAmount').textContent;
-    const changeAmount = document.getElementById('changeAmount').textContent;
-
-    // Validate cash input
-    if (!cashAmount || parseFloat(cashAmount) <= 0) {
-        alert('Please enter a valid cash amount');
-        return;
-    }
-
-    // Ensure we have an order ID for status updates
-    if (!orderData.orderId) {
-        console.error('❌ No order ID found in order data');
-        alert('Error: Order ID missing. Cannot process receipt.');
-        return;
-    }
-
-    // Create complete receipt data
-    const receiptData = {
-        ...orderData,
-        cash: `₱${parseFloat(cashAmount).toFixed(2)}`,
-        total: totalAmount,
-        change: changeAmount,
-        orderId: orderData.orderId
-    };
-
-    // Store receipt data for the receipt page
-    localStorage.setItem('receiptData', JSON.stringify(receiptData));
-    console.log('📋 Receipt data saved with Order ID:', receiptData.orderId);
+function proceedToReceipt() {
+    console.log('=== Proceeding to receipt ===');
     
-    // Navigate directly to receipt page without print dialog
-    window.location.href = 'receiptinter.html';
+    try {
+        const orderData = JSON.parse(localStorage.getItem('currentOrder'));
+        const cashAmount = document.getElementById('cashInput').value;
+        const totalAmount = document.getElementById('totalAmount').textContent;
+        const changeAmount = document.getElementById('changeAmount').textContent;
+
+        console.log('Order data:', orderData);
+        console.log('Payment data:', { cashAmount, totalAmount, changeAmount });
+
+        if (!orderData) {
+            console.error('No order data found');
+            showNoOrderDataModal();
+            return;
+        }
+
+        if (!orderData.orderId) {
+            console.error('No order ID found');
+            showMissingOrderIdModal();
+            return;
+        }
+
+        // Create receipt data
+        const receiptData = {
+            ...orderData,
+            cash: `₱${parseFloat(cashAmount).toFixed(2)}`,
+            total: totalAmount,
+            change: changeAmount,
+            orderId: orderData.orderId,
+            timestamp: new Date().toISOString()
+        };
+
+        console.log('Receipt data to save:', receiptData);
+
+        // Save receipt data
+        localStorage.setItem('receiptData', JSON.stringify(receiptData));
+        console.log('Receipt data saved successfully');
+
+        // Navigate to receipt page
+        console.log('Navigating to receiptinter.html');
+        window.location.href = 'receiptinter.html';
+        
+    } catch (error) {
+        console.error('Error in proceedToReceipt:', error);
+        alert('An error occurred while processing the receipt. Please try again.');
+    }
+}
+
+// Modal functions
+function showInputAmountModal() {
+    document.getElementById('inputAmountModal').classList.add('show');
+}
+
+function closeInputAmountModal() {
+    document.getElementById('inputAmountModal').classList.remove('show');
+}
+
+function showInvalidAmountModal() {
+    document.getElementById('invalidAmountModal').classList.add('show');
+}
+
+function closeInvalidAmountModal() {
+    document.getElementById('invalidAmountModal').classList.remove('show');
+}
+
+function showNoOrderDataModal() {
+    document.getElementById('noOrderDataModal').classList.add('show');
+}
+
+function closeNoOrderDataModal() {
+    document.getElementById('noOrderDataModal').classList.remove('show');
+    window.location.href = 'cashiering.html';
+}
+
+function showMissingOrderIdModal() {
+    document.getElementById('missingOrderIdModal').classList.add('show');
+}
+
+function closeMissingOrderIdModal() {
+    document.getElementById('missingOrderIdModal').classList.remove('show');
 }
 
 // Make functions globally accessible
-window.handlePrint = handlePrint;
+window.proceedToReceipt = proceedToReceipt;
+window.closeInputAmountModal = closeInputAmountModal;
+window.closeInvalidAmountModal = closeInvalidAmountModal;
+window.closeNoOrderDataModal = closeNoOrderDataModal;
+window.closeMissingOrderIdModal = closeMissingOrderIdModal;

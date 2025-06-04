@@ -50,6 +50,7 @@ body {
     background-color: #f0f0f0;
     padding: 8px 15px;
     border-radius: 20px;
+    text-align: center;
 }
 
 .employee-btn {
@@ -67,7 +68,7 @@ body {
     background-color: #ecebff;
     padding: 8px 15px;
     border-radius: 8px;
-    margin-bottom: 20px;
+    justify-content: center;
 }
 
 .queue-input input {
@@ -75,7 +76,7 @@ body {
     border: none;
     width: 100px;
     font-size: 14px;
-    text-align: left;
+    text-align: center;
 }
 
 .queue-section {

@@ -12,7 +12,7 @@
                 <img src="../assets/images/logo.png" alt="Logo">
             </div>
             <div class="header-center">
-                <div class="datetime">Tuesday, February 25, 2025 4:33pm</div>
+                <div class="datetime" id="datetime">Loading...</div>
                 <div class="queue-input">
                     <label>Queue Number :</label>
                     <input type="text" readonly>
@@ -54,7 +54,7 @@
                         <span id="changeAmount">₱0.00</span>
                     </div>
                 </div>
-                <button class="print-btn" onclick="handlePrint()">Print Receipt</button>
+                <button class="print-btn">Print Receipt</button>
             </div>
         </div>
     </div>
@@ -75,6 +75,94 @@
             </div>
             <div class="modal-footer">
                 <button class="ok-btn" onclick="closeInvalidCashModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Please Input Amount Modal -->
+    <div class="invalid-cash-modal" id="inputAmountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">⚠️</span>
+                    Input Required
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Please input an amount.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeInputAmountModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Please Enter Valid Amount Modal -->
+    <div class="invalid-cash-modal" id="invalidAmountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">💰</span>
+                    Invalid Amount
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Please enter valid amount.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeInvalidAmountModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Order Data Modal -->
+    <div class="invalid-cash-modal" id="noOrderDataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">📋</span>
+                    No Order Data
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    No order data found. Redirecting to cashiering page.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeNoOrderDataModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Missing Order ID Modal -->
+    <div class="invalid-cash-modal" id="missingOrderIdModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <span class="warning-icon">🆔</span>
+                    Order ID Missing
+                </h2>
+            </div>
+            <div class="modal-body">
+                <p class="error-message">
+                    Error: Order ID missing. Cannot process receipt.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="ok-btn" onclick="closeMissingOrderIdModal()">
                     OK
                 </button>
             </div>
