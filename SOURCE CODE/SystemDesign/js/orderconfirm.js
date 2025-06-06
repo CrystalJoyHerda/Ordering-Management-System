@@ -31,8 +31,7 @@ function loadOrderData() {
     console.log('Loading order data:', orderData);
     
     if (!orderData) {
-        alert('No order data found');
-        window.location.href = 'cashiering.html';
+        document.getElementById('noOrderDataModal').style.display = 'block';
         return;
     }
 
