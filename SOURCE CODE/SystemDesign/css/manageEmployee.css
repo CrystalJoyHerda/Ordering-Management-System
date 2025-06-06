@@ -220,6 +220,89 @@ body {
     background-color: #e0e0e0;
 }
 
+/* Action buttons styles */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-buttons .edit-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.action-buttons .delete-btn {
+    background-color: #f44336;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.action-buttons .edit-btn:hover {
+    background-color: #45a049;
+}
+
+.action-buttons .delete-btn:hover {
+    background-color: #da190b;
+}
+
+/* Table column adjustments for 2-column layout */
+.employee-table th:nth-child(1), 
+.employee-table td:nth-child(1) {
+    width: 70%;
+}
+
+.employee-table th:nth-child(2), 
+.employee-table td:nth-child(2) {
+    width: 30%;
+}
+
+/* Employee name clickable style */
+.employee-name {
+    color: #67503b;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.employee-name:hover {
+    color: #4a3422;
+}
+
+/* Contact and email styling */
+.employee-contact, .employee-email {
+    color: #666;
+    font-size: 14px;
+}
+
+.employee-role {
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* Form input styling improvements */
+input[type="tel"] {
+    background-color: #f9f9f9;
+}
+
+input[type="tel"]:focus {
+    background-color: white;
+    border-color: #67503b;
+    outline: none;
+    box-shadow: 0 0 5px rgba(103, 80, 59, 0.3);
+}
+
 /* Popup Styles */
 .popup-container {
     display: none;
@@ -348,8 +431,10 @@ body {
     border-radius: 8px;
     width: 500px;
     max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
+    height: auto;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -361,6 +446,7 @@ body {
     justify-content: space-between;
     align-items: center;
     border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -384,24 +470,34 @@ body {
 }
 
 .modal-form {
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.modal-form-content {
+    padding: 15px 20px;
+    overflow-y: visible;
+    flex: none;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: bold;
     color: #333;
+    font-size: 13px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
@@ -417,39 +513,61 @@ body {
 
 .form-actions {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    padding: 15px 20px;
+    border-top: 2px solid #f0f0f0;
+    background: linear-gradient(to bottom, #fafafa 0%, #f5f5f5 100%);
+    flex-shrink: 0;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .cancel-btn,
 .submit-btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    text-transform: none;
 }
 
 .cancel-btn {
     background-color: #6c757d;
     color: white;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
 }
 
 .cancel-btn:hover {
     background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+}
+
+.cancel-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
 }
 
 .submit-btn {
-    background-color: #8b5a3c;
+    background-color: #007bff;
     color: white;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
 .submit-btn:hover {
-    background-color: #6d4428;
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
 /* Notification Styles */
@@ -625,6 +743,118 @@ body {
 
 .cancel-logout:hover {
     background-color: #5a6268;
+}
+
+/* Employee name clickable styles */
+.employee-name {
+    cursor: pointer;
+    color: #8b5a3c;
+    text-decoration: underline;
+    transition: color 0.3s;
+}
+
+.employee-name:hover {
+    color: #6d4428;
+    font-weight: bold;
+}
+
+/* Employee Info Modal Styles */
+.employee-info-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.employee-info-content {
+    background: white;
+    padding: 0;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.employee-info-header {
+    background-color: #8b5a3c;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.employee-info-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.employee-info-body {
+    padding: 20px;
+}
+
+.info-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.info-group label {
+    font-weight: bold;
+    color: #333;
+    width: 120px; /* Reduced width since we removed status */
+    margin-right: 10px;
+}
+
+.info-group span {
+    color: #555;
+    flex: 1;
+}
+
+.employee-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.info-edit-btn,
+.info-delete-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.info-edit-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.info-edit-btn:hover {
+    background-color: #0056b3;
+}
+
+.info-delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.info-delete-btn:hover {
+    background-color: #c82333;
 }
 
 /* Responsive adjustments for smaller screens */

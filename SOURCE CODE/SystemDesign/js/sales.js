@@ -126,23 +126,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Weekly sales
+        // Monthly sales (now card index 1)
         if (cards[1]) {
-            const weeklyAmount = cards[1].querySelector('.amount');
-            const weeklyTrend = cards[1].querySelector('.trend');
-            const weeklyIcon = weeklyTrend.querySelector('i');
-            
-            weeklyAmount.textContent = `₱${Number(data.weekly.total).toLocaleString()}`;
-            weeklyTrend.textContent = `${data.weekly.change >= 0 ? '+' : ''}${data.weekly.change}% `;
-            weeklyTrend.className = `trend ${data.weekly.change >= 0 ? 'positive' : 'negative'}`;
-            weeklyIcon.className = `fas fa-arrow-${data.weekly.change >= 0 ? 'up' : 'down'}`;
-            weeklyTrend.appendChild(weeklyIcon);
-        }
-        
-        // Monthly sales
-        if (cards[2]) {
-            const monthlyAmount = cards[2].querySelector('.amount');
-            const monthlyTrend = cards[2].querySelector('.trend');
+            const monthlyAmount = cards[1].querySelector('.amount');
+            const monthlyTrend = cards[1].querySelector('.trend');
             const monthlyIcon = monthlyTrend.querySelector('i');
             
             monthlyAmount.textContent = `₱${Number(data.monthly.total).toLocaleString()}`;
@@ -435,7 +422,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${product.product_name || product.name || 'Unknown Product'}</td>
                 <td>${product.total_quantity || 0}</td>
                 <td>₱${Number(product.total_revenue || 0).toLocaleString()}</td>
-                <td><span class="trend ${product.trend >= 0 ? 'positive' : 'negative'}">${product.trend >= 0 ? '+' : ''}${product.trend || 0}%</span></td>
             `;
             tbody.appendChild(row);
         });
@@ -661,13 +647,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show fallback data when API fails
     function showFallbackData() {
         const cards = document.querySelectorAll('.overview-cards .card');
-        cards.forEach(card => {
+        cards.forEach((card, index) => {
             const amount = card.querySelector('.amount');
-            if (amount.textContent.includes('Today')) {
+            if (index === 0) { // Today's sales
                 amount.textContent = '₱1,250';
-            } else if (amount.textContent.includes('Weekly')) {
-                amount.textContent = '₱8,940';
-            } else if (amount.textContent.includes('Monthly')) {
+            } else if (index === 1) { // Monthly sales
                 amount.textContent = '₱32,460';
             }
         });

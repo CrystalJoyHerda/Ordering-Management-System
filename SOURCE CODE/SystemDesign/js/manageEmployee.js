@@ -87,40 +87,129 @@ function displayEmployees(employees) {
     tbody.innerHTML = '';
 
     if (!employees || employees.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No employees found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No employees found</td></tr>';
         return;
     }
 
     employees.forEach(emp => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${emp.emp_id}</td>
-            <td>${emp.name}</td>
-            <td>${emp.email || 'N/A'}</td>
-            <td>${emp.role}</td>
-            <td>Active</td>
             <td>
-                <button class="edit-btn" onclick="editEmployee(${emp.emp_id})">Edit</button>
-                <button class="delete-btn" onclick="deleteEmployee(${emp.emp_id})">Delete</button>
+                <span class="employee-name" onclick="showEmployeeInfo(${emp.emp_id})">${emp.name}</span>
+            </td>
+            <td>
+                <span class="employee-role">${emp.role || 'N/A'}</span>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
 
+async function showEmployeeInfo(empId) {
+    try {
+        const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/employee.php?id=${empId}`);
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            displayEmployeeInfoModal(result.data);
+        } else {
+            showNotification('Error loading employee data: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error fetching employee:', error);
+        showNotification('Failed to load employee data', 'error');
+    }
+}
+
+function displayEmployeeInfoModal(employee) {
+    const modal = document.createElement('div');
+    modal.className = 'employee-info-modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="employee-info-content">
+            <div class="employee-info-header">
+                <h2>Employee Information</h2>
+                <span class="close" onclick="closeEmployeeInfoModal(this)">&times;</span>
+            </div>
+            <div class="employee-info-body">
+                <div class="info-group">
+                    <label>Employee ID:</label>
+                    <span>${employee.emp_id}</span>
+                </div>
+                <div class="info-group">
+                    <label>Name:</label>
+                    <span>${employee.name}</span>
+                </div>
+                <div class="info-group">
+                    <label>Email:</label>
+                    <span>${employee.email || 'Not provided'}</span>
+                </div>
+                <div class="info-group">
+                    <label>Role:</label>
+                    <span>${employee.role}</span>
+                </div>
+                <div class="info-group">
+                    <label>Contact Number:</label>
+                    <span>${employee.contact_number || 'Not provided'}</span>
+                </div>
+                <div class="info-group">
+                    <label>Address:</label>
+                    <span>${employee.address || 'Not provided'}</span>
+                </div>
+                <div class="employee-actions">
+                    <button class="info-edit-btn" onclick="editEmployeeFromInfo(${employee.emp_id})">Edit Employee</button>
+                    <button class="info-delete-btn" onclick="deleteEmployeeFromInfo(${employee.emp_id})">Delete Employee</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeEmployeeInfoModal(element) {
+    const modal = element.closest('.employee-info-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function editEmployeeFromInfo(empId) {
+    // Close the info modal first
+    const infoModal = document.querySelector('.employee-info-modal');
+    if (infoModal) {
+        infoModal.remove();
+    }
+    // Then open the edit modal
+    editEmployee(empId);
+}
+
+function deleteEmployeeFromInfo(empId) {
+    // Close the info modal first
+    const infoModal = document.querySelector('.employee-info-modal');
+    if (infoModal) {
+        infoModal.remove();
+    }
+    // Then proceed with delete
+    deleteEmployee(empId);
+}
+
 function filterEmployees(searchTerm) {
     const rows = document.querySelectorAll('#employeeTableBody tr');
     
     rows.forEach(row => {
-        const name = row.cells[1]?.textContent.toLowerCase() || '';
-        const email = row.cells[2]?.textContent.toLowerCase() || '';
-        const role = row.cells[3]?.textContent.toLowerCase() || '';
+        const nameCell = row.querySelector('.employee-name');
+        const roleCell = row.querySelector('.employee-role');
         
-        const matches = name.includes(searchTerm.toLowerCase()) || 
-                       email.includes(searchTerm.toLowerCase()) ||
-                       role.includes(searchTerm.toLowerCase());
-        
-        row.style.display = matches ? '' : 'none';
+        if (nameCell && roleCell) {
+            const name = nameCell.textContent.toLowerCase();
+            const role = roleCell.textContent.toLowerCase();
+            
+            const matches = name.includes(searchTerm.toLowerCase()) ||
+                          role.includes(searchTerm.toLowerCase());
+            
+            row.style.display = matches ? '' : 'none';
+        }
     });
 }
 
@@ -188,31 +277,47 @@ function createEmployeeModal(title, employee = {}) {
                 <h2>${title}</h2>
                 <span class="close" onclick="closeModal(this)">&times;</span>
             </div>
-            <form class="modal-form" onsubmit="handleEmployeeSubmit(event, ${employee.emp_id || 'null'})">                <div class="form-group">
-                    <label for="employeeName">Name*</label>
-                    <input type="text" id="employeeName" name="name" value="${employee.name || ''}" required autocomplete="off">
+            <form class="modal-form" onsubmit="handleEmployeeSubmit(event, ${employee.emp_id || 'null'})">
+                <div class="modal-form-content">
+                    <div class="form-group">
+                        <label for="employeeName">Name*</label>
+                        <input type="text" id="employeeName" name="name" value="${employee.name || ''}" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeEmail">Email</label>
+                        <input type="email" id="employeeEmail" name="email" value="${employee.email || ''}" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeRole">Role*</label>
+                        <select id="employeeRole" name="role" required autocomplete="off">
+                            <option value="">Select Role</option>
+                            <option value="admin" ${employee.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="cashier" ${employee.role === 'cashier' ? 'selected' : ''}>Cashier</option>
+                        </select>
+                    </div>                    <div class="form-group">
+                        <label for="employeeContact">Contact Number</label>
+                        <input type="tel" id="employeeContact" name="contact_number" value="${employee.contact_number || ''}" 
+                               placeholder="e.g., +1-234-567-8900 or 09123456789" 
+                               pattern="[+]?[0-9\-\s\(\)]+" 
+                               title="Please enter a valid phone number" 
+                               autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeAddress">Address</label>
+                        <input type="text" id="employeeAddress" name="address" value="${employee.address || ''}" autocomplete="off">
+                    </div>
+                    ${!employee.emp_id ? `
+                    <div class="form-group">
+                        <label for="employeePassword">Password*</label>
+                        <input type="password" id="employeePassword" name="password" required autocomplete="new-password">
+                    </div>
+                    ` : `
+                    <div class="form-group">
+                        <label for="employeePassword">New Password (leave blank to keep current)</label>
+                        <input type="password" id="employeePassword" name="password" autocomplete="new-password">
+                    </div>
+                    `}
                 </div>
-                <div class="form-group">
-                    <label for="employeeEmail">Email</label>
-                    <input type="email" id="employeeEmail" name="email" value="${employee.email || ''}" autocomplete="off">
-                </div><div class="form-group">
-                    <label for="employeeRole">Role*</label>
-                    <select id="employeeRole" name="role" required autocomplete="off">
-                        <option value="">Select Role</option>
-                        <option value="admin" ${employee.role === 'admin' ? 'selected' : ''}>Admin</option>
-                        <option value="cashier" ${employee.role === 'cashier' ? 'selected' : ''}>Cashier</option>
-                    </select>
-                </div>                ${!employee.emp_id ? `
-                <div class="form-group">
-                    <label for="employeePassword">Password*</label>
-                    <input type="password" id="employeePassword" name="password" required autocomplete="new-password">
-                </div>
-                ` : `
-                <div class="form-group">
-                    <label for="employeePassword">New Password (leave blank to keep current)</label>
-                    <input type="password" id="employeePassword" name="password" autocomplete="new-password">
-                </div>
-                `}
                 <div class="form-actions">
                     <button type="button" class="cancel-btn" onclick="closeModal(this)">Cancel</button>
                     <button type="submit" class="submit-btn">${employee.emp_id ? 'Update' : 'Add'} Employee</button>
@@ -230,6 +335,17 @@ async function handleEmployeeSubmit(event, empId) {
     const form = event.target;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
+    
+    // Validate contact number format if provided
+    if (data.contact_number && data.contact_number.trim()) {
+        const phoneRegex = /^[+]?[0-9\-\s\(\)]+$/;
+        if (!phoneRegex.test(data.contact_number.trim())) {
+            showNotification('Please enter a valid contact number format', 'error');
+            return;
+        }
+        // Clean up the contact number (remove extra spaces)
+        data.contact_number = data.contact_number.trim();
+    }
     
     // Remove empty password field for updates
     if (empId && !data.password) {

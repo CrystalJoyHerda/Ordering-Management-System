@@ -7,25 +7,25 @@ class Employee {
     // Database connection and table
     private $conn;
     private $table = 'employees';
-    
-    // Employee properties
+      // Employee properties
     public $emp_id;
     public $name;
     public $role;
     public $password_hash;
     public $created_at;
     public $email;
+    public $contact_number;
+    public $address;
     
     // Constructor with database connection
     public function __construct() {
         $database = new Database();
         $this->conn = $database->getConnection();
     }
-    
-    // Get all employees
+      // Get all employees
     public function getAll() {
         try {
-            $query = "SELECT emp_id, name, role, email, created_at FROM " . $this->table;
+            $query = "SELECT emp_id, name, role, email, contact_number, address, created_at FROM " . $this->table;
             $stmt = $this->conn->prepare($query);
             $stmt->execute();
             
@@ -34,11 +34,10 @@ class Employee {
             return false;
         }
     }
-    
-    // Get single employee by ID
+      // Get single employee by ID
     public function getById($id) {
         try {
-            $query = "SELECT emp_id, name, role, created_at, email FROM " . $this->table . " WHERE emp_id = :id";
+            $query = "SELECT emp_id, name, role, created_at, email, contact_number, address FROM " . $this->table . " WHERE emp_id = :id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $id);
             $stmt->execute();
@@ -91,10 +90,9 @@ class Employee {
               
             // Hash password using SHA256 to match authentication method
             $password_hash = hash('sha256', $data['password']);
-            
-            // Create query
-            $query = "INSERT INTO " . $this->table . " (name, role, password_hash, email) VALUES 
-                    (:name, :role, :password_hash, :email)";
+              // Create query
+            $query = "INSERT INTO " . $this->table . " (name, role, password_hash, email, contact_number, address) VALUES 
+                    (:name, :role, :password_hash, :email, :contact_number, :address)";
             
             // Prepare statement
             $stmt = $this->conn->prepare($query);
@@ -103,12 +101,16 @@ class Employee {
             $name = htmlspecialchars(strip_tags($data['name']));
             $role = htmlspecialchars(strip_tags($data['role']));
             $email = isset($data['email']) ? htmlspecialchars(strip_tags($data['email'])) : null;
+            $contact_number = isset($data['contact_number']) ? htmlspecialchars(strip_tags($data['contact_number'])) : null;
+            $address = isset($data['address']) ? htmlspecialchars(strip_tags($data['address'])) : null;
             
             // Bind data
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':role', $role);
             $stmt->bindParam(':password_hash', $password_hash);
             $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':contact_number', $contact_number);
+            $stmt->bindParam(':address', $address);
             
             // Execute query
             $stmt->execute();
@@ -149,10 +151,19 @@ class Employee {
                 $updateFields[] = "role = :role";
                 $params[':role'] = htmlspecialchars(strip_tags($data['role']));
             }
-            
-            if (isset($data['email'])) {
+              if (isset($data['email'])) {
                 $updateFields[] = "email = :email";
                 $params[':email'] = htmlspecialchars(strip_tags($data['email']));
+            }
+            
+            if (isset($data['contact_number'])) {
+                $updateFields[] = "contact_number = :contact_number";
+                $params[':contact_number'] = htmlspecialchars(strip_tags($data['contact_number']));
+            }
+            
+            if (isset($data['address'])) {
+                $updateFields[] = "address = :address";
+                $params[':address'] = htmlspecialchars(strip_tags($data['address']));
             }
               if (isset($data['password'])) {
                 $updateFields[] = "password_hash = :password_hash";
@@ -244,10 +255,9 @@ class Employee {
     }
     
     // Login method
-    public function login($name, $password) {
-        try {
+    public function login($name, $password) {        try {
             // Find employee by name
-            $query = "SELECT emp_id, name, role, password_hash, email FROM " . $this->table . " WHERE name = :name";
+            $query = "SELECT emp_id, name, role, password_hash, email, contact_number, address FROM " . $this->table . " WHERE name = :name";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':name', $name);
             $stmt->execute();

@@ -134,7 +134,8 @@
                             <div class="upload-text">Click to upload product image</div>
                         </div>
                         
-                        <div class="form-row">                            <div class="form-col">
+                        <div class="form-row">
+                            <div class="form-col">
                                 <div class="form-group">
                                     <label for="product-name">Product Name</label>
                                     <input type="text" id="product-name" class="form-control" autocomplete="off" required>
@@ -148,10 +149,12 @@
                                 </div>
                             </div>
                         </div>
-                          <div class="form-row">
+                        
+                        <div class="form-row">
                             <div class="form-col">
                                 <div class="form-group">
-                                    <label for="product-category">Category</label>                                    <select id="product-category" class="form-control" required>
+                                    <label for="product-category">Category</label>
+                                    <select id="product-category" class="form-control" required>
                                         <option value="">-- Select Category --</option>
                                         <option value="Hot Coffee">Hot Coffee</option>
                                         <option value="Cold Coffee">Cold Coffee</option>
@@ -172,7 +175,10 @@
                                         <option value="low">Low Stock</option>
                                     </select>
                                 </div>
-                            </div>                        </div>                            <!-- Stock Management Row -->
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Management Row -->
                         <div class="form-row" id="stock-quantity-row">
                             <div class="form-col">
                                 <div class="form-group">
@@ -195,14 +201,17 @@
                             <label for="product-description">Description</label>
                             <textarea id="product-description" class="form-control" rows="3"></textarea>
                         </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-                            <button type="submit" class="btn-save">Save Product</button>
-                        </div>
                     </form>
                 </div>
-            </div>        </div>
+                
+                <div class="modal-footer">
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                        <button type="submit" form="product-form" class="btn-save">Save Product</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Stock Update Modal -->
         <div id="stock-modal" class="modal">
@@ -253,12 +262,14 @@
                             <label for="stock-notes">Additional Notes (Optional)</label>
                             <textarea id="stock-notes" class="form-control" rows="3" placeholder="Enter any additional details..."></textarea>
                         </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="btn-cancel" onclick="closeStockModal()">Cancel</button>
-                            <button type="submit" class="btn-save">Update Stock</button>
-                        </div>
                     </form>
+                </div>
+                
+                <div class="modal-footer">
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeStockModal()">Cancel</button>
+                        <button type="submit" form="stock-form" class="btn-save">Update Stock</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -10,7 +10,7 @@ body {
     justify-content: center;
     align-items: center; /* Center content vertically */
     height: 100vh; /* Full viewport height */
-    background: url('../../../RESOURCES/Orderspictures/coffeeshopbg.png') no-repeat center center fixed;
+    background: url('../assets/images/coffeeshopbg.png') no-repeat center center fixed;
     background-size: cover;
     text-align: center;
     overflow: hidden; /* Prevent scrolling */

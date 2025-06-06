@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Employee Contact & Address</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        button { padding: 10px 15px; margin: 5px; }
+        input, textarea { margin: 5px; padding: 8px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Test Employee Contact Number & Address Features</h1>
+
+    <div class="test-section">
+        <h3>1. Test Get All Employees (should include contact_number and address)</h3>
+        <button onclick="testGetAllEmployees()">Get All Employees</button>
+        <div id="getAllResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Get Single Employee by ID</h3>
+        <input type="number" id="employeeId" placeholder="Employee ID" value="1">
+        <button onclick="testGetEmployee()">Get Employee</button>
+        <div id="getEmployeeResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Create New Employee with Contact & Address</h3>
+        <div>
+            <input type="text" id="newName" placeholder="Name" value="Test Employee">
+            <input type="text" id="newRole" placeholder="Role" value="cashier">
+            <input type="email" id="newEmail" placeholder="Email" value="test@example.com">
+            <input type="text" id="newContact" placeholder="Contact Number" value="09123456789">
+            <textarea id="newAddress" placeholder="Address">123 Test Street, Test City</textarea>
+            <input type="password" id="newPassword" placeholder="Password" value="testpass">
+        </div>
+        <button onclick="testCreateEmployee()">Create Employee</button>
+        <div id="createResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test Update Employee (add contact & address)</h3>
+        <div>
+            <input type="number" id="updateId" placeholder="Employee ID to Update" value="1">
+            <input type="text" id="updateContact" placeholder="New Contact Number" value="09987654321">
+            <textarea id="updateAddress" placeholder="New Address">456 Updated Avenue, New City</textarea>
+        </div>
+        <button onclick="testUpdateEmployee()">Update Employee</button>
+        <div id="updateResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost/SOURCE_CODE/Employee/public/api/employee.php';
+
+        async function testGetAllEmployees() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                document.getElementById('getAllResult').innerHTML = 
+                    '<h4>Response:</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                
+                if (result.status === 'success' && result.data.length > 0) {
+                    const firstEmployee = result.data[0];
+                    const hasContactAndAddress = firstEmployee.hasOwnProperty('contact_number') && 
+                                               firstEmployee.hasOwnProperty('address');
+                    if (hasContactAndAddress) {
+                        document.getElementById('getAllResult').innerHTML += 
+                            '<div style="color: green;"><strong>✅ SUCCESS: contact_number and address fields are present!</strong></div>';
+                    } else {
+                        document.getElementById('getAllResult').innerHTML += 
+                            '<div style="color: red;"><strong>❌ MISSING: contact_number or address fields not found</strong></div>';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('getAllResult').innerHTML = 
+                    '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+
+        async function testGetEmployee() {
+            const empId = document.getElementById('employeeId').value;
+            try {
+                const response = await fetch(`${API_URL}?id=${empId}`);
+                const result = await response.json();
+                document.getElementById('getEmployeeResult').innerHTML = 
+                    '<h4>Response:</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('getEmployeeResult').innerHTML = 
+                    '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+
+        async function testCreateEmployee() {
+            const data = {
+                name: document.getElementById('newName').value,
+                role: document.getElementById('newRole').value,
+                email: document.getElementById('newEmail').value,
+                contact_number: document.getElementById('newContact').value,
+                address: document.getElementById('newAddress').value,
+                password: document.getElementById('newPassword').value
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('createResult').innerHTML = 
+                    '<h4>Response:</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                
+                if (result.status === 'success') {
+                    document.getElementById('createResult').innerHTML += 
+                        '<div style="color: green;"><strong>✅ Employee created successfully!</strong></div>';
+                }
+            } catch (error) {
+                document.getElementById('createResult').innerHTML = 
+                    '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+
+        async function testUpdateEmployee() {
+            const empId = document.getElementById('updateId').value;
+            const data = {
+                contact_number: document.getElementById('updateContact').value,
+                address: document.getElementById('updateAddress').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}?id=${empId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                document.getElementById('updateResult').innerHTML = 
+                    '<h4>Response:</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                
+                if (result.status === 'success') {
+                    document.getElementById('updateResult').innerHTML += 
+                        '<div style="color: green;"><strong>✅ Employee updated successfully!</strong></div>';
+                }
+            } catch (error) {
+                document.getElementById('updateResult').innerHTML = 
+                    '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+
+        // Auto-run the first test
+        window.addEventListener('load', function() {
+            setTimeout(testGetAllEmployees, 500);
+        });
+    </script>
+</body>
+</html>
