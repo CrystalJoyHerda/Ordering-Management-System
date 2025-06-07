@@ -313,9 +313,24 @@
             return product ? product.status === 'inactive' : false;
         }
         
+        // Function to get category-specific default image
+        function getCategoryDefaultImage(category) {
+            const categoryImages = {
+                'Hot Coffee': '../assets/images/products/hot-coffee-default.png',
+                'Cold Coffee': '../assets/images/products/cold-coffee-default.png',
+                'Non Coffee': '../assets/images/products/non-coffee-default.png',
+                'Pastry': '../assets/images/products/pastry-default.png',
+                'Sandwich': '../assets/images/products/sandwich-default.png',
+                'Cake': '../assets/images/products/cake-default.png'
+            };
+            
+            return categoryImages[category] || '../assets/images/logo.png';
+        }
+        
         // Store these functions globally
         window.getProductStatuses = getProductStatuses;
         window.isProductOutOfStock = isProductOutOfStock;
+        window.getCategoryDefaultImage = getCategoryDefaultImage;
     </script>
 </body>
 </html>

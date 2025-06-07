@@ -268,16 +268,21 @@ body {
     width: 30%;
 }
 
-/* Employee name clickable style */
-.employee-name {
-    color: #67503b;
+/* Employee row clickable styles */
+.employee-row {
     cursor: pointer;
-    text-decoration: underline;
-    font-weight: 500;
+    transition: background-color 0.3s ease;
 }
 
-.employee-name:hover {
-    color: #4a3422;
+.employee-row:hover {
+    background-color: #f0f4f8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Employee name styles - remove clickable styling */
+.employee-name {
+    color: #333;
+    font-weight: 500;
 }
 
 /* Contact and email styling */
@@ -743,19 +748,6 @@ input[type="tel"]:focus {
 
 .cancel-logout:hover {
     background-color: #5a6268;
-}
-
-/* Employee name clickable styles */
-.employee-name {
-    cursor: pointer;
-    color: #8b5a3c;
-    text-decoration: underline;
-    transition: color 0.3s;
-}
-
-.employee-name:hover {
-    color: #6d4428;
-    font-weight: bold;
 }
 
 /* Employee Info Modal Styles */

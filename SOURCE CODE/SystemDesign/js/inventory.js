@@ -520,7 +520,9 @@ function displayProducts(productsToShow) {
     }
 
     // Clear existing content
-    tableBody.innerHTML = '';    if (!productsToShow || productsToShow.length === 0) {
+    tableBody.innerHTML = '';
+
+    if (!productsToShow || productsToShow.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="8" class="text-center">
@@ -534,10 +536,13 @@ function displayProducts(productsToShow) {
     }
 
     // Start index for current page
-    const startIndex = (currentPage - 1) * productsPerPage;    // Display each product
+    const startIndex = (currentPage - 1) * productsPerPage;
+
+    // Display each product
     productsToShow.forEach((product, index) => {
         const row = document.createElement('tr');
-          // Determine stock status and color
+        
+        // Determine stock status and color
         const stockQuantity = product.stock_quantity || 0;
         const lowStockThreshold = product.low_stock_threshold || 5;
         let stockClass = 'stock-normal';
@@ -553,13 +558,18 @@ function displayProducts(productsToShow) {
         
         // Determine what the status should be based on stock levels
         const autoStatus = determineAutoStatus(stockQuantity, lowStockThreshold);
-        const displayStatus = autoStatus; // Use the automatically determined status for display
+        const displayStatus = autoStatus;
+        
+        // Get appropriate image with category fallback
+        const productImage = getProductImage(product);
+        const fallbackImage = getCategoryDefaultImage(product.category);
         
         row.innerHTML = `
             <td>${startIndex + index + 1}</td>
             <td>
-                <img src="${product.image}" alt="${product.name}" 
-                     class="product-image" onerror="this.src='../assets/images/logo.png'">
+                <img src="${productImage}" alt="${product.name}" 
+                     class="product-image" 
+                     onerror="this.onerror=null; this.src='${fallbackImage}'; if(this.src==='${fallbackImage}' && this.complete && this.naturalHeight===0) this.src='../assets/images/logo.png';">
             </td>
             <td>
                 <strong>${product.name}</strong><br>
@@ -574,7 +584,8 @@ function displayProducts(productsToShow) {
                     <button onclick="openStockModal(${product.id})" class="btn-stock-update" title="Update Stock">
                         <i class="fas fa-edit"></i>
                     </button>
-                </div>            </td>
+                </div>
+            </td>
             <td><span class="status-badge ${displayStatus}">${displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}</span></td>
             <td>
                 <button onclick="editProduct(${product.id})" class="btn-action btn-edit" title="Edit">
@@ -790,12 +801,41 @@ function editProduct(productId) {
     openModal('edit', productId);
 }
 
+// Function to get category-specific default image
+function getCategoryDefaultImage(category) {
+    const categoryImages = {
+        'Hot Coffee': '../assets/images/products/hot-coffee-default.png',
+        'Cold Coffee': '../assets/images/products/cold-coffee-default.png',
+        'Non Coffee': '../assets/images/products/non-coffee-default.png',
+        'Pastry': '../assets/images/products/pastry-default.png',
+        'Sandwich': '../assets/images/products/sandwich-default.png',
+        'Cake': '../assets/images/products/cake-default.png'
+    };
+    
+    return categoryImages[category] || '../assets/images/logo.png';
+}
+
+// Function to get product image with proper fallback
+function getProductImage(product) {
+    // If product has a specific image and it's not empty
+    if (product.image && product.image.trim() !== '' && product.image !== '../assets/images/logo.png') {
+        return product.image;
+    }
+    
+    // Use category-specific default image
+    return getCategoryDefaultImage(product.category);
+}
+
 // Function to view product details
 function viewProduct(productId) {
     // Find the product
     const product = products.find(p => p.id === productId);
     
     if (product) {
+        // Get appropriate image with category fallback
+        const productImage = getProductImage(product);
+        const fallbackImage = getCategoryDefaultImage(product.category);
+        
         // Create and show a product details modal
         const detailsHTML = `
             <div class="modal-header">
@@ -805,10 +845,12 @@ function viewProduct(productId) {
             <div class="modal-body">
                 <div style="display: flex; margin-bottom: 20px;">
                     <div style="flex: 0 0 120px; margin-right: 20px;">
-                        <img src="${product.image || '../assets/images/logo.png'}" 
+                        <img src="${productImage}" 
                              alt="${product.name}" 
-                             style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e0d5c5;">
-                    </div>                    <div style="flex: 1;">
+                             style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e0d5c5;"
+                             onerror="this.onerror=null; this.src='${fallbackImage}'; if(this.src==='${fallbackImage}' && this.complete && this.naturalHeight===0) this.src='../assets/images/logo.png';">
+                    </div>
+                    <div style="flex: 1;">
                         <h3 style="margin: 0 0 10px 0; color: #3b2a1f;">${product.name}</h3>
                         <div style="margin-bottom: 5px;">
                             <span class="status-badge ${product.status ? 

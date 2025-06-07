@@ -93,9 +93,11 @@ function displayEmployees(employees) {
 
     employees.forEach(emp => {
         const row = document.createElement('tr');
+        row.className = 'employee-row';
+        row.onclick = () => showEmployeeInfo(emp.emp_id);
         row.innerHTML = `
             <td>
-                <span class="employee-name" onclick="showEmployeeInfo(${emp.emp_id})">${emp.name}</span>
+                <span class="employee-name">${emp.name}</span>
             </td>
             <td>
                 <span class="employee-role">${emp.role || 'N/A'}</span>
