@@ -311,8 +311,8 @@ h2 {
 .invalid-cash-modal .modal-content {
     background-color: white;
     border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
+    width: 85%;
+    max-width: 350px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     animation: slideInScale 0.3s ease;
     overflow: hidden;
@@ -336,46 +336,64 @@ h2 {
 
 .invalid-cash-modal .modal-header {
     background: linear-gradient(135deg, #dc3545, #c82333);
-    color: white;
-    padding: 20px;
+    color: rgb(8, 7, 7);
+    padding: 15px 20px;
     text-align: center;
 }
 
 .invalid-cash-modal .modal-header h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .invalid-cash-modal .warning-icon {
-    font-size: 24px;
+    font-size: 20px;
     color: #fff3cd;
 }
 
 .invalid-cash-modal .modal-body {
-    padding: 30px 25px;
+    padding: 20px;
     text-align: center;
 }
 
 .invalid-cash-modal .error-message {
     font-size: 16px;
-    color: #333;
-    margin-bottom: 20px;
+    color: #080808;
+    margin-bottom: 15px;
     line-height: 1.5;
 }
 
+/* Specific styling for input amount modal to make text bigger */
+#inputAmountModal .error-message {
+    font-size: 18px;
+    font-weight: 600;
+    color: #080808;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+/* Specific styling for invalid amount modal to make text bigger */
+#invalidAmountModal .error-message {
+    font-size: 18px;
+    font-weight: 600;
+    color: #040404;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
 .invalid-cash-modal .modal-footer {
-    padding: 20px 25px;
+    padding: 15px 20px;
     background-color: #f8f9fa;
     text-align: center;
 }
 
 .invalid-cash-modal .ok-btn {
-    padding: 12px 30px;
+    padding: 10px 25px;
     background-color: #dc3545;
     color: white;
     border: none;
