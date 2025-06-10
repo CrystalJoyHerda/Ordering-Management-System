@@ -39,7 +39,7 @@ header {
     justify-content: center;
     align-items: center;
     position: absolute;
-    left: 10px;
+    right: 950px;
 }
 
 .logo img {
