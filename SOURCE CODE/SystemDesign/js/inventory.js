@@ -149,15 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     
     // Load products automatically
-    loadProducts();
-    
-    // Set up event listeners
+    loadProducts();    // Set up event listeners
     document.getElementById('add-product').addEventListener('click', () => openModal('add'));
     document.querySelector('.logout-btn').addEventListener('click', handleLogout);
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
     document.getElementById('stock-form').addEventListener('submit', handleStockSubmit);
-    
-    // Search and filter functionality
+      // Search and filter functionality
     document.getElementById('product-search').addEventListener('input', filterProducts);
     document.getElementById('category-filter').addEventListener('change', filterProducts);
     document.getElementById('status-filter').addEventListener('change', filterProducts);
@@ -178,26 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setAttribute('autocomplete', 'off');
         });
     }
-
-    // Add event listeners for delete product modal
-    const confirmDeleteBtn = document.getElementById('confirm-delete-product');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-product');
-    
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', confirmDeleteProduct);
-    }
-    
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', closeDeleteProductModal);
-    }
-    
-    // Add event listener for clicking outside delete modal
-    window.addEventListener('click', function(event) {
-        const deleteModal = document.getElementById('delete-product-modal');
-        if (event.target === deleteModal) {
-            closeDeleteProductModal();
-        }
-    });
 });
 
 // Authentication check
@@ -222,7 +199,30 @@ function checkAuth() {
     } else {
         // Fallback to basic token parsing
         try {
-            // Simple
+            // Simple token format: SIMPLE.payload.TOKEN or REDIRECT.payload.TOKEN
+            const parts = token.split('.');
+            if (parts.length !== 3) throw new Error('Invalid token format');
+            
+            const payload = atob(parts[1]);
+            const userData = JSON.parse(payload);
+            
+            if (userData.data && userData.data.role !== 'admin') {
+                window.location.href = '../pages/loginInterface.html';
+                return;
+            }
+            
+            const adminNameElement = document.getElementById('admin-name');
+            if (adminNameElement && userData.data) {
+                adminNameElement.textContent = userData.data.name;
+            }
+        } catch (e) {
+            console.error('Error validating token', e);
+            localStorage.removeItem('auth_token');
+            window.location.href = '../pages/loginInterface.html';
+        }
+    }
+}
+
 // Function to handle logout
 function handleLogout() {
     // Show the modal first - NEVER directly redirect
