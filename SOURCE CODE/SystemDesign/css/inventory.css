@@ -341,12 +341,13 @@ tbody tr:hover {
     flex: 1;
 }
 
-/* Form actions */
+/* Form actions - improved positioning for Cancel and Save buttons */
 .form-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+    justify-content: center; /* Center the buttons horizontally */
+    gap: 15px; /* Increase space between buttons */
     margin-top: 20px;
+    padding-bottom: 15px; /* Add bottom padding for spacing */
 }
 
 .btn-cancel {
@@ -358,10 +359,8 @@ tbody tr:hover {
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s ease;
-}
-
-.btn-cancel:hover {
-    background-color: #f9f5f1;
+    min-width: 100px; /* Consistent button width */
+    text-align: center; /* Center button text */
 }
 
 .btn-save {
@@ -373,10 +372,8 @@ tbody tr:hover {
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s ease;
-}
-
-.btn-save:hover {
-    background-color: #4a3422;
+    min-width: 120px; /* Slightly wider for primary button */
+    text-align: center; /* Center button text */
 }
 
 /* Admin Profile Image */
