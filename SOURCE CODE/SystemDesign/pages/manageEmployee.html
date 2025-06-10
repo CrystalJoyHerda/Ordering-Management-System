@@ -73,6 +73,19 @@
         </div>
     </div>
 
+    <!-- Delete Employee Confirmation Modal -->
+    <div id="delete-employee-modal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h3>Delete Employee</h3>
+            <p>Are you sure you want to delete this employee? This action cannot be undone.</p>
+            <input type="hidden" id="delete-employee-id">
+            <div class="logout-modal-buttons">
+                <button id="confirm-delete-employee" class="confirm-logout">Yes, Delete</button>
+                <button id="cancel-delete-employee" class="cancel-logout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/auth.js"></script>
     <script src="../js/rbac.js"></script>
 </body>

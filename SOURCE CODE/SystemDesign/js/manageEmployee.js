@@ -30,6 +30,18 @@ function setupEventListeners() {
     document.getElementById('searchInput').addEventListener('input', (e) => {
         filterEmployees(e.target.value);
     });
+
+    // Setup delete modal buttons
+    const confirmDeleteBtn = document.getElementById('confirm-delete-employee');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-employee');
+    
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', confirmDeleteEmployee);
+    }
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteEmployeeModal);
+    }
 }
 
 function handleLogout() {
@@ -192,8 +204,8 @@ function deleteEmployeeFromInfo(empId) {
     if (infoModal) {
         infoModal.remove();
     }
-    // Then proceed with delete
-    deleteEmployee(empId);
+    // Show delete confirmation modal
+    showDeleteEmployeeModal(empId);
 }
 
 function filterEmployees(searchTerm) {
@@ -232,11 +244,46 @@ async function editEmployee(empId) {
     }
 }
 
-async function deleteEmployee(empId) {
-    if (!confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+function showDeleteEmployeeModal(empId) {
+    const modal = document.getElementById('delete-employee-modal');
+    const employeeIdInput = document.getElementById('delete-employee-id');
+    
+    // Set the employee ID to be deleted
+    if (employeeIdInput) {
+        employeeIdInput.value = empId;
+    }
+    
+    // Show the modal
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeDeleteEmployeeModal() {
+    const modal = document.getElementById('delete-employee-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function confirmDeleteEmployee() {
+    const employeeIdInput = document.getElementById('delete-employee-id');
+    const empId = employeeIdInput ? employeeIdInput.value : null;
+    
+    if (!empId) {
+        showNotification('Error: Employee ID not found', 'error');
+        closeDeleteEmployeeModal();
         return;
     }
     
+    // Close the modal
+    closeDeleteEmployeeModal();
+    
+    // Perform the delete operation
+    performDeleteEmployee(empId);
+}
+
+async function performDeleteEmployee(empId) {
     try {
         const response = await fetch(`http://localhost/SOURCE_CODE/Employee/public/api/employee.php?id=${empId}`, {
             method: 'DELETE',

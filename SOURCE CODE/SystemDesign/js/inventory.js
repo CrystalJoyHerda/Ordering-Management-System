@@ -843,28 +843,82 @@ function viewProduct(productId) {
     }
 }
 
-// Function to delete a product
-async function deleteProduct(productId) {
-    if (confirm('Are you sure you want to delete this product?')) {
-        try {
-            const response = await productApi.deleteProduct(productId);
-            
-            if (response.status === 'success') {
-                // Remove product from local state
-                products = products.filter(p => p.id !== productId);
-                filteredProducts = filteredProducts.filter(p => p.id !== productId);
-                  // Refresh display using current page (don't reset filters)
-                filterProducts(false);
-                
-                // Show success message
-                showToast('Product deleted successfully!', 'success');
-            } else {
-                throw new Error(response.message || 'Failed to delete product');
-            }
-        } catch (error) {
-            console.error('Error deleting product:', error);
-            showToast(`Error: ${error.message}`, 'error');
+// Function to delete a product - replace existing function
+function deleteProduct(productId) {
+    showDeleteConfirmation(productId);
+}
+
+// New function to show delete confirmation
+function showDeleteConfirmation(productId) {
+    // Create modal element
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'logout-modal';
+    modalOverlay.id = 'delete-product-modal-' + productId;
+    modalOverlay.style.display = 'flex';
+    
+    modalOverlay.innerHTML = `
+        <div class="logout-modal-content">
+            <h3>Delete Product</h3>
+            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+            <div class="logout-modal-buttons">
+                <button onclick="confirmDelete(${productId})" class="confirm-logout">Yes, Delete</button>
+                <button onclick="cancelDelete(${productId})" class="cancel-logout">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalOverlay);
+    
+    // Close when clicking outside modal
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) {
+            cancelDelete(productId);
         }
+    });
+}
+
+// Function to confirm deletion
+function confirmDelete(productId) {
+    // Remove modal
+    const modal = document.getElementById('delete-product-modal-' + productId);
+    if (modal) {
+        modal.remove();
+    }
+    
+    // Call the existing delete logic
+    performDeleteProduct(productId);
+}
+
+// Function to cancel deletion
+function cancelDelete(productId) {
+    // Just remove the modal
+    const modal = document.getElementById('delete-product-modal-' + productId);
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Function to perform the actual deletion - extracted from deleteProduct
+async function performDeleteProduct(productId) {
+    try {
+        const response = await productApi.deleteProduct(productId);
+        
+        if (response.status === 'success') {
+            // Remove product from local state
+            products = products.filter(p => p.id !== productId);
+            filteredProducts = filteredProducts.filter(p => p.id !== productId);
+            
+            // Refresh display using current page (don't reset filters)
+            filterProducts(false);
+            
+            // Show success message
+            showToast('Product deleted successfully!', 'success');
+        } else {
+            throw new Error(response.message || 'Failed to delete product');
+        }
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -1316,3 +1370,9 @@ window.loadProducts = loadProducts;
 // Make stock functions globally accessible
 window.openStockModal = openStockModal;
 window.closeStockModal = closeStockModal;
+
+// Expose functions to global scope
+window.deleteProduct = deleteProduct;
+window.showDeleteConfirmation = showDeleteConfirmation;
+window.confirmDelete = confirmDelete;
+window.cancelDelete = cancelDelete;
