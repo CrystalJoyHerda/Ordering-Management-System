@@ -845,27 +845,76 @@ function viewProduct(productId) {
 
 // Function to delete a product
 async function deleteProduct(productId) {
-    if (confirm('Are you sure you want to delete this product?')) {
-        try {
-            const response = await productApi.deleteProduct(productId);
+    // Store the product ID to be deleted
+    window.productToDelete = productId;
+    
+    // Show the delete confirmation modal
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal) {
+        deleteModal.style.display = 'flex';
+        
+        // Set up listeners for the delete modal buttons if they don't exist yet
+        if (!window.deleteListenersInitialized) {
+            const confirmDeleteBtn = document.getElementById('confirm-delete');
+            const cancelDeleteBtn = document.getElementById('cancel-delete');
             
-            if (response.status === 'success') {
-                // Remove product from local state
-                products = products.filter(p => p.id !== productId);
-                filteredProducts = filteredProducts.filter(p => p.id !== productId);
-                  // Refresh display using current page (don't reset filters)
-                filterProducts(false);
-                
-                // Show success message
-                showToast('Product deleted successfully!', 'success');
-            } else {
-                throw new Error(response.message || 'Failed to delete product');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', confirmDeleteProduct);
             }
-        } catch (error) {
-            console.error('Error deleting product:', error);
-            showToast(`Error: ${error.message}`, 'error');
+            
+            if (cancelDeleteBtn) {
+                cancelDeleteBtn.addEventListener('click', function() {
+                    deleteModal.style.display = 'none';
+                });
+            }
+            
+            // Close when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === deleteModal) {
+                    deleteModal.style.display = 'none';
+                }
+            });
+            
+            window.deleteListenersInitialized = true;
         }
     }
+}
+
+// Function to handle confirm delete action
+async function confirmDeleteProduct() {
+    // Hide the modal
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal) {
+        deleteModal.style.display = 'none';
+    }
+    
+    // Get the product ID to delete
+    const productId = window.productToDelete;
+    if (!productId) return;
+    
+    try {
+        const response = await productApi.deleteProduct(productId);
+        
+        if (response.status === 'success') {
+            // Remove product from local state
+            products = products.filter(p => p.id !== productId);
+            filteredProducts = filteredProducts.filter(p => p.id !== productId);
+              
+            // Refresh display using current page (don't reset filters)
+            filterProducts(false);
+            
+            // Show success message
+            showToast('Product deleted successfully!', 'success');
+        } else {
+            throw new Error(response.message || 'Failed to delete product');
+        }
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showToast(`Error: ${error.message}`, 'error');
+    }
+    
+    // Clear the product ID
+    window.productToDelete = null;
 }
 
 // Function to show toast notifications
