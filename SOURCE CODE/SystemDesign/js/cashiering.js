@@ -490,8 +490,8 @@ function addOrderItem(quantity, name, price, addons) {
 }
 
 // Function specifically for adding items retrieved from database
-function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
-    console.log(`📋 Adding DB item: ${quantity}x ${name} @ ₱${displayPrice} (total: ₱${totalPrice})`);
+function addOrderItemFromDB(quantity, name, unitPrice, totalPrice, addons) {
+    console.log(`📋 Adding DB item: ${quantity}x ${name} @ ₱${unitPrice} each (line total: ₱${totalPrice})`);
     
     const itemsContainer = document.getElementById('items-container');
     const namesContainer = document.getElementById('names-container');
@@ -512,16 +512,17 @@ function addOrderItemFromDB(quantity, name, displayPrice, totalPrice, addons) {
     const addonsDiv = document.createElement('div');
     addonsDiv.style.cssText = itemStyle;
     if (addons && Array.isArray(addons) && addons.length > 0) {
-        addonsDiv.textContent = addons.map(a => a.name).join(', ');
+        addonsDiv.textContent = addons.map(a => a.name || a).join(', ');
     } else {
         addonsDiv.textContent = '-';
     }
 
-    // Show the unit price, but store total price for calculation
+    // Display the total price for this line (unit price × quantity)
     const priceDiv = document.createElement('div');
     priceDiv.style.cssText = itemStyle;
-    priceDiv.textContent = `₱${parseFloat(displayPrice).toFixed(2)}`;
-    // Store the actual total price as a data attribute for accurate calculation
+    priceDiv.textContent = `₱${parseFloat(totalPrice).toFixed(2)}`;
+    // Store the unit price as a data attribute for editing purposes
+    priceDiv.setAttribute('data-unit-price', unitPrice);
     priceDiv.setAttribute('data-total-price', totalPrice);
 
     itemsContainer.appendChild(itemDiv);
@@ -544,438 +545,420 @@ function updateTotal() {
         const itemName = names[i].textContent.trim();
         const addonsText = addons[i].textContent.trim();
         
-        // Step 1: Calculate the updated unit price (original + add-ons)
-        const originalPrice = getBasePrice(itemName);
-        let totalAddOnsPrice = 0;
+        // Check if we have stored unit price data attribute
+        const priceElement = prices[i];
+        const storedUnitPrice = priceElement.getAttribute('data-unit-price');
         
-        // Calculate total add-ons price if there are any
-        if (addonsText !== '-' && addonsText) {
-            const addonsList = addonsText.split(', ').map(a => a.trim());
-            totalAddOnsPrice = addonsList.reduce((sum, addonName) => {
-                return sum + getAddonPrice(addonName);
-            }, 0);
+        let lineTotal;
+        
+        if (storedUnitPrice) {
+            // Use stored unit price from database
+            const unitPrice = parseFloat(storedUnitPrice);
+            lineTotal = unitPrice * quantity;
+            console.log(`💰 Using stored unit price for ${itemName}: ₱${unitPrice} × ${quantity} = ₱${lineTotal}`);
+        } else {
+            // Calculate from base price + add-ons (for manually added items)
+            const originalPrice = getBasePrice(itemName);
+            let totalAddOnsPrice = 0;
+            
+            if (addonsText !== '-' && addonsText) {
+                const addonsList = addonsText.split(', ').map(a => a.trim());
+                totalAddOnsPrice = addonsList.reduce((sum, addonName) => {
+                    return sum + getAddonPrice(addonName);
+                }, 0);
+            }
+            
+            const unitPrice = originalPrice + totalAddOnsPrice;
+            lineTotal = unitPrice * quantity;
+            console.log(`🧮 Calculated unit price for ${itemName}: ₱${originalPrice} + ₱${totalAddOnsPrice} = ₱${unitPrice} × ${quantity} = ₱${lineTotal}`);
         }
         
-        // Step 2: Update unit price = original + total add-ons
-        const unitPrice = originalPrice + totalAddOnsPrice;
-        
-        // Step 3: Calculate total amount = unit price × quantity
-        const lineTotal = unitPrice * quantity;
-        
         // Update the displayed price to reflect the correct line total
-        prices[i].textContent = `₱${lineTotal.toFixed(2)}`;
+        priceElement.textContent = `₱${lineTotal.toFixed(2)}`;
         
         // Add to grand total
         total += lineTotal;
     }
     
     document.getElementById('total').textContent = `Total Amount: ₱${total.toFixed(2)}`;
+    console.log(`📊 Grand total updated: ₱${total.toFixed(2)}`);
 }
 
-function handleConfirm() {
-    const total = document.getElementById('total').textContent;
-    const queueNum = document.getElementById('queueNumber').value;
+// Sample base prices for items
+function getBasePrice(itemName) {
+    // Return base prices for items - adjust these according to your actual prices
+    const prices = {
+        'Espresso': 120,
+        'Cappuccino': 150,
+        'Americano': 130,
+        'Latte': 140,
+        'Matcha': 145, 
+        'Iced Latte': 140,
+        'Iced Americano': 130,
+        'Cold Brew': 140,
+        'Frappuccino': 160,
+        'Affogato': 155,
+        'Strawberry Italian Soda': 110,
+        'Lemon-Lime Fizz': 110,
+        'Raspberry Spritzer': 115,
+        'Donut': 80,
+        'Apple Pie': 90,
+        'Cinnamon Roll': 70,
+        'Sugar Cookie': 60,
+        'Brownie': 75,
+        'BLT (Bacon, Lettuce, Tomato)': 180,
+        'Club Sandwich': 190,
+        'Ham and Cheese Sandwich': 160,
+        'Tuna Salad Sandwich': 170,
+        'Chocolate Cake': 200,
+        'Cheesecake': 220,
+        'Carrot Cake': 190,
+        'Black Forest Cake': 210,
+        'Red Velvet Cake': 215
+    };
+    return prices[itemName] || 100; // Default price if not found
+}
 
-    // Check if items are added to the order
-    if (total === 'Total Amount: ₱0.00') {
-        showNoItemsWarningModal();
+// Get price of add-ons
+function getAddonPrice(addonName) {
+    // Return prices for add-ons
+    const addonPrices = {
+        'Extra Milk': 15,
+        'Extra Sugar': 10,
+        'Whipped Cream': 20,
+        'Caramel Syrup': 25
+    };
+    return addonPrices[addonName] || 0;
+}
+
+// ============ EDIT ITEM FUNCTIONALITY ============
+
+let currentEditingIndex = -1;
+
+function editItem(button) {
+    console.log('Edit item clicked');
+    
+    // Get the row index
+    const itemDiv = button.parentNode;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
+    
+    if (rowIndex === -1) {
+        console.error('Could not find row index');
         return;
     }
+    
+    currentEditingIndex = rowIndex;
+    
+    // Get item data from the grid
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    const quantity = parseInt(itemDiv.childNodes[0].textContent.trim());
+    const itemName = namesContainer.children[rowIndex].textContent;
+    const addonsText = addonsContainer.children[rowIndex].textContent;
+    const totalPrice = parseFloat(pricesContainer.children[rowIndex].textContent.replace('₱', ''));
+    
+    console.log(`Editing: ${itemName}, Qty: ${quantity}, Price: ${totalPrice}, Add-ons: ${addonsText}`);
+    
+    // Show edit modal and populate with current data
+    showEditModal(itemName, quantity, addonsText, totalPrice);
+}
 
-    // Check if an order type is selected
-    const selectedOrderType = document.querySelector('.type-button.active');
-    if (!selectedOrderType) {
-        showOrderTypeWarningModal();
-        return;
-    }
-
-    // Get order type text
-    const orderTypeText = selectedOrderType.textContent.trim();
-
-    // Collect order items
-    const orderItems = [];
-    const quantities = document.getElementById('items-container').children;
-    const names = document.getElementById('names-container').children;
-    const addons = document.getElementById('addons-container').children;
-    const prices = document.getElementById('prices-container').children;
-
-    for (let i = 0; i < quantities.length; i++) {
-        // Extract quantity (first text node before the buttons)
-        const qtyText = quantities[i].childNodes[0].textContent.trim();
-        const qty = parseInt(qtyText);
-        
-        const name = names[i].textContent.trim();
-        const addonText = addons[i].textContent.trim();
-        const priceText = prices[i].textContent.replace('₱', '').trim();
-        const totalPrice = parseFloat(priceText);
-        
-        orderItems.push({
-            quantity: qty,
-            name: name,
-            addons: addonText !== '-' ? addonText.split(', ') : [],
-            price: totalPrice / qty, // Unit price
-            totalPrice: totalPrice   // Total price for this line
+function showEditModal(itemName, quantity, addonsText, totalPrice) {
+    const modal = document.getElementById('editItemModal');
+    
+    // Populate modal with current item data
+    modal.querySelector('.edit-item-name').textContent = itemName;
+    modal.querySelector('.quantity-value').textContent = quantity;
+    
+    // Check if this item is a hot/cold coffee item
+    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
+    
+    // Handle add-ons section visibility and functionality
+    const addonsSection = modal.querySelector('.edit-addons-section');
+    const addonBoxes = modal.querySelectorAll('.edit-addon-box');
+    
+    if (isHotOrColdCoffee) {
+        // Enable add-ons for hot/cold coffee
+        addonsSection.style.opacity = '1';
+        addonBoxes.forEach(addon => {
+            addon.style.opacity = '1';
+            addon.style.pointerEvents = 'auto';
+            addon.style.cursor = 'pointer';
         });
-    }    // Handle order creation/updating based on whether we're editing an existing order
-    if (currentOrderId) {
-        // Editing existing order - include the order ID
-        const orderData = {
-            items: orderItems,
-            total: total.replace('Total Amount: ₱', ''),
-            queueNumber: queueNum,
-            orderType: orderTypeText,
-            datetime: document.getElementById('datetime').textContent,
-            itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-            orderId: currentOrderId  // Include order ID for existing orders
-        };
-
-        console.log('Sending existing order data to confirmation:', orderData);
-        localStorage.setItem('currentOrder', JSON.stringify(orderData));
-        window.location.href = 'orderconfirm.html';
+        
+        // Handle add-ons selection for coffee items
+        const addonsArray = addonsText !== '-' ? addonsText.split(', ').map(a => a.trim()) : [];
+        
+        // Clear previous selections
+        addonBoxes.forEach(addon => {
+            addon.classList.remove('selected');
+        });
+        
+        // Select current add-ons
+        addonsArray.forEach(addonName => {
+            const addonBox = Array.from(addonBoxes).find(box => {
+                const spanText = box.querySelector('span').textContent;
+                return spanText === addonName;
+            });
+            if (addonBox) {
+                addonBox.classList.add('selected');
+            }
+        });
     } else {
-        // Creating new order - need to save to database first to get order ID
-        console.log('Creating new order in database before confirmation...');
-        createNewOrderInDatabase(orderItems, total.replace('Total Amount: ₱', ''), queueNum, orderTypeText);
-    }
-}
-
-// Function to create new order in database and get order ID
-async function createNewOrderInDatabase(orderItems, totalAmount, queueNumber, orderType) {
-    try {
-        // Prepare order data for API
-        const orderData = {
-            order_type: orderType.toLowerCase().replace(' ', '_'),
-            customer_name: null,
-            items: orderItems.map(item => ({
-                product_name: item.name,
-                quantity: item.quantity,
-                unit_price: item.price,
-                total_price: item.totalPrice,
-                addons: item.addons || []
-            }))
-        };
-
-        console.log('📤 Sending new order to database:', orderData);
-
-        // Send POST request to create order
-        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(orderData)
+        // Disable add-ons for non-coffee items
+        addonsSection.style.opacity = '0.5';
+        addonBoxes.forEach(addon => {
+            addon.classList.remove('selected');
+            addon.style.opacity = '0.3';
+            addon.style.pointerEvents = 'none';
+            addon.style.cursor = 'not-allowed';
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('📥 Database creation result:', result);
-
-        if (result.status === 'success' && result.data && result.data.id) {
-            // Store the new order ID
-            currentOrderId = result.data.id;
-            console.log('✅ New order created with ID:', currentOrderId);
-
-            // Create complete order data object with the new order ID
-            const confirmationData = {
-                items: orderItems,
-                total: totalAmount,
-                queueNumber: queueNumber,
-                orderType: orderType,
-                datetime: document.getElementById('datetime').textContent,
-                itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-                orderId: currentOrderId  // Include the new order ID
-            };
-
-            console.log('Sending new order data to confirmation:', confirmationData);
-            localStorage.setItem('currentOrder', JSON.stringify(confirmationData));
-            window.location.href = 'orderconfirm.html';
-        } else {
-            throw new Error(result.message || 'Failed to create order in database');
-        }
-    } catch (error) {
-        console.error('🚨 Error creating order in database:', error);
-        alert('Error creating order: ' + error.message + '\nPlease try again.');
     }
-}
-
-// Show no items warning modal
-function showNoItemsWarningModal() {
-    const modal = document.getElementById('noItemsWarningModal');
+    
+    // Show modal
     modal.classList.add('show');
-}
-
-// Close no items warning modal
-function closeNoItemsWarningModal() {
-    const modal = document.getElementById('noItemsWarningModal');
-    modal.classList.remove('show');
-}
-
-// Show order type warning modal
-function showOrderTypeWarningModal() {
-    const modal = document.getElementById('orderTypeWarningModal');
-    modal.classList.add('show');
-}
-
-// Close order type warning modal
-function closeOrderTypeWarningModal() {
-    const modal = document.getElementById('orderTypeWarningModal');
-    modal.classList.remove('show');
-}
-
-// Handle order type selection from modal
-function selectOrderTypeFromModal(orderType) {
-    // Update the main order type buttons
-    document.querySelectorAll('.type-button').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.type === orderType) {
-            btn.classList.add('active');
-        }
-    });
     
-    // Close the modal
-    closeOrderTypeWarningModal();
-    
-    // Automatically proceed with confirmation
-    handleConfirm();
+    // Set up event handlers if not already set
+    setupEditModalHandlers();
 }
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', function() {
-    setInterval(updateDateTime, 1000);
-    initializeQueueNumber();  // Use initializeQueueNumber instead of generateQueueNumber
-    updateDateTime();
-
-    // Add event listeners for buttons
-    document.querySelector('.cancel-button').addEventListener('click', handleCancel);
-    document.querySelector('.confirm-button').addEventListener('click', handleConfirm);
+// Helper function to check if item name belongs to hot/cold coffee categories
+function isHotOrColdCoffeeItemByName(itemName) {
+    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Matcha']; // Changed from 'Macha' to 'Matcha'
+    const coldCoffeeItems = ['Iced Latte', 'Iced Americano', 'Cold Brew', 'Frappuccino', 'Affogato'];
     
-    // Add menu button click handler
-    const menuButton = document.querySelector('.menu-button');
-    if(menuButton) {
-        menuButton.addEventListener('click', goToMenu);
+    return hotCoffeeItems.includes(itemName) || coldCoffeeItems.includes(itemName);
+}
+
+function setupEditModalHandlers() {
+    const modal = document.getElementById('editItemModal');
+    
+    // Close button
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn && !closeBtn.hasAttribute('data-handler-set')) {
+        closeBtn.addEventListener('click', closeEditModal);
+        closeBtn.setAttribute('data-handler-set', 'true');
     }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Check for newly added items
-    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
     
-    if (newItems.length > 0) {
-        // Add items to the grid
-        newItems.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'grid-row flash-highlight';
-            row.innerHTML = `
-                <div>${item.quantity}</div>
-                <div>${item.name}</div>
-                <div>₱${item.price.toFixed(2)}</div>
-            `;
-            document.getElementById('items-container').appendChild(row);
+    // Quantity controls
+    const minusBtn = modal.querySelector('.minus-btn');
+    const plusBtn = modal.querySelector('.plus-btn');
+    const quantitySpan = modal.querySelector('.quantity-value');
+    
+    if (minusBtn && !minusBtn.hasAttribute('data-handler-set')) {
+        minusBtn.addEventListener('click', () => {
+            let qty = parseInt(quantitySpan.textContent);
+            if (qty > 1) {
+                qty--;
+                quantitySpan.textContent = qty;
+            }
         });
-        
-        // Clear the stored items
-        localStorage.removeItem('newAddedItems');
-        
-        // Update total
-        updateTotal();
+        minusBtn.setAttribute('data-handler-set', 'true');
     }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Check for newly added items from menu
-    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
     
-    if (newItems.length > 0) {
-        newItems.forEach(item => {
-            // Create the item elements with flash effect
-            const quantityElement = document.createElement('div');
-            quantityElement.textContent = item.quantity;
-            quantityElement.classList.add('flash-highlight');
-            
-            const nameElement = document.createElement('div');
-            nameElement.textContent = item.name;
-            nameElement.classList.add('flash-highlight');
-            
-            const priceElement = document.createElement('div');
-            priceElement.textContent = `₱${(item.price * item.quantity).toFixed(2)}`;
-            priceElement.classList.add('flash-highlight');
-            
-            // Add to containers
-            document.getElementById('items-container').appendChild(quantityElement);
-            document.getElementById('names-container').appendChild(nameElement);
-            document.getElementById('prices-container').appendChild(priceElement);
+    if (plusBtn && !plusBtn.hasAttribute('data-handler-set')) {
+        plusBtn.addEventListener('click', () => {
+            let qty = parseInt(quantitySpan.textContent);
+            qty++;
+            quantitySpan.textContent = qty;
         });
-        
-        // Clear storage after adding
-        localStorage.removeItem('newAddedItems');
-        
-        // Update total amount
-        updateTotal();
+        plusBtn.setAttribute('data-handler-set', 'true');
     }
-});
-
-// Function to populate grid items from localStorage
-function populateGridFromStorage() {
-    const newItems = JSON.parse(localStorage.getItem('newAddedItems') || '[]');
     
-    if (newItems.length > 0) {
-        newItems.forEach(item => {
-            // Create grid items with flash effect
-            const quantityElement = document.createElement('div');
-            quantityElement.textContent = item.quantity;
-            quantityElement.classList.add('flash-highlight');
-            
-            const nameElement = document.createElement('div');
-            nameElement.textContent = item.name;
-            nameElement.classList.add('flash-highlight');
-            
-            const priceElement = document.createElement('div');
-            priceElement.textContent = `₱${item.price.toFixed(2)}`;
-            priceElement.classList.add('flash-highlight');
-            
-            // Add to containers
-            document.getElementById('items-container').appendChild(quantityElement);
-            document.getElementById('names-container').appendChild(nameElement);
-            document.getElementById('prices-container').appendChild(priceElement);
-        });
-        
-        // Clear storage after adding
-        localStorage.removeItem('newAddedItems');
-        
-        // Update total amount
-        updateTotal();
-    }
-}
-
-// Call on page load
-document.addEventListener('DOMContentLoaded', () => {
-    populateGridFromStorage();
-});
-
-// Handler functions
-function handleCancel() {
-    // Remove confirm() and just call cancelOrder which handles modals
-    cancelOrder();
-}
-
-// Menu navigation function - now opens modal instead of redirecting
-function goToMenu() {
-    // Show the add item modal
-    showAddItemModal();
-}
-
-// Helper function to get current order items
-function getOrderItems() {
-    const items = [];
-    const quantities = document.getElementById('items-container').children;
-    const names = document.getElementById('names-container').children;
-    const addons = document.getElementById('addons-container') ? document.getElementById('addons-container').children : [];
-    const prices = document.getElementById('prices-container').children;
-
-    for(let i = 0; i < quantities.length; i++) {
-        items.push({
-            quantity: parseInt(quantities[i].childNodes[0].textContent.trim()),
-            name: names[i].textContent,
-            // For now, add-ons are not editable in cashiering, so just display
-            addons: addons[i] ? addons[i].textContent.split(',').map(a => a.trim()).filter(a => a && a !== '-') : [],
-            price: parseFloat(prices[i].textContent.replace('₱', ''))
-        });
-    }
-    return items;
-}
-
-// Utility functions
-function clearContainers() {
-    document.getElementById('items-container').innerHTML = '';
-    document.getElementById('names-container').innerHTML = '';
-    if (document.getElementById('addons-container')) {
-        document.getElementById('addons-container').innerHTML = '';
-    }
-    document.getElementById('prices-container').innerHTML = '';
-}
-
-function clearInputs() {
-    document.getElementById('quantity').value = '';
-    document.getElementById('productName').value = '';
-    document.getElementById('price').value = '';
-}
-
-function clearOrder() {
-    clearContainers();
-    clearInputs();
-    document.getElementById('orderNumber').value = '';
-    document.getElementById('total').textContent = 'Total Amount: ₱0.00';
-}
-
-// Order type selection
-document.querySelectorAll('.type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        localStorage.setItem('selectedOrderType', btn.dataset.type);
-    });
-});
-
-// Order lookup functionality - calls the database lookup function
-function lookupOrder() {
-    console.log('🔍 lookupOrder() wrapper called, delegating to lookupOrderInternal()');
-    lookupOrderInternal();
-}
-
-// Add type button functionality
-document.querySelectorAll('.type-button').forEach(button => {
-    button.addEventListener('click', () => {
-        document.querySelectorAll('.type-button').forEach(btn => 
-            btn.classList.remove('active'));
-        button.classList.add('active');
-        localStorage.setItem('orderType', button.dataset.type);
-    });
-});
-
-// Add this function to restrict input to numbers only
-function onlyNumbers(e) {
-    const char = String.fromCharCode(e.which);
-    if (!(/[0-9]/.test(char))) {
-        e.preventDefault();
-        return false;
-    }
-}
-
-// On page load, check if there is an updated order from menuinterface
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for updated order from menuinterface
-    const updatedOrder = JSON.parse(localStorage.getItem('updatedOrderFromMenu') || 'null');
-    if (updatedOrder) {
-        clearContainers();
-        updatedOrder.items.forEach(item => {
-            addOrderItem(
-                item.quantity,
-                item.name,
-                item.total ? (item.total / item.quantity) : item.price, // Use per-item price if possible
-                item.addons
-            );
-        });
-        updateTotal();
-        // Update order type button if present
-        if (updatedOrder.orderType) {
-            document.querySelectorAll('.type-button').forEach(btn => {
-                if (
-                    btn.textContent.trim().toLowerCase() === updatedOrder.orderType.trim().toLowerCase() ||
-                    btn.dataset.type.replace('-', ' ').replace('out', 'out').toLowerCase() === updatedOrder.orderType.trim().toLowerCase()
-                ) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
+    // Add-on selection - only set handlers if not already set
+    modal.querySelectorAll('.edit-addon-box').forEach(addon => {
+        if (!addon.hasAttribute('data-handler-set')) {
+            addon.addEventListener('click', () => {
+                // Only allow selection if the add-on is enabled (has pointer events)
+                const computedStyle = window.getComputedStyle(addon);
+                if (computedStyle.pointerEvents !== 'none') {
+                    addon.classList.toggle('selected');
                 }
             });
+            addon.setAttribute('data-handler-set', 'true');
         }
-        localStorage.removeItem('updatedOrderFromMenu');
+    });
+    
+    // Save and cancel buttons
+    const saveBtn = modal.querySelector('.save-btn');
+    const cancelBtn = modal.querySelector('.cancel-btn');
+    
+    if (saveBtn && !saveBtn.hasAttribute('data-handler-set')) {
+        saveBtn.addEventListener('click', saveEditedItem);
+        saveBtn.setAttribute('data-handler-set', 'true');
     }
-});
+    
+    if (cancelBtn && !cancelBtn.hasAttribute('data-handler-set')) {
+        cancelBtn.addEventListener('click', closeEditModal);
+        cancelBtn.setAttribute('data-handler-set', 'true');
+    }
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editItemModal');
+    modal.classList.remove('show');
+    currentEditingIndex = -1;
+}
+
+function saveEditedItem() {
+    if (currentEditingIndex === -1) {
+        console.error('No item being edited');
+        return;
+    }
+    
+    const modal = document.getElementById('editItemModal');
+    const newQuantity = parseInt(modal.querySelector('.quantity-value').textContent);
+    const itemName = modal.querySelector('.edit-item-name').textContent;
+    
+    // Check if this is a hot/cold coffee item to determine if add-ons should be processed
+    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
+    
+    // Get selected add-ons only for hot/cold coffee items
+    const selectedAddons = [];
+    if (isHotOrColdCoffee) {
+        modal.querySelectorAll('.edit-addon-box.selected').forEach(addon => {
+            const addonName = addon.querySelector('span').textContent;
+            selectedAddons.push(addonName);
+        });
+    }
+    
+    // Update the grid
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    const itemDiv = itemsContainer.children[currentEditingIndex];
+    
+    // Step 1: Get original price
+    const originalPrice = getBasePrice(itemName);
+    
+    // Step 2: Calculate total add-ons price (only for hot/cold coffee)
+    let totalAddOnsPrice = 0;
+    if (isHotOrColdCoffee) {
+        totalAddOnsPrice = selectedAddons.reduce((sum, addonName) => {
+            return sum + getAddonPrice(addonName);
+        }, 0);
+    }
+    
+    // Step 3: Calculate updated unit price = original + total add-ons
+    const unitPrice = originalPrice + totalAddOnsPrice;
+    
+    // Step 4: Calculate total amount = unit price × quantity
+    const totalPrice = unitPrice * newQuantity;
+    
+    // Update quantity display
+    itemDiv.innerHTML = `${newQuantity} 
+        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+    
+    // Update add-ons display (only show add-ons for hot/cold coffee)
+    if (isHotOrColdCoffee) {
+        addonsContainer.children[currentEditingIndex].textContent = selectedAddons.length > 0 ? selectedAddons.join(', ') : '-';
+    } else {
+        addonsContainer.children[currentEditingIndex].textContent = '-';
+    }
+    
+    // Update price display with calculated total
+    pricesContainer.children[currentEditingIndex].textContent = `₱${totalPrice.toFixed(2)}`;
+    
+    // Recalculate total using the updated calculation logic
+    updateTotal();
+    
+    // Sync to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Edit changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync edit changes to database');
+            }
+        });
+    }
+    
+    // Close modal
+    closeEditModal();
+}
+
+// ============ DELETE ITEM FUNCTIONALITY ============
+
+let deleteItemIndex = -1;
+
+function deleteItem(button) {
+    console.log('Delete item clicked');
+    
+    // Get the row index
+    const itemDiv = button.parentNode;
+    const itemsContainer = document.getElementById('items-container');
+    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
+    
+    if (rowIndex === -1) {
+        console.error('Could not find row index');
+        return;
+    }
+    
+    deleteItemIndex = rowIndex;
+    
+    // Get item name for confirmation
+    const namesContainer = document.getElementById('names-container');
+    const itemName = namesContainer.children[rowIndex].textContent;
+    
+    // Show delete confirmation modal
+    showDeleteItemModal(itemName);
+}
+
+function showDeleteItemModal(itemName) {
+    const modal = document.getElementById('deleteItemModal');
+    const messageElement = modal.querySelector('.delete-message');
+    messageElement.textContent = `Are you sure you want to remove "${itemName}" from the order?`;
+    modal.classList.add('show');
+}
+
+function closeDeleteItemModal() {
+    const modal = document.getElementById('deleteItemModal');
+    modal.classList.remove('show');
+    deleteItemIndex = -1;
+}
+
+function confirmDeleteItem() {
+    if (deleteItemIndex === -1) {
+        console.error('No item selected for deletion');
+        return;
+    }
+    
+    // Remove item from all containers
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    itemsContainer.removeChild(itemsContainer.children[deleteItemIndex]);
+    namesContainer.removeChild(namesContainer.children[deleteItemIndex]);
+    addonsContainer.removeChild(addonsContainer.children[deleteItemIndex]);
+    pricesContainer.removeChild(pricesContainer.children[deleteItemIndex]);
+    
+    // Update total
+    updateTotal();
+    
+    // Sync to database if we have an order ID
+    if (currentOrderId) {
+        syncOrderToDatabase().then(success => {
+            if (success) {
+                console.log('✅ Delete changes synced to database');
+            } else {
+                console.warn('⚠️ Failed to sync delete changes to database');
+            }
+        });
+    }
+    
+    // Close modal
+    closeDeleteItemModal();
+    
+    console.log('Item deleted successfully');
+}
 
 // ============ ADD ITEM MODAL FUNCTIONALITY ============
 
@@ -1042,7 +1025,7 @@ function updateModalProductAvailability() {
         });
         
         console.log("=== MODAL PRODUCT AVAILABILITY CHECK COMPLETE ===");
-          } catch (error) {
+    } catch (error) {
         console.error("Failed to check product availability in modal:", error);
     }
 }
@@ -1373,7 +1356,7 @@ function selectFoodItem(item) {
 // Helper function to check if item is Hot Coffee or Cold Coffee
 function isHotOrColdCoffeeItem(item) {
     const itemName = item.querySelector('.food-name').textContent;
-    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Macha'];
+    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Matcha']; // Changed from 'Macha' to 'Matcha'
     const coldCoffeeItems = ['Iced Latte', 'Iced Americano', 'Cold Brew', 'Frappuccino', 'Affogato'];
     
     return hotCoffeeItems.includes(itemName) || coldCoffeeItems.includes(itemName);
@@ -1482,89 +1465,6 @@ function toggleAddon(addon) {
     
     // Update the order item with new add-ons
     updateModalOrderItem(currentActiveCoffee);
-}
-
-// Show selection modal for which coffee item to add the add-on to
-function showCoffeeSelectionForAddon(addon, selectedCoffeeItems) {
-    // Create a simple selection interface
-    const addonName = addon.getAttribute('data-name');
-    
-    // Create a temporary selection div
-    const selectionDiv = document.createElement('div');
-    selectionDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border: 2px solid #8B4513;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 300px;
-        text-align: center;
-    `;
-    
-    selectionDiv.innerHTML = `
-        <h4 style="margin-top: 0; color: #8B4513;">Add ${addonName} to which coffee?</h4>
-        <div id="coffee-selection-buttons" style="margin: 15px 0;"></div>
-        <button onclick="this.parentElement.remove()" style="background: #ccc; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">Cancel</button>
-    `;
-    
-    const buttonsContainer = selectionDiv.querySelector('#coffee-selection-buttons');
-    
-    // Add button for each selected coffee item
-    selectedCoffeeItems.forEach(coffeeItem => {
-        const foodName = coffeeItem.querySelector('.food-name').textContent;
-        const button = document.createElement('button');
-        button.textContent = foodName;
-        button.style.cssText = `
-            display: block;
-            width: 100%;
-            margin: 5px 0;
-            padding: 10px;
-            background: #8B4513;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        `;
-        
-        button.onclick = () => {
-            // Add the add-on to this specific coffee item
-            const isCurrentlySelected = addon.classList.contains('selected') && addon.getAttribute('data-for-item') === foodName;
-            
-            if (isCurrentlySelected) {
-                // Remove if already selected for this item
-                addon.classList.remove('selected');
-                addon.removeAttribute('data-for-item');
-            } else {
-                // Add to this coffee item
-                addon.classList.add('selected');
-                addon.setAttribute('data-for-item', foodName);
-            }
-            
-            // Update the order item
-            updateModalOrderItem(coffeeItem);
-            
-            // Update the display to show which item has add-ons
-            updateAddonDisplay();
-            
-            // Remove the selection modal
-            selectionDiv.remove();
-        };
-        
-        // Highlight if this coffee already has this add-on
-        if (addon.getAttribute('data-for-item') === foodName) {
-            button.style.background = '#A0522D';
-            button.innerHTML = `${foodName} ✓`;
-        }
-        
-        buttonsContainer.appendChild(button);
-    });
-    
-    document.body.appendChild(selectionDiv);
 }
 
 // Update the add-on display to show current associations
@@ -1750,564 +1650,131 @@ function addSelectedItems() {
     closeAddItemModal();
 }
 
-// Add item to the main cashiering grid
-function addItemToGrid(name, price, addons = []) {
-    const itemsContainer = document.getElementById('items-container');
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    // Format add-ons for comparison
-    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
-        ? addons.map(a => a.name || a).join(', ') 
-        : '-';
-    
-    // Check for existing item with same name and add-ons
-    let existingRowIndex = -1;
-    for (let i = 0; i < namesContainer.children.length; i++) {
-        const existingName = namesContainer.children[i].textContent;
-        const existingAddons = addonsContainer.children[i].textContent;
-        
-        if (existingName === name && existingAddons === addonsText) {
-            existingRowIndex = i;
-            break;
-        }
-    }
-    
-    if (existingRowIndex !== -1) {
-        // Update existing item quantity
-        const quantityElement = itemsContainer.children[existingRowIndex];
-        
-        // Extract current quantity
-        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
-        const newQuantity = currentQuantity + 1;
-        
-        // Update quantity display with buttons
-        quantityElement.innerHTML = `${newQuantity} 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        // Let updateTotal() recalculate with correct pricing logic
-        updateTotal();
-    } else {
-        // Create new row
-        const itemDiv = document.createElement('div');
-        itemDiv.style.cssText = itemStyle;
-        itemDiv.innerHTML = `1 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.style.cssText = itemStyle;
-        nameDiv.textContent = name;
-        
-        const addonsDiv = document.createElement('div');
-        addonsDiv.style.cssText = itemStyle;
-        addonsDiv.textContent = addonsText;
-        
-        const priceDiv = document.createElement('div');
-        priceDiv.style.cssText = itemStyle;
-        
-        // Step 1: Get original price
-        const originalPrice = getBasePrice(name);
-        
-        // Step 2: Calculate total add-ons price
-        let totalAddOnsPrice = 0;
-        if (addons && Array.isArray(addons) && addons.length > 0) {
-            totalAddOnsPrice = addons.reduce((sum, addon) => {
-                const addonName = addon.name || addon;
-                return sum + getAddonPrice(addonName);
-            }, 0);
-        }
-        
-        // Step 3: Calculate unit price = original + total add-ons
-        const unitPrice = originalPrice + totalAddOnsPrice;
-        
-        // Step 4: Set price display (quantity is 1 for new items)
-        priceDiv.textContent = `₱${unitPrice.toFixed(2)}`;
-        
-        itemsContainer.appendChild(itemDiv);
-        namesContainer.appendChild(nameDiv);
-        addonsContainer.appendChild(addonsDiv);
-        pricesContainer.appendChild(priceDiv);
-        
-        // Recalculate total using the updated calculation logic
-        updateTotal();
-    }
+// Menu navigation function - now opens modal instead of redirecting
+function goToMenu() {
+    // Show the add item modal
+    showAddItemModal();
 }
 
-// Add item to the main cashiering grid with specified quantity (fix for quantity duplication)
-function addItemToGridWithQuantity(name, unitPrice, addons = [], quantity = 1) {
-    console.log(`🎯 DEBUG addItemToGridWithQuantity called:`, {
-        name,
-        unitPrice,
-        addons,
-        quantity
-    });
-    
-    const itemsContainer = document.getElementById('items-container');
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    // Format add-ons for comparison
-    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
-        ? addons.map(a => a.name || a).join(', ') 
-        : '-';
-    
-    // Check for existing item with same name and add-ons
-    let existingRowIndex = -1;
-    for (let i = 0; i < namesContainer.children.length; i++) {
-        const existingName = namesContainer.children[i].textContent;
-        const existingAddons = addonsContainer.children[i].textContent;
-        
-        if (existingName === name && existingAddons === addonsText) {
-            existingRowIndex = i;
-            break;
-        }
-    }
-    
-    if (existingRowIndex !== -1) {
-        // Update existing item quantity
-        const quantityElement = itemsContainer.children[existingRowIndex];
-          // Extract current quantity
-        const currentQuantity = parseInt(quantityElement.textContent.trim().split(' ')[0]);
-        const newQuantity = currentQuantity + quantity;
-        
-        // Update quantity display with buttons
-        quantityElement.innerHTML = `${newQuantity} 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        console.log(`📈 Updated existing item ${name}: old qty=${currentQuantity}, added=${quantity}, new total=${newQuantity}`);
-        
-        // Let updateTotal() recalculate with correct pricing logic
-        updateTotal();
-    } else {
-        // Create new row with specified quantity
-        const itemDiv = document.createElement('div');
-        itemDiv.style.cssText = itemStyle;
-        itemDiv.innerHTML = `${quantity} 
-            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-        
-        console.log(`🆕 Created new item ${name} with quantity: ${quantity}`);
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.style.cssText = itemStyle;
-        nameDiv.textContent = name;
-        
-        const addonsDiv = document.createElement('div');
-        addonsDiv.style.cssText = itemStyle;
-        addonsDiv.textContent = addonsText;
-        
-        const priceDiv = document.createElement('div');
-        priceDiv.style.cssText = itemStyle;
-        
-        // Calculate pricing
-        const originalPrice = getBasePrice(name);
-        let totalAddOnsPrice = 0;
-        
-        if (addons && Array.isArray(addons) && addons.length > 0) {
-            totalAddOnsPrice = addons.reduce((sum, addon) => {
-                const addonName = addon.name || addon;
-                return sum + getAddonPrice(addonName);
-            }, 0);
-        }
-        
-        // Calculate unit price = original + total add-ons
-        const calculatedUnitPrice = originalPrice + totalAddOnsPrice;
-        
-        // Use the provided unit price or calculated price
-        const finalUnitPrice = unitPrice || calculatedUnitPrice;
-        
-        // Display unit price (not total price)
-        priceDiv.textContent = `₱${finalUnitPrice.toFixed(2)}`;
-        
-        itemsContainer.appendChild(itemDiv);
-        namesContainer.appendChild(nameDiv);
-        addonsContainer.appendChild(addonsDiv);
-        pricesContainer.appendChild(priceDiv);
-        
-        // Recalculate total using the updated calculation logic
-        updateTotal();
-    }
-}
-
-// Sample base prices for items
-function getBasePrice(itemName) {
-    // Return base prices for items - adjust these according to your actual prices
-    const prices = {
-        'Espresso': 120,
-        'Cappuccino': 150,
-        'Americano': 130,
-        'Latte': 140,
-        'Macha': 145,
-        'Iced Latte': 140,
-        'Iced Americano': 130,
-        'Cold Brew': 140,
-        'Frappuccino': 160,
-        'Affogato': 155,
-        'Strawberry Italian Soda': 110,
-        'Lemon-Lime Fizz': 110,
-        'Raspberry Spritzer': 115,
-        'Donut': 80,
-        'Apple Pie': 90,
-        'Cinnamon Roll': 70,
-        'Sugar Cookie': 60,
-        'Brownie': 75,
-        'BLT (Bacon, Lettuce, Tomato)': 180,
-        'Club Sandwich': 190,
-        'Ham and Cheese Sandwich': 160,
-        'Tuna Salad Sandwich': 170,
-        'Chocolate Cake': 200,
-        'Cheesecake': 220,
-        'Carrot Cake': 190,
-        'Black Forest Cake': 210,
-        'Red Velvet Cake': 215
-    };
-    return prices[itemName] || 100; // Default price if not found
-}
-
-// Get price of add-ons
-function getAddonPrice(addonName) {
-    // Return prices for add-ons
-    const addonPrices = {
-        'Extra Milk': 15,
-        'Extra Sugar': 10,
-        'Whipped Cream': 20,
-        'Caramel Syrup': 25
-    };
-    return addonPrices[addonName] || 0;
-}
-
-// ============ EDIT ITEM FUNCTIONALITY ============
-
-let currentEditingIndex = -1;
-
-function editItem(button) {
-    console.log('Edit item clicked');
-    
-    // Get the row index
-    const itemDiv = button.parentNode;
-    const itemsContainer = document.getElementById('items-container');
-    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
-    
-    if (rowIndex === -1) {
-        console.error('Could not find row index');
+// Missing functions for lookup functionality
+function onlyNumbers(e) {
+    // Allow: backspace, delete, tab, escape, enter
+    if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode === 65 && e.ctrlKey === true) ||
+        (e.keyCode === 67 && e.ctrlKey === true) ||
+        (e.keyCode === 86 && e.ctrlKey === true) ||
+        (e.keyCode === 88 && e.ctrlKey === true) ||
+        // Allow: home, end, left, right
+        (e.keyCode >= 35 && e.keyCode <= 39)) {
         return;
     }
-    
-    currentEditingIndex = rowIndex;
-    
-    // Get item data from the grid
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    const quantity = parseInt(itemDiv.childNodes[0].textContent.trim());
-    const itemName = namesContainer.children[rowIndex].textContent;
-    const addonsText = addonsContainer.children[rowIndex].textContent;
-    const totalPrice = parseFloat(pricesContainer.children[rowIndex].textContent.replace('₱', ''));
-    
-    console.log(`Editing: ${itemName}, Qty: ${quantity}, Price: ${totalPrice}, Add-ons: ${addonsText}`);
-    
-    // Show edit modal and populate with current data
-    showEditModal(itemName, quantity, addonsText, totalPrice);
-}
-
-function showEditModal(itemName, quantity, addonsText, totalPrice) {
-    const modal = document.getElementById('editItemModal');
-    
-    // Populate modal with current item data
-    modal.querySelector('.edit-item-name').textContent = itemName;
-    modal.querySelector('.quantity-value').textContent = quantity;
-    
-    // Check if this item is a hot/cold coffee item
-    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
-    
-    // Handle add-ons section visibility and functionality
-    const addonsSection = modal.querySelector('.edit-addons-section');
-    const addonBoxes = modal.querySelectorAll('.edit-addon-box');
-    
-    if (isHotOrColdCoffee) {
-        // Enable add-ons for hot/cold coffee
-        addonsSection.style.opacity = '1';
-        addonBoxes.forEach(addon => {
-            addon.style.opacity = '1';
-            addon.style.pointerEvents = 'auto';
-            addon.style.cursor = 'pointer';
-        });
-        
-        // Handle add-ons selection for coffee items
-        const addonsArray = addonsText !== '-' ? addonsText.split(', ').map(a => a.trim()) : [];
-        
-        // Clear previous selections
-        addonBoxes.forEach(addon => {
-            addon.classList.remove('selected');
-        });
-        
-        // Select current add-ons
-        addonsArray.forEach(addonName => {
-            const addonBox = Array.from(addonBoxes).find(box => {
-                const spanText = box.querySelector('span').textContent;
-                return spanText === addonName;
-            });
-            if (addonBox) {
-                addonBox.classList.add('selected');
-            }
-        });
-    } else {
-        // Disable add-ons for non-coffee items
-        addonsSection.style.opacity = '0.5';
-        addonBoxes.forEach(addon => {
-            addon.classList.remove('selected');
-            addon.style.opacity = '0.3';
-            addon.style.pointerEvents = 'none';
-            addon.style.cursor = 'not-allowed';
-        });
-    }
-    
-    // Show modal
-    modal.classList.add('show');
-    
-    // Set up event handlers if not already set
-    setupEditModalHandlers();
-}
-
-// Helper function to check if item name belongs to hot/cold coffee categories
-function isHotOrColdCoffeeItemByName(itemName) {
-    const hotCoffeeItems = ['Espresso', 'Cappuccino', 'Americano', 'Latte', 'Macha'];
-    const coldCoffeeItems = ['Iced Latte', 'Iced Americano', 'Cold Brew', 'Frappuccino', 'Affogato'];
-    
-    return hotCoffeeItems.includes(itemName) || coldCoffeeItems.includes(itemName);
-}
-
-function setupEditModalHandlers() {
-    const modal = document.getElementById('editItemModal');
-    
-    // Close button
-    const closeBtn = modal.querySelector('.close-modal');
-    if (closeBtn && !closeBtn.hasAttribute('data-handler-set')) {
-        closeBtn.addEventListener('click', closeEditModal);
-        closeBtn.setAttribute('data-handler-set', 'true');
-    }
-    
-    // Quantity controls
-    const minusBtn = modal.querySelector('.minus-btn');
-    const plusBtn = modal.querySelector('.plus-btn');
-    const quantitySpan = modal.querySelector('.quantity-value');
-    
-    if (minusBtn && !minusBtn.hasAttribute('data-handler-set')) {
-        minusBtn.addEventListener('click', () => {
-            let qty = parseInt(quantitySpan.textContent);
-            if (qty > 1) {
-                qty--;
-                quantitySpan.textContent = qty;
-            }
-        });
-        minusBtn.setAttribute('data-handler-set', 'true');
-    }
-    
-    if (plusBtn && !plusBtn.hasAttribute('data-handler-set')) {
-        plusBtn.addEventListener('click', () => {
-            let qty = parseInt(quantitySpan.textContent);
-            qty++;
-            quantitySpan.textContent = qty;
-        });
-        plusBtn.setAttribute('data-handler-set', 'true');
-    }
-    
-    // Add-on selection - only set handlers if not already set
-    modal.querySelectorAll('.edit-addon-box').forEach(addon => {
-        if (!addon.hasAttribute('data-handler-set')) {
-            addon.addEventListener('click', () => {
-                // Only allow selection if the add-on is enabled (has pointer events)
-                const computedStyle = window.getComputedStyle(addon);
-                if (computedStyle.pointerEvents !== 'none') {
-                    addon.classList.toggle('selected');
-                }
-            });
-            addon.setAttribute('data-handler-set', 'true');
-        }
-    });
-    
-    // Save and cancel buttons
-    const saveBtn = modal.querySelector('.save-btn');
-    const cancelBtn = modal.querySelector('.cancel-btn');
-    
-    if (saveBtn && !saveBtn.hasAttribute('data-handler-set')) {
-        saveBtn.addEventListener('click', saveEditedItem);
-        saveBtn.setAttribute('data-handler-set', 'true');
-    }
-    
-    if (cancelBtn && !cancelBtn.hasAttribute('data-handler-set')) {
-        cancelBtn.addEventListener('click', closeEditModal);
-        cancelBtn.setAttribute('data-handler-set', 'true');
+    // Ensure that it is a number and stop the keypress
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
     }
 }
 
-function closeEditModal() {
-    const modal = document.getElementById('editItemModal');
-    modal.classList.remove('show');
-    currentEditingIndex = -1;
-}
-
-function saveEditedItem() {
-    if (currentEditingIndex === -1) {
-        console.error('No item being edited');
-        return;
-    }
-    
-    const modal = document.getElementById('editItemModal');
-    const newQuantity = parseInt(modal.querySelector('.quantity-value').textContent);
-    const itemName = modal.querySelector('.edit-item-name').textContent;
-    
-    // Check if this is a hot/cold coffee item to determine if add-ons should be processed
-    const isHotOrColdCoffee = isHotOrColdCoffeeItemByName(itemName);
-    
-    // Get selected add-ons only for hot/cold coffee items
-    const selectedAddons = [];
-    if (isHotOrColdCoffee) {
-        modal.querySelectorAll('.edit-addon-box.selected').forEach(addon => {
-            const addonName = addon.querySelector('span').textContent;
-            selectedAddons.push(addonName);
-        });
-    }
-    
-    // Update the grid
-    const itemsContainer = document.getElementById('items-container');
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    const itemDiv = itemsContainer.children[currentEditingIndex];
-    
-    // Step 1: Get original price
-    const originalPrice = getBasePrice(itemName);
-    
-    // Step 2: Calculate total add-ons price (only for hot/cold coffee)
-    let totalAddOnsPrice = 0;
-    if (isHotOrColdCoffee) {
-        totalAddOnsPrice = selectedAddons.reduce((sum, addonName) => {
-            return sum + getAddonPrice(addonName);
-        }, 0);
-    }
-    
-    // Step 3: Calculate updated unit price = original + total add-ons
-    const unitPrice = originalPrice + totalAddOnsPrice;
-    
-    // Step 4: Calculate total amount = unit price × quantity
-    const totalPrice = unitPrice * newQuantity;
-    
-    // Update quantity display
-    itemDiv.innerHTML = `${newQuantity} 
-        <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
-        <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
-    
-    // Update add-ons display (only show add-ons for hot/cold coffee)
-    if (isHotOrColdCoffee) {
-        addonsContainer.children[currentEditingIndex].textContent = selectedAddons.length > 0 ? selectedAddons.join(', ') : '-';
-    } else {
-        addonsContainer.children[currentEditingIndex].textContent = '-';
-    }
-    
-    // Update price display with calculated total
-    pricesContainer.children[currentEditingIndex].textContent = `₱${totalPrice.toFixed(2)}`;
-    
-    // Recalculate total using the updated calculation logic
-    updateTotal();
-    
-    // Sync to database if we have an order ID
-    if (currentOrderId) {
-        syncOrderToDatabase().then(success => {
-            if (success) {
-                console.log('✅ Edit changes synced to database');
-            } else {
-                console.warn('⚠️ Failed to sync edit changes to database');
-            }
-        });
-    }
-    
-    // Close modal
-    closeEditModal();
-}
-
-// ============ DELETE ITEM FUNCTIONALITY ============
-
-let deleteItemIndex = -1;
-
-function deleteItem(button) {
-    console.log('Delete item clicked');
-    
-    // Get the row index
-    const itemDiv = button.parentNode;
-    const itemsContainer = document.getElementById('items-container');
-    const rowIndex = Array.from(itemsContainer.children).indexOf(itemDiv);
-    
-    if (rowIndex === -1) {
-        console.error('Could not find row index');
-        return;
-    }
-    
-    deleteItemIndex = rowIndex;
-    
-    // Get item name for confirmation
-    const namesContainer = document.getElementById('names-container');
-    const itemName = namesContainer.children[rowIndex].textContent;
-    
-    // Show delete confirmation modal
-    showDeleteItemModal(itemName);
-}
-
-function showDeleteItemModal(itemName) {
-    const modal = document.getElementById('deleteItemModal');
-    const messageElement = modal.querySelector('.delete-message');
-    messageElement.textContent = `Are you sure you want to remove "${itemName}" from the order?`;
+// Missing modal functions for warnings
+function showNoItemsWarningModal() {
+    const modal = document.getElementById('noItemsWarningModal');
     modal.classList.add('show');
 }
 
-function closeDeleteItemModal() {
-    const modal = document.getElementById('deleteItemModal');
+function closeNoItemsWarningModal() {
+    const modal = document.getElementById('noItemsWarningModal');
     modal.classList.remove('show');
-    deleteItemIndex = -1;
 }
 
-function confirmDeleteItem() {
-    if (deleteItemIndex === -1) {
-        console.error('No item selected for deletion');
-        return;
-    }
+function showOrderTypeWarningModal() {
+    const modal = document.getElementById('orderTypeWarningModal');
+    modal.classList.add('show');
+}
+
+function closeOrderTypeWarningModal() {
+    const modal = document.getElementById('orderTypeWarningModal');
+    modal.classList.remove('show');
+}
+
+function selectOrderTypeFromModal(type) {
+    // Set the order type based on modal selection
+    document.querySelectorAll('.type-button').forEach(btn => {
+        btn.classList.remove('active');
+        const btnType = btn.dataset.type;
+        if (btnType === type) {
+            btn.classList.add('active');
+        }
+    });
     
-    // Remove item from all containers
-    const itemsContainer = document.getElementById('items-container');
-    const namesContainer = document.getElementById('names-container');
-    const addonsContainer = document.getElementById('addons-container');
-    const pricesContainer = document.getElementById('prices-container');
-    
-    itemsContainer.removeChild(itemsContainer.children[deleteItemIndex]);
-    namesContainer.removeChild(namesContainer.children[deleteItemIndex]);
-    addonsContainer.removeChild(addonsContainer.children[deleteItemIndex]);
-    pricesContainer.removeChild(pricesContainer.children[deleteItemIndex]);
-    
-    // Update total
-    updateTotal();
-    
-    // Sync to database if we have an order ID
-    if (currentOrderId) {
-        syncOrderToDatabase().then(success => {
-            if (success) {
-                console.log('✅ Delete changes synced to database');
-            } else {
-                console.warn('⚠️ Failed to sync delete changes to database');
-            }
+    // Close the modal
+    closeOrderTypeWarningModal();
+}
+
+// Function to create new order in database (referenced in handleConfirm)
+async function createNewOrderInDatabase(orderItems, total, queueNum, orderTypeText) {
+    try {
+        console.log('🔄 Creating new order in database...');
+        
+        // Prepare order data for database
+        const orderData = {
+            order_type: orderTypeText.toLowerCase().replace(' ', '_'),
+            customer_name: null,
+            items: orderItems.map(item => ({
+                product_name: item.name,
+                quantity: item.quantity,
+                unit_price: item.price,
+                total_price: item.totalPrice,
+                addons: item.addons || []
+            })),
+            total_amount: parseFloat(total)
+        };
+        
+        console.log('📤 Sending new order data:', orderData);
+        
+        // Send to database
+        const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/orders.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(orderData)
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('📥 New order creation result:', result);
+        
+        if (result.status === 'success') {
+            // Store the new order ID
+            currentOrderId = result.data.id;
+            
+            // Prepare data for confirmation page
+            const confirmationData = {
+                items: orderItems,
+                total: total,
+                queueNumber: queueNum,
+                orderType: orderTypeText,
+                datetime: document.getElementById('datetime').textContent,
+                itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+                orderId: currentOrderId,
+                orderNumber: result.data.order_number
+            };
+            
+            console.log('✅ New order created successfully, redirecting to confirmation...');
+            localStorage.setItem('currentOrder', JSON.stringify(confirmationData));
+            window.location.href = 'orderconfirm.html';
+        } else {
+            throw new Error(result.message || 'Failed to create order');
+        }
+        
+    } catch (error) {
+        console.error('🚨 Error creating new order:', error);
+        alert('Failed to create order: ' + error.message);
     }
-    
-    // Close modal
-    closeDeleteItemModal();
-    
-    console.log('Item deleted successfully');
 }
 
 // Make functions globally accessible
@@ -2424,4 +1891,209 @@ function closeOrderCancelledModal(event) {
     }
     const modal = document.getElementById('orderCancelledModal');
     modal.classList.remove('show');
+}
+
+// Utility functions
+function clearContainers() {
+    document.getElementById('items-container').innerHTML = '';
+    document.getElementById('names-container').innerHTML = '';
+    if (document.getElementById('addons-container')) {
+        document.getElementById('addons-container').innerHTML = '';
+    }
+    document.getElementById('prices-container').innerHTML = '';
+}
+
+function clearInputs() {
+    document.getElementById('quantity').value = '';
+    document.getElementById('productName').value = '';
+    document.getElementById('price').value = '';
+}
+
+function clearOrder() {
+    clearContainers();
+    clearInputs();
+    document.getElementById('orderNumber').value = '';
+    document.getElementById('total').textContent = 'Total Amount: ₱0.00';
+}
+
+function handleConfirm() {
+    const total = document.getElementById('total').textContent;
+    const queueNum = document.getElementById('queueNumber').value;
+
+    // Check if items are added to the order
+    if (total === 'Total Amount: ₱0.00') {
+        showNoItemsWarningModal();
+        return;
+    }
+
+    // Check if an order type is selected
+    const selectedOrderType = document.querySelector('.type-button.active');
+    if (!selectedOrderType) {
+        showOrderTypeWarningModal();
+        return;
+    }
+
+    // Get order type text
+    const orderTypeText = selectedOrderType.textContent.trim();
+
+    // Collect order items
+    const orderItems = [];
+    const quantities = document.getElementById('items-container').children;
+    const names = document.getElementById('names-container').children;
+    const addons = document.getElementById('addons-container').children;
+    const prices = document.getElementById('prices-container').children;
+
+    for (let i = 0; i < quantities.length; i++) {
+        // Extract quantity (first text node before the buttons)
+        const qtyText = quantities[i].childNodes[0].textContent.trim();
+        const qty = parseInt(qtyText);
+        
+        const name = names[i].textContent.trim();
+        const addonText = addons[i].textContent.trim();
+        const priceText = prices[i].textContent.replace('₱', '').trim();
+        const totalPrice = parseFloat(priceText);
+        
+        orderItems.push({
+            quantity: qty,
+            name: name,
+            addons: addonText !== '-' ? addonText.split(', ') : [],
+            price: totalPrice / qty, // Unit price
+            totalPrice: totalPrice   // Total price for this line
+        });
+    }
+
+    // Handle order creation/updating based on whether we're editing an existing order
+    if (currentOrderId) {
+        // Editing existing order - include the order ID
+        const orderData = {
+            items: orderItems,
+            total: total.replace('Total Amount: ₱', ''),
+            queueNumber: queueNum,
+            orderType: orderTypeText,
+            datetime: document.getElementById('datetime').textContent,
+            itemCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+            orderId: currentOrderId  // Include order ID for existing orders
+        };
+
+        console.log('Sending existing order data to confirmation:', orderData);
+        localStorage.setItem('currentOrder', JSON.stringify(orderData));
+        window.location.href = 'orderconfirm.html';
+    } else {
+        // Creating new order - need to save to database first to get order ID
+        console.log('Creating new order in database before confirmation...');
+        createNewOrderInDatabase(orderItems, total.replace('Total Amount: ₱', ''), queueNum, orderTypeText);
+    }
+}
+
+// Add item to the main cashiering grid with specified quantity (fix for quantity duplication)
+function addItemToGridWithQuantity(name, unitPrice, addons = [], quantity = 1) {
+    console.log(`🎯 DEBUG addItemToGridWithQuantity called:`, {
+        name,
+        unitPrice,
+        addons,
+        quantity
+    });
+    
+    const itemsContainer = document.getElementById('items-container');
+    const namesContainer = document.getElementById('names-container');
+    const addonsContainer = document.getElementById('addons-container');
+    const pricesContainer = document.getElementById('prices-container');
+    
+    // Format add-ons for comparison
+    const addonsText = addons && Array.isArray(addons) && addons.length > 0 
+        ? addons.map(a => a.name || a).join(', ') 
+        : '-';
+    
+    // Check for existing item with same name and add-ons
+   
+    let existingRowIndex = -1;
+    for (let i = 0; i < namesContainer.children.length; i++) {
+        const existingName = namesContainer.children[i].textContent;
+        const existingAddons = addonsContainer.children[i].textContent;
+        
+        if (existingName === name && existingAddons === addonsText) {
+            existingRowIndex = i;
+            break;
+        }
+    }
+    
+    if (existingRowIndex !== -1) {
+        // Update existing item quantity
+        const quantityElement = itemsContainer.children[existingRowIndex];
+        const priceElement = pricesContainer.children[existingRowIndex];
+        
+        // Extract current quantity
+        const currentQuantity = parseInt(quantityElement.childNodes[0].textContent.trim());
+        const newQuantity = currentQuantity + quantity;
+        
+        // Update quantity display with buttons
+        quantityElement.innerHTML = `${newQuantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        // Update total price for the line
+        const finalUnitPrice = unitPrice || getBasePrice(name);
+        const newLineTotal = finalUnitPrice * newQuantity;
+        priceElement.textContent = `₱${newLineTotal.toFixed(2)}`;
+        priceElement.setAttribute('data-unit-price', finalUnitPrice);
+        priceElement.setAttribute('data-total-price', newLineTotal);
+        
+        console.log(`📈 Updated existing item ${name}: old qty=${currentQuantity}, added=${quantity}, new total=${newQuantity}, line total=₱${newLineTotal}`);
+        
+        // Let updateTotal() recalculate with correct pricing logic
+        updateTotal();
+    } else {
+        // Create new row with specified quantity
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = itemStyle;
+        itemDiv.innerHTML = `${quantity} 
+            <button onclick="editItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #4A2C1B; color: white; border: none; border-radius: 3px;">Edit</button>
+            <button onclick="deleteItem(this)" style="margin-left: 5px; font-size: 12px; padding: 2px 6px; cursor: pointer; background-color: #ff4444; color: white; border: none; border-radius: 3px;">Delete</button>`;
+        
+        console.log(`🆕 Created new item ${name} with quantity: ${quantity}`);
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = itemStyle;
+        nameDiv.textContent = name;
+        
+        const addonsDiv = document.createElement('div');
+        addonsDiv.style.cssText = itemStyle;
+        addonsDiv.textContent = addonsText;
+        
+        const priceDiv = document.createElement('div');
+        priceDiv.style.cssText = itemStyle;
+        
+        // Calculate pricing
+        const originalPrice = getBasePrice(name);
+        let totalAddOnsPrice = 0;
+        
+        if (addons && Array.isArray(addons) && addons.length > 0) {
+            totalAddOnsPrice = addons.reduce((sum, addon) => {
+                const addonName = addon.name || addon;
+                return sum + getAddonPrice(addonName);
+            }, 0);
+        }
+        
+        // Calculate unit price = original + total add-ons
+        const calculatedUnitPrice = originalPrice + totalAddOnsPrice;
+        
+        // Use the provided unit price or calculated price
+        const finalUnitPrice = unitPrice || calculatedUnitPrice;
+        
+        // Calculate and display line total (unit price × quantity)
+        const lineTotal = finalUnitPrice * quantity;
+        priceDiv.textContent = `₱${lineTotal.toFixed(2)}`;
+        priceDiv.setAttribute('data-unit-price', finalUnitPrice);
+        priceDiv.setAttribute('data-total-price', lineTotal);
+        
+        console.log(`💰 New item pricing: unit=₱${finalUnitPrice}, qty=${quantity}, line total=₱${lineTotal}`);
+        
+        itemsContainer.appendChild(itemDiv);
+        namesContainer.appendChild(nameDiv);
+        addonsContainer.appendChild(addonsDiv);
+        pricesContainer.appendChild(priceDiv);
+        
+        // Recalculate total using the updated calculation logic
+        updateTotal();
+    }
 }
