@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Invisible Page Refresh - Month Picker Auto-Sync</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f6f3;
+            color: #3b2a1f;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #67503b;
+        }
+
+        .test-header h1 {
+            color: #67503b;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .test-header p {
+            color: #666;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0ddd8;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .test-section h3 {
+            color: #67503b;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+        }
+
+        .test-instructions {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .test-instructions h4 {
+            color: #1565c0;
+            margin: 0 0 10px 0;
+        }
+
+        .test-instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .test-instructions li {
+            margin-bottom: 8px;
+            color: #1976d2;
+        }
+
+        /* Month Picker Section */
+        .month-filter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border: 2px solid #d4c8b9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .month-filter label {
+            font-weight: 600;
+            color: #67503b;
+            font-size: 14px;
+        }
+
+        .month-picker-input {
+            padding: 8px 12px;
+            border: 2px solid #d4c8b9;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #3b2a1f;
+            background-color: white;
+            cursor: pointer;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .month-picker-input:focus {
+            outline: none;
+            border-color: #67503b;
+            box-shadow: 0 0 0 2px rgba(103, 80, 59, 0.1);
+            transform: scale(1.02);
+        }
+
+        .month-picker-input:not([value=""]) {
+            background-color: #f0f8ff;
+            border-color: #67503b;
+            font-weight: 600;
+            transform: scale(1.01);
+        }
+
+        .reset-month-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background-color: #6c757d;
+            color: white;
+            min-width: 80px;
+        }
+
+        .reset-month-btn:hover:not(:disabled) {
+            background-color: #545b62;
+            transform: translateY(-1px);
+        }
+
+        .reset-month-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Products Table */
+        .products-table {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #67503b;
+            color: white;
+        }
+
+        .products-header h2 {
+            margin: 0;
+            font-size: 20px;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .products-header h2.updating {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+
+        .products-header h2.filtered {
+            color: #e3f2fd;
+        }
+
+        .products-header h2.filtered::before {
+            content: "🔍 ";
+            font-size: 16px;
+            margin-right: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            background: #f8f6f3;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #67503b;
+            border-bottom: 2px solid #e0ddd8;
+        }
+
+        table tbody tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #e0ddd8;
+            animation: slideInUp 0.4s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+        table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+        table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+        table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+        table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+        table tbody tr:hover {
+            background-color: #fcf9f5;
+            transform: translateX(5px);
+        }
+
+        table td {
+            padding: 15px;
+            color: #3b2a1f;
+        }
+
+        .no-data-row td {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Invisible refresh overlay */
+        .invisible-refresh-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(1px);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .fadeIn {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .fadeOut {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0ddd8;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #67503b;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-magic"></i> Invisible Page Refresh Test</h1>
+            <p>Testing the invisible refresh implementation for month picker auto-sync</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-clipboard-list"></i> Test Instructions</h3>
+            <div class="test-instructions">
+                <h4>How to Test Invisible Refresh:</h4>                <ol>
+                    <li><strong>Observe Current Table:</strong> Notice the current table content below</li>
+                    <li><strong>Change Month:</strong> Select different months from the month picker</li>
+                    <li><strong>Test No Data:</strong> Try selecting "2025-05" to test the "No data for this month" display</li>
+                    <li><strong>Watch for Invisibility:</strong> The refresh should be completely invisible - no flicker, no flash, no visible content replacement</li>
+                    <li><strong>Check Smoothness:</strong> Only a subtle loading overlay should appear briefly</li>
+                    <li><strong>Verify Auto-Sync:</strong> Data should update automatically without clicking Apply</li>
+                    <li><strong>Test Reset:</strong> Use the Reset button to return to all-time data</li>
+                    <li><strong>Verify No Data Display:</strong> Empty months should show "No sales data found for [Month Year]" directly in the table</li>
+                </ol>
+            </div>
+
+            <div class="status-indicator status-success">
+                <i class="fas fa-check-circle"></i>
+                <span>Invisible refresh implementation active - Testing smooth transitions</span>
+            </div>
+
+            <!-- Month Filter -->
+            <div class="month-filter">
+                <label for="month-picker">Filter by Month:</label>
+                <input type="month" id="month-picker" class="month-picker-input">
+                <button class="reset-month-btn" id="reset-month-filter">Reset</button>
+            </div>
+
+            <!-- Products Table -->
+            <div class="products-table">
+                <div class="products-header">
+                    <h2>Top Selling Products - All-Time</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Units Sold</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Default test data -->
+                        <tr>
+                            <td>Americano</td>
+                            <td>245</td>
+                            <td>₱31,850.00</td>
+                        </tr>
+                        <tr>
+                            <td>Cappuccino</td>
+                            <td>198</td>
+                            <td>₱29,700.00</td>
+                        </tr>
+                        <tr>
+                            <td>Latte</td>
+                            <td>167</td>
+                            <td>₱26,720.00</td>
+                        </tr>
+                        <tr>
+                            <td>Espresso</td>
+                            <td>134</td>
+                            <td>₱16,080.00</td>
+                        </tr>
+                        <tr>
+                            <td>Chocolate Chip Cookies</td>
+                            <td>89</td>
+                            <td>₱7,120.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-chart-line"></i> Performance Metrics</h3>
+            <div class="performance-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="transition-count">0</div>
+                    <div class="metric-label">Transitions</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-load-time">0ms</div>
+                    <div class="metric-label">Avg Load Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="smoothness-score">100%</div>
+                    <div class="metric-label">Smoothness Score</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="flicker-count">0</div>
+                    <div class="metric-label">Flicker Events</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle"></i> Expected Results</h3>
+            <div class="status-indicator status-info">
+                <i class="fas fa-magic"></i>
+                <span><strong>Success Criteria:</strong> Month changes should be completely invisible with only subtle overlay feedback</span>
+            </div>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li>✅ No visible flash or flicker during month selection</li>
+                <li>✅ Smooth overlay appears briefly during data loading</li>
+                <li>✅ Table content updates seamlessly in background</li>
+                <li>✅ Header updates automatically with selected month</li>
+                <li>✅ Reset button works smoothly</li>
+                <li>✅ Hover effects remain functional after updates</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Test data for different months
+        const testData = {
+            'all-time': [
+                { product_name: 'Americano', total_quantity: 245, total_revenue: 31850 },
+                { product_name: 'Cappuccino', total_quantity: 198, total_revenue: 29700 },
+                { product_name: 'Latte', total_quantity: 167, total_revenue: 26720 },
+                { product_name: 'Espresso', total_quantity: 134, total_revenue: 16080 },
+                { product_name: 'Chocolate Chip Cookies', total_quantity: 89, total_revenue: 7120 }
+            ],
+            '2025-01': [
+                { product_name: 'Hot Chocolate', total_quantity: 89, total_revenue: 13350 },
+                { product_name: 'Americano', total_quantity: 67, total_revenue: 8710 },
+                { product_name: 'Cappuccino', total_quantity: 54, total_revenue: 8100 },
+                { product_name: 'Croissant', total_quantity: 43, total_revenue: 6450 },
+                { product_name: 'Latte', total_quantity: 38, total_revenue: 6080 }
+            ],
+            '2025-02': [
+                { product_name: 'Valentine Cake', total_quantity: 76, total_revenue: 15200 },
+                { product_name: 'Cappuccino', total_quantity: 65, total_revenue: 9750 },
+                { product_name: 'Americano', total_quantity: 58, total_revenue: 7540 },
+                { product_name: 'Heart Cookies', total_quantity: 45, total_revenue: 3600 },
+                { product_name: 'Latte', total_quantity: 39, total_revenue: 6240 }
+            ],            '2025-04': [
+                { product_name: 'Spring Latte', total_quantity: 95, total_revenue: 17100 },
+                { product_name: 'Americano', total_quantity: 78, total_revenue: 10140 },
+                { product_name: 'Iced Americano', total_quantity: 67, total_revenue: 9380 },
+                { product_name: 'Cappuccino', total_quantity: 52, total_revenue: 7800 },
+                { product_name: 'Easter Cookies', total_quantity: 41, total_revenue: 3280 }
+            ],
+            '2025-05': [], // Empty array to test "No data for this month"
+            '2025-06': [
+                { product_name: 'Summer Blend', total_quantity: 112, total_revenue: 22400 },
+                { product_name: 'Iced Coffee', total_quantity: 98, total_revenue: 14700 },
+                { product_name: 'Cold Brew', total_quantity: 87, total_revenue: 13050 },
+                { product_name: 'Frappuccino', total_quantity: 74, total_revenue: 14800 },
+                { product_name: 'Iced Tea', total_quantity: 56, total_revenue: 8400 }
+            ]
+        };
+
+        // Performance tracking
+        let transitionCount = 0;
+        let loadTimes = [];
+        let flickerCount = 0;
+
+        // Initialize month picker with current month
+        const monthPicker = document.getElementById('month-picker');
+        const resetBtn = document.getElementById('reset-month-filter');
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        monthPicker.value = currentMonth;
+
+        // Invisible refresh implementation - copied from the updated sales.js
+        function updateProductsTable(products) {
+            const tbody = document.querySelector('.products-table tbody');
+            if (!tbody) {
+                console.error('Products table tbody not found');
+                return;
+            }
+
+            // Track start time for performance
+            const startTime = performance.now();
+
+            // Create invisible overlay to prevent visible content changes
+            const tableContainer = tbody.closest('.products-table');
+            let overlay = tableContainer.querySelector('.invisible-refresh-overlay');
+            
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'invisible-refresh-overlay';
+                overlay.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(1px);
+                    z-index: 10;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                    pointer-events: none;
+                    border-radius: 8px;
+                `;
+                tableContainer.style.position = 'relative';
+                tableContainer.appendChild(overlay);
+            }
+
+            // Show overlay with minimal opacity to mask content changes
+            overlay.style.opacity = '0.7';
+            
+            // Build new content in background without affecting DOM
+            const newTbody = document.createElement('tbody');
+            
+            if (!products || products.length === 0) {
+                newTbody.innerHTML = `
+                    <tr class="no-data-row">
+                        <td colspan="3" style="text-align: center; padding: 30px; color: #666; font-style: italic;">
+                            <i class="fas fa-info-circle" style="margin-right: 8px; opacity: 0.7;"></i>
+                            No sales data available
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Build rows in memory first
+                products.forEach((product, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${product.product_name || 'Unknown Product'}</td>
+                        <td>${product.total_quantity || 0}</td>
+                        <td>₱${Number(product.total_revenue || 0).toFixed(2)}</td>
+                    `;
+                    
+                    // Add smooth hover effects
+                    row.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#fcf9f5';
+                        this.style.transform = 'translateX(5px)';
+                    });
+                    
+                    row.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '';
+                        this.style.transform = 'translateX(0)';
+                    });
+                    
+                    newTbody.appendChild(row);
+                });
+            }
+
+            // Quick content replacement while overlay masks the change
+            setTimeout(() => {
+                // Replace content instantly while masked
+                tbody.innerHTML = newTbody.innerHTML;
+                
+                // Re-attach event listeners to new rows
+                tbody.querySelectorAll('tr').forEach(row => {
+                    if (!row.classList.contains('no-data-row')) {
+                        row.addEventListener('mouseenter', function() {
+                            this.style.backgroundColor = '#fcf9f5';
+                            this.style.transform = 'translateX(5px)';
+                        });
+                        
+                        row.addEventListener('mouseleave', function() {
+                            this.style.backgroundColor = '';
+                            this.style.transform = 'translateX(0)';
+                        });
+                    }
+                });
+                
+                // Hide overlay to reveal updated content
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    
+                    // Track performance
+                    const endTime = performance.now();
+                    const loadTime = endTime - startTime;
+                    loadTimes.push(loadTime);
+                    transitionCount++;
+                    
+                    updateMetrics();
+                    
+                    console.log(`Invisibly updated products table with ${products ? products.length : 0} products`);
+                }, 50);
+                
+            }, 100); // Minimal delay for smooth masking
+        }
+
+        // Update header function
+        function updateProductsTableHeader(monthYear = null) {
+            const headerElement = document.querySelector('.products-header h2');
+            if (headerElement) {
+                // Add updating class for smooth transition
+                headerElement.classList.add('updating');
+                
+                setTimeout(() => {
+                    if (monthYear) {
+                        // Parse year and month separately to avoid timezone issues
+                        const [year, month] = monthYear.split('-');
+                        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                        const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        headerElement.textContent = `Top Selling Products - ${monthName}`;
+                        headerElement.classList.add('filtered');
+                        
+                        console.log(`Month display update: Input="${monthYear}" -> Output="${monthName}"`);
+                    } else {
+                        headerElement.textContent = 'Top Selling Products - All-Time';
+                        headerElement.classList.remove('filtered');
+                    }
+                    
+                    // Remove updating class
+                    headerElement.classList.remove('updating');
+                }, 100);
+            }
+        }
+
+        // Update visual state function
+        function updateMonthPickerVisualState() {
+            const hasValue = monthPicker.value !== '';
+            
+            // Update reset button state
+            resetBtn.disabled = !hasValue;
+            
+            // Update picker appearance
+            if (hasValue) {
+                monthPicker.style.backgroundColor = '#f0f8ff';
+                monthPicker.style.borderColor = '#67503b';
+                monthPicker.style.fontWeight = '600';
+            } else {
+                monthPicker.style.backgroundColor = 'white';
+                monthPicker.style.borderColor = '#d4c8b9';
+                monthPicker.style.fontWeight = 'normal';
+            }
+        }        // Simulate data loading with invisible transitions
+        function loadDataForMonth(monthYear) {
+            const data = testData[monthYear] || testData['all-time'];
+            
+            // Simulate API delay
+            setTimeout(() => {
+                if (monthYear && monthYear !== 'all-time' && (!data || data.length === 0)) {
+                    // Handle empty month data with custom message
+                    const [year, month] = monthYear.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    updateProductsTable(null, `No sales data found for ${monthName}`);
+                    updateProductsTableHeader(monthYear);
+                } else {
+                    updateProductsTable(data);
+                    updateProductsTableHeader(monthYear === 'all-time' ? null : monthYear);
+                }
+            }, 100 + Math.random() * 200); // Random delay 100-300ms
+        }
+
+        // Update performance metrics
+        function updateMetrics() {
+            document.getElementById('transition-count').textContent = transitionCount;
+            
+            if (loadTimes.length > 0) {
+                const avgTime = loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length;
+                document.getElementById('avg-load-time').textContent = Math.round(avgTime) + 'ms';
+            }
+            
+            // Calculate smoothness score (100% - flicker penalty)
+            const smoothnessScore = Math.max(0, 100 - (flickerCount * 10));
+            document.getElementById('smoothness-score').textContent = smoothnessScore + '%';
+            
+            document.getElementById('flicker-count').textContent = flickerCount;
+        }
+
+        // Event listeners
+        monthPicker.addEventListener('change', function() {
+            const selectedMonth = monthPicker.value;
+            
+            // Clear any existing timeout to prevent rapid calls
+            if (monthPicker.changeTimeout) {
+                clearTimeout(monthPicker.changeTimeout);
+            }
+            
+            // Debounce the change event
+            monthPicker.changeTimeout = setTimeout(() => {
+                if (selectedMonth) {
+                    console.log('Auto-applying month filter:', selectedMonth);
+                    loadDataForMonth(selectedMonth);
+                } else {
+                    console.log('Month cleared, loading all-time data');
+                    loadDataForMonth('all-time');
+                }
+                updateMonthPickerVisualState();
+            }, 150);
+        });
+
+        resetBtn.addEventListener('click', function() {
+            monthPicker.value = '';
+            updateMonthPickerVisualState();
+            console.log('Resetting month filter');
+            
+            resetBtn.disabled = true;
+            resetBtn.textContent = 'Resetting...';
+            
+            loadDataForMonth('all-time');
+            
+            setTimeout(() => {
+                resetBtn.disabled = false;
+                resetBtn.textContent = 'Reset';
+            }, 500);
+        });
+
+        // Initialize visual state
+        updateMonthPickerVisualState();
+
+        // Flicker detection (for testing purposes)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' && mutation.target.tagName === 'TBODY') {
+                    // Check if this is a visible content change (bad)
+                    const overlay = document.querySelector('.invisible-refresh-overlay');
+                    if (!overlay || overlay.style.opacity === '0') {
+                        flickerCount++;
+                        updateMetrics();
+                        console.warn('Flicker detected: visible content change without overlay');
+                    }
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.products-table tbody'), {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('🧪 Invisible refresh test initialized');
+        console.log('🎯 Select different months to test smooth transitions');
+    </script>
+</body>
+</html>

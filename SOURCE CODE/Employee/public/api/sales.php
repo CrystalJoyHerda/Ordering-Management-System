@@ -94,11 +94,12 @@ try {
                     $timeframe = $_GET['timeframe'] ?? 'daily';
                     $result = getSalesTrends($conn, $timeframe);
                     sendResponse($result);
-                    break;
-                      case 'top_products':
+                    break;                case 'top_products':
                     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
                     $date = $_GET['date'] ?? null;
-                    $result = getTopSellingProducts($conn, $limit, $date);
+                    $startDate = $_GET['start_date'] ?? null;
+                    $endDate = $_GET['end_date'] ?? null;
+                    $result = getTopSellingProducts($conn, $limit, $date, $startDate, $endDate);
                     sendResponse($result);
                     break;
                       case 'date_range':
@@ -304,14 +305,13 @@ function getSalesTrends($conn, $timeframe = 'daily') {
                         'end_date' => $weekEnd
                     ];
                 }
-                break;
-                
-            case 'monthly':
-                // Last 6 months
-                for ($i = 5; $i >= 0; $i--) {
-                    $monthStart = date('Y-m-01', strtotime("-{$i} months"));
-                    $monthEnd = date('Y-m-t', strtotime("-{$i} months"));
-                    $label = date('M Y', strtotime($monthStart));
+                break;            case 'monthly':
+                // Current year months from January to December
+                $currentYear = date('Y');
+                for ($month = 1; $month <= 12; $month++) {
+                    $monthStart = sprintf('%s-%02d-01', $currentYear, $month);
+                    $monthEnd = date('Y-m-t', strtotime($monthStart));
+                    $label = date('M Y', strtotime($monthStart)); // Format as "Jan 2025"
                       $query = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) BETWEEN :start AND :end AND status = 'completed'";
                     $stmt = $conn->prepare($query);
                     $stmt->bindValue(':start', $monthStart);
@@ -345,19 +345,23 @@ function getSalesTrends($conn, $timeframe = 'daily') {
 /**
  * Get top selling products
  */
-function getTopSellingProducts($conn, $limit = 10, $selectedDate = null) {
+function getTopSellingProducts($conn, $limit = 10, $selectedDate = null, $startDate = null, $endDate = null) {
     try {
         // Build date condition
         $dateCondition = '';
         $dateParams = [];
-        
-        if ($selectedDate) {
+          if ($startDate && $endDate) {
+            // Filter by date range (for monthly filtering)
+            $dateCondition = ' AND DATE(o.created_at) BETWEEN :start_date AND :end_date';
+            $dateParams[':start_date'] = $startDate;
+            $dateParams[':end_date'] = $endDate;
+        } elseif ($selectedDate) {
             // Filter by specific date
             $dateCondition = ' AND DATE(o.created_at) = :selected_date';
             $dateParams[':selected_date'] = $selectedDate;
         } else {
-            // Default: last 30 days
-            $dateCondition = ' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)';
+            // Default: ALL-TIME data (no date restriction for general total)
+            $dateCondition = '';
         }
         
         $query = "SELECT 
@@ -383,13 +387,41 @@ function getTopSellingProducts($conn, $limit = 10, $selectedDate = null) {
         
         $stmt->execute();
         $products = $stmt->fetchAll();
-        
-        // Calculate trends (compare with previous period)
+          // Calculate trends (compare with previous period)
         foreach ($products as &$product) {
             $trendQuery = '';
             $trendParams = [':product_name' => $product['product_name']];
             
-            if ($selectedDate) {
+            if ($startDate && $endDate) {
+                // For date range, compare with previous period of same length
+                $start = new DateTime($startDate);
+                $end = new DateTime($endDate);
+                $interval = $start->diff($end);
+                $days = $interval->days + 1; // +1 to include both start and end dates
+                
+                $prevEndDate = date('Y-m-d', strtotime($startDate . ' -1 day'));
+                $prevStartDate = date('Y-m-d', strtotime($prevEndDate . ' -' . ($days - 1) . ' days'));
+                
+                $trendQuery = "SELECT 
+                                SUM(oi.quantity) as prev_quantity
+                               FROM order_items oi
+                               JOIN orders o ON oi.order_id = o.id
+                               WHERE o.status = 'completed'
+                                 AND oi.product_name = :product_name
+                                 AND DATE(o.created_at) BETWEEN :prev_start_date AND :prev_end_date";
+                $trendParams[':prev_start_date'] = $prevStartDate;
+                $trendParams[':prev_end_date'] = $prevEndDate;
+            } elseif ($selectedDate) {
+                // Compare with previous day
+                $prevDate = date('Y-m-d', strtotime($selectedDate . ' -1 day'));
+                $trendQuery = "SELECT 
+                                SUM(oi.quantity) as prev_quantity
+                               FROM order_items oi
+                               JOIN orders o ON oi.order_id = o.id
+                               WHERE o.status = 'completed'
+                                 AND oi.product_name = :product_name
+                                 AND DATE(o.created_at) = :prev_date";
+                $trendParams[':prev_date'] = $prevDate;            } elseif ($selectedDate) {
                 // Compare with previous day
                 $prevDate = date('Y-m-d', strtotime($selectedDate . ' -1 day'));
                 $trendQuery = "SELECT 
@@ -401,14 +433,18 @@ function getTopSellingProducts($conn, $limit = 10, $selectedDate = null) {
                                  AND DATE(o.created_at) = :prev_date";
                 $trendParams[':prev_date'] = $prevDate;
             } else {
-                // Compare with previous 30 days
+                // For all-time data, compare current month vs previous month
+                $currentMonth = date('Y-m');
+                $prevMonth = date('Y-m', strtotime('last month'));
+                
                 $trendQuery = "SELECT 
                                 SUM(oi.quantity) as prev_quantity
                                FROM order_items oi
                                JOIN orders o ON oi.order_id = o.id
                                WHERE o.status = 'completed'
                                  AND oi.product_name = :product_name
-                                 AND o.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                                 AND DATE_FORMAT(o.created_at, '%Y-%m') = :prev_month";
+                $trendParams[':prev_month'] = $prevMonth;
             }
             
             $trendStmt = $conn->prepare($trendQuery);

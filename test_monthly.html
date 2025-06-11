@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly API Test</title>
+</head>
+<body>
+    <h1>Testing Monthly Sales API</h1>
+    <button onclick="testMonthly()">Test Monthly API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testMonthly() {
+            try {
+                const response = await fetch('http://localhost/SOURCE_CODE/Employee/public/api/sales.php?action=trends&timeframe=monthly');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                console.log('Monthly API Response:', data);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

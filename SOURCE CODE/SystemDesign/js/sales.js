@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', function() {
             chartFilters.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             const timeframe = this.textContent.toLowerCase();
+            
+            // Toggle monthly view class for special styling
+            const chartContainer = document.querySelector('.chart-container');
+            if (timeframe === 'monthly') {
+                chartContainer.classList.add('monthly-view');
+                setupMonthlyView();
+            } else {
+                chartContainer.classList.remove('monthly-view');
+                setupDailyWeeklyView();
+            }
+            
             loadSalesTrends(timeframe);
         });
     });
@@ -126,17 +137,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Monthly sales (now card index 1)
+        // Monthly sales (now card index 1) - remove percentage display
         if (cards[1]) {
             const monthlyAmount = cards[1].querySelector('.amount');
             const monthlyTrend = cards[1].querySelector('.trend');
-            const monthlyIcon = monthlyTrend.querySelector('i');
             
             monthlyAmount.textContent = `₱${Number(data.monthly.total).toLocaleString()}`;
-            monthlyTrend.textContent = `${data.monthly.change >= 0 ? '+' : ''}${data.monthly.change}% `;
-            monthlyTrend.className = `trend ${data.monthly.change >= 0 ? 'positive' : 'negative'}`;
-            monthlyIcon.className = `fas fa-arrow-${data.monthly.change >= 0 ? 'up' : 'down'}`;
-            monthlyTrend.appendChild(monthlyIcon);
+            // Hide the trend percentage for monthly sales
+            if (monthlyTrend) {
+                monthlyTrend.style.display = 'none';
+            }
         }
     }
 
@@ -205,17 +215,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const chartContainer = document.querySelector('.chart-container');
         showLoading(chartContainer);
         
+        console.log(`Loading sales trends for timeframe: ${timeframe}`);
+        
         try {
             const response = await fetch(`${API_BASE_URL}/sales.php?action=trends&timeframe=${timeframe}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }            
             const result = await response.json();
+            console.log(`API response for ${timeframe}:`, result);
             debugAPIResponse('trends', result);
             
             if (result.status === 'success') {
                 // Validate that data is an array
                 if (result.data && Array.isArray(result.data)) {
+                    console.log(`Received ${result.data.length} data points for ${timeframe}`);
                     currentChartData[timeframe] = result.data;
                     updateChart(timeframe);
                     updateChartLabels(timeframe, result.data);
@@ -282,24 +296,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 todayCard.setAttribute('data-date', currentDate);
             }
         }
-    }// Update chart based on filter
+    }    // Update chart based on filter
     function updateChart(timeframe) {
         const bars = document.querySelectorAll('.bar');
         const data = currentChartData[timeframe];
         
+        console.log(`Updating chart for ${timeframe}, bars found: ${bars.length}, data:`, data);
+        
         // Validate data is an array
         if (!data || !Array.isArray(data) || data.length === 0) {
-            console.log('No valid data available for timeframe:', timeframe, 'Using fallback data');        // Use fallback data if no real data available
-        const fallbackData = [60, 80, 40, 70, 90, 55, 75];
-        const fallbackAmounts = [15000, 25000, 12000, 20000, 30000, 18000, 22000];
-        bars.forEach((bar, index) => {
-            if (fallbackData[index] !== undefined) {
-                bar.style.height = `${fallbackData[index]}%`;
-                bar.style.transition = 'height 0.5s ease';
-                bar.setAttribute('data-value', `₱${Number(fallbackAmounts[index]).toLocaleString()}`);
-                bar.setAttribute('title', `Demo data: ₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+            console.log('No valid data available for timeframe:', timeframe, 'Using fallback data');
+            
+            // Use different fallback data based on timeframe
+            if (timeframe === 'monthly') {
+                // Use fallback data for 12 months
+                const fallbackData = [45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 75, 60];
+                const fallbackAmounts = [12000, 15000, 18000, 22000, 25000, 28000, 32000, 35000, 38000, 42000, 30000, 20000];
+                console.log(`Using fallback monthly data for ${bars.length} bars`);
+                bars.forEach((bar, index) => {
+                    if (index < fallbackData.length && fallbackData[index] !== undefined) {
+                        bar.style.height = `${fallbackData[index]}%`;
+                        bar.style.transition = 'height 0.5s ease';
+                        bar.setAttribute('data-value', `₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+                        bar.setAttribute('title', `Demo data: ₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+                    }
+                });
+            } else {
+                // Use fallback data for 7 days/weeks
+                const fallbackData = [60, 80, 40, 70, 90, 55, 75];
+                const fallbackAmounts = [15000, 25000, 12000, 20000, 30000, 18000, 22000];
+                console.log(`Using fallback daily/weekly data for ${bars.length} bars`);
+                bars.forEach((bar, index) => {
+                    if (index < fallbackData.length && fallbackData[index] !== undefined) {
+                        bar.style.height = `${fallbackData[index]}%`;
+                        bar.style.transition = 'height 0.5s ease';
+                        bar.setAttribute('data-value', `₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+                        bar.setAttribute('title', `Demo data: ₱${Number(fallbackAmounts[index]).toLocaleString()}`);
+                    }
+                });
             }
-        });
             return;
         }
         
@@ -314,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const maxValue = Math.max(...validTotals);
+        console.log(`Max value for scaling: ${maxValue}`);
         
         bars.forEach((bar, index) => {
             if (data[index] && data[index].total !== undefined) {
@@ -323,74 +359,214 @@ document.addEventListener('DOMContentLoaded', function() {
                 bar.style.transition = 'height 0.5s ease';
                 bar.setAttribute('data-value', `₱${Number(total).toLocaleString()}`);
                 bar.setAttribute('title', `${data[index].label || 'Unknown'}: ₱${Number(total).toLocaleString()}`);
+                console.log(`Bar ${index}: ${data[index].label} = ₱${total} (${percentage.toFixed(1)}%)`);
             } else {
-                // Set empty bar if no data
+                // Set empty bar if no data for this index
                 bar.style.height = '5%';
                 bar.setAttribute('data-value', '₱0');
                 bar.setAttribute('title', 'No data');
+                console.log(`Bar ${index}: No data`);
             }
         });
-    }    // Update chart labels based on timeframe
+        
+        // Calculate and display total after updating chart
+        calculateAndDisplayWeeklyTotal();
+    }// Update chart labels based on timeframe
     function updateChartLabels(timeframe, data) {
         const xAxisLabels = document.querySelectorAll('.x-axis span');
         const chartDescription = document.querySelector('.chart-description p');
-        const avgElement = document.querySelector('.legend-avg');
         
         // Validate data is an array
         if (!data || !Array.isArray(data) || data.length === 0) {
             console.log('No valid data for chart labels');
-            // Set default labels
+            // Set default labels based on timeframe
             if (chartDescription) {
                 const descriptions = {
                     daily: 'Daily revenue trends for the current week',
                     weekly: 'Weekly revenue trends for recent weeks',
-                    monthly: 'Monthly revenue trends for recent months'
+                    monthly: 'Monthly revenue trends for the past 12 months'
                 };
                 chartDescription.textContent = descriptions[timeframe] || descriptions.daily;
             }
-            if (avgElement) {
-                avgElement.textContent = 'Average: ₱0';
-            }
             return;
         }
-        
-        // Update x-axis labels
+          // Update x-axis labels with actual data
         xAxisLabels.forEach((label, index) => {
             if (data[index] && data[index].label) {
-                label.textContent = data[index].label;
+                // For monthly data, format the label to show just the month
+                if (timeframe === 'monthly') {
+                    // Extract month from "Jan 2025" format and show just "Jan"
+                    const monthYear = data[index].label;
+                    const monthPart = monthYear.split(' ')[0]; // Get just "Jan"
+                    label.textContent = monthPart;
+                } else {
+                    label.textContent = data[index].label;
+                }
+            } else if (index < xAxisLabels.length) {
+                // For monthly view, keep the default month names if no data
+                if (timeframe === 'monthly') {
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    if (index < monthNames.length) {
+                        label.textContent = monthNames[index];
+                    }
+                } else {
+                    // Clear label if no data for other timeframes
+                    label.textContent = '';
+                }
             }
         });
-        
-        // Calculate and display average
-        const validTotals = data
-            .filter(item => item && item.total !== undefined && item.total !== null)
-            .map(item => parseFloat(item.total) || 0);
-            
-        if (validTotals.length > 0) {
-            const total = validTotals.reduce((sum, value) => sum + value, 0);
-            const average = total / validTotals.length;
-            if (avgElement) {
-                avgElement.textContent = `Average: ₱${Number(average).toLocaleString()}`;
-            }
-        } else {
-            if (avgElement) {
-                avgElement.textContent = 'Average: ₱0';
-            }
-        }
         
         // Update description
         if (chartDescription) {
             const descriptions = {
                 daily: 'Daily revenue trends for the current week',
                 weekly: 'Weekly revenue trends for recent weeks',
-                monthly: 'Monthly revenue trends for recent months'
+                monthly: 'Monthly revenue trends for the past 12 months'
             };
             chartDescription.textContent = descriptions[timeframe] || descriptions.daily;
         }
-    }// Load top selling products
+        
+        // Calculate and display the total after updating labels
+        calculateAndDisplayWeeklyTotal();
+    }
+
+    // Calculate and display total in the revenue legend item
+    function calculateAndDisplayWeeklyTotal() {
+        const bars = document.querySelectorAll('.bar');
+        const revenueElement = document.getElementById('revenue-with-total');
+        
+        if (!revenueElement) return;
+        
+        let total = 0;
+        let validBars = 0;
+        
+        // Sum up all the values from visible bars
+        bars.forEach(bar => {
+            const dataValue = bar.getAttribute('data-value');
+            if (dataValue && dataValue !== '₱0') {
+                // Extract numeric value from "₱1,234" format
+                const numericValue = parseFloat(dataValue.replace(/[₱,]/g, '')) || 0;
+                if (numericValue > 0) {
+                    total += numericValue;
+                    validBars++;
+                }
+            }
+        });
+        
+        // Update the display with just the revenue amount
+        revenueElement.textContent = `Revenue: ₱${Number(total).toLocaleString()}`;
+        
+        console.log(`Total calculated: ₱${total.toLocaleString()} from ${validBars} bars`);
+    }    // Update products table with new data - enhanced with smooth transitions    // Update products table with new data - invisible refresh implementation
+    function updateProductsTable(products, customNoDataMessage = null) {
+        const tbody = document.querySelector('.products-table tbody');
+        if (!tbody) {
+            console.error('Products table tbody not found');
+            return;
+        }
+
+        // Create invisible overlay to prevent visible content changes
+        const tableContainer = tbody.closest('.products-table');
+        let overlay = tableContainer.querySelector('.invisible-refresh-overlay');
+        
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'invisible-refresh-overlay';
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(1px);
+                z-index: 10;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+                pointer-events: none;
+                border-radius: 8px;
+            `;
+            tableContainer.style.position = 'relative';
+            tableContainer.appendChild(overlay);
+        }
+
+        // Show overlay with minimal opacity to mask content changes
+        overlay.style.opacity = '0.7';
+        
+        // Build new content in background without affecting DOM
+        const newTbody = document.createElement('tbody');
+        
+        if (!products || products.length === 0) {
+            // Use custom message if provided, otherwise use default
+            const message = customNoDataMessage || 'No sales data available';
+            newTbody.innerHTML = `
+                <tr class="no-data-row">
+                    <td colspan="3" style="text-align: center; padding: 40px 20px; color: #666; font-style: italic;">
+                        <i class="fas fa-calendar-times" style="margin-right: 8px; opacity: 0.7; color: #67503b;"></i>
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        } else {
+            // Build rows in memory first
+            products.forEach((product, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.product_name || 'Unknown Product'}</td>
+                    <td>${product.total_quantity || 0}</td>
+                    <td>₱${Number(product.total_revenue || 0).toFixed(2)}</td>
+                `;
+                
+                // Add smooth hover effects
+                row.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#fcf9f5';
+                    this.style.transform = 'translateX(5px)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                    this.style.transform = 'translateX(0)';
+                });
+                
+                newTbody.appendChild(row);
+            });
+        }
+
+        // Quick content replacement while overlay masks the change
+        setTimeout(() => {
+            // Replace content instantly while masked
+            tbody.innerHTML = newTbody.innerHTML;
+            
+            // Re-attach event listeners to new rows
+            tbody.querySelectorAll('tr').forEach(row => {
+                if (!row.classList.contains('no-data-row')) {
+                    row.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#fcf9f5';
+                        this.style.transform = 'translateX(5px)';
+                    });
+                    
+                    row.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '';
+                        this.style.transform = 'translateX(0)';
+                    });
+                }
+            });
+            
+            // Hide overlay to reveal updated content
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                console.log(`Invisibly updated products table with ${products ? products.length : 0} products`);
+            }, 50);
+            
+        }, 100); // Minimal delay for smooth masking
+    }// Load top selling products with smooth transitions    // Load top selling products with invisible transitions
     async function loadTopProducts() {
-        const productsTable = document.querySelector('.products-table');
-        showLoading(productsTable);
+        const tbody = document.querySelector('.products-table tbody');
+        
+        // Don't show loading message if we're already loading
+        if (!tbody.classList.contains('loading')) {
+            showProductsMessage('Loading all-time top selling products...', 'info');
+        }
         
         try {
             const response = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=5`);
@@ -398,34 +574,141 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
+              // Hide loading overlay first
+            hideProductsLoading();
             
             if (data.status === 'success') {
-                updateProductsTable(data.data);
-            } else {
+                if (data.data && data.data.length > 0) {
+                    updateProductsTable(data.data);
+                    updateProductsTableHeader(null); // Reset header to default (All-Time)
+                } else {
+                    updateProductsTable(null, 'No sales data available for all-time');
+                    updateProductsTableHeader(null);
+                }            } else {
                 console.error('API Error:', data.message);
-                showError('Failed to load product data: ' + data.message, productsTable);
+                updateProductsTable(null, 'Failed to load product data: ' + data.message);
             }
         } catch (error) {
+            hideProductsLoading();
             console.error('Error fetching top products:', error);
-            showError('Failed to load product data. Check connection.', productsTable);
-        } finally {
-            hideLoading(productsTable);
+            updateProductsTable(null, 'Failed to load product data. Please check your connection.');
         }
-    }    // Update products table with real data
-    function updateProductsTable(products) {
+    }// Hide loading overlay
+    function hideProductsLoading() {
         const tbody = document.querySelector('.products-table tbody');
-        tbody.innerHTML = ''; // Clear existing rows
+        if (tbody) {
+            tbody.classList.remove('loading');
+            const tableContainer = tbody.closest('.products-table');
+            const overlay = tableContainer.querySelector('.invisible-refresh-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+            }
+        }
+    }
+
+    // Load top selling products for a specific month with invisible transitions
+    async function loadTopProductsForMonth(monthYear) {
+        const tbody = document.querySelector('.products-table tbody');
         
-        products.forEach(product => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${product.product_name || product.name || 'Unknown Product'}</td>
-                <td>${product.total_quantity || 0}</td>
-                <td>₱${Number(product.total_revenue || 0).toLocaleString()}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }// Update sales data based on date range
+        // Prevent rapid consecutive calls - debounce mechanism
+        if (loadTopProductsForMonth.timeout) {
+            clearTimeout(loadTopProductsForMonth.timeout);
+        }
+        
+        loadTopProductsForMonth.timeout = setTimeout(async () => {
+            showProductsMessage('Loading products for selected month...', 'info');
+            
+            try {
+                // Convert month format from YYYY-MM to start and end dates
+                const [year, month] = monthYear.split('-');
+                const startDate = `${year}-${month}-01`;
+                const endDate = new Date(year, month, 0).toISOString().slice(0, 10); // Last day of month
+                
+                console.log(`Loading top products for ${monthYear}: ${startDate} to ${endDate}`);
+                
+                // Use date range approach for monthly data
+                const response = await fetch(`${API_BASE_URL}/sales.php?action=top_products&limit=5&start_date=${startDate}&end_date=${endDate}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                  // Hide loading overlay first
+                hideProductsLoading();
+                
+                if (data.status === 'success') {
+                    if (data.data && data.data.length > 0) {
+                        updateProductsTable(data.data);
+                        updateProductsTableHeader(monthYear);
+                    } else {
+                        // Parse year and month separately to avoid timezone issues
+                        const [year, month] = monthYear.split('-');
+                        const date = new Date(parseInt(year), parseInt(month) - 1, 1); // month is 0-based in JavaScript
+                        const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        
+                        // Display "No data" in the table itself with month information
+                        updateProductsTable(null, `No sales data found for ${monthName}`);
+                        updateProductsTableHeader(monthYear);
+                    }                } else {
+                    console.error('API Error:', data.message);
+                    updateProductsTable(null, 'Failed to load product data: ' + data.message);
+                }
+            } catch (error) {
+                hideProductsLoading();
+                console.error('Error fetching top products for month:', error);
+                updateProductsTable(null, 'Failed to load product data. Please check your connection.');
+            }
+        }, 200); // 200ms debounce delay to prevent rapid API calls
+    }// Update the products table header with smooth transitions
+    function updateProductsTableHeader(monthYear = null) {
+        const headerElement = document.querySelector('.products-header h2');
+        if (headerElement) {
+            // Add updating class for smooth transition
+            headerElement.classList.add('updating');
+            
+            setTimeout(() => {
+                if (monthYear) {
+                    // Parse year and month separately to avoid timezone issues
+                    const [year, month] = monthYear.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, 1); // month is 0-based in JavaScript
+                    const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    headerElement.textContent = `Top Selling Products - ${monthName}`;
+                    headerElement.classList.add('filtered');
+                    
+                    console.log(`Month display update: Input="${monthYear}" -> Output="${monthName}"`);
+                } else {
+                    headerElement.textContent = 'Top Selling Products - All-Time';
+                    headerElement.classList.remove('filtered');
+                }
+                
+                // Remove updating class
+                headerElement.classList.remove('updating');
+            }, 100);
+        }
+    }// Add visual feedback for month picker selection - updated for auto-sync
+    function updateMonthPickerVisualState() {
+        const monthPicker = document.getElementById('month-picker');
+        const resetBtn = document.getElementById('reset-month-filter');
+        
+        if (monthPicker && resetBtn) {
+            const hasValue = monthPicker.value !== '';
+            
+            // Update reset button state
+            resetBtn.disabled = !hasValue;
+            
+            // Update picker appearance
+            if (hasValue) {
+                monthPicker.style.backgroundColor = '#f0f8ff';
+                monthPicker.style.borderColor = '#67503b';
+                monthPicker.style.fontWeight = '600';
+            } else {
+                monthPicker.style.backgroundColor = 'white';
+                monthPicker.style.borderColor = '#d4c8b9';
+                monthPicker.style.fontWeight = 'normal';
+            }
+        }
+    }
+
+    // Update sales data based on date range
     async function updateSalesData(startDate, endDate) {
         console.log(`Fetching sales data from ${startDate} to ${endDate}`);
         
@@ -507,7 +790,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const bars = document.querySelectorAll('.bar');
         const xAxisLabels = document.querySelectorAll('.x-axis span');
         const chartDescription = document.querySelector('.chart-description p');
-        const avgElement = document.querySelector('.legend-avg');
         
         console.log('Data for date range:', data);
         console.log('Date range:', startDate, 'to', endDate);
@@ -579,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTodaysSalesFromChart();
         }
         
-        // Update chart description and average
+        // Update chart description
         const startFormatted = startDate.toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric',
@@ -596,17 +878,8 @@ document.addEventListener('DOMContentLoaded', function() {
             chartDescription.textContent = `Revenue trends from ${startFormatted} to ${endFormatted}`;
         }
         
-        if (avgElement && data.daily_breakdown && data.daily_breakdown.length > 0) {
-            // Calculate average from actual data points
-            const total = data.daily_breakdown.reduce((sum, item) => {
-                return sum + parseFloat(item.daily_total || item.total || 0);
-            }, 0);
-            
-            const average = total / data.daily_breakdown.length;
-            avgElement.textContent = `Average: ₱${Number(average).toLocaleString()}`;
-        } else if (avgElement) {
-            avgElement.textContent = 'Average: ₱0';
-        }
+        // Calculate and display the total after updating date range data
+        calculateAndDisplayWeeklyTotal();
     }
 
     // Helper function to get an array of dates between startDate and endDate (inclusive)
@@ -688,10 +961,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Showing details for ${product} with revenue ${revenue}`);
             // Here you would typically show a modal or navigate to product details
         }
-    });
-
-    // Initialize dashboard with real data
+    });    // Initialize dashboard with real data
     async function initializeDashboard() {
+        // Setup default daily view
+        setupDailyWeeklyView();
+        
         await loadSalesOverview();
         await loadSalesTrends('daily');
         await loadTopProducts();
@@ -830,5 +1104,225 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadSalesOverview();
             }
         });
+    }    // Setup monthly view with all 12 months
+    function setupMonthlyView() {
+        const barGraph = document.getElementById('sales-bar-graph');
+        const xAxis = document.getElementById('date-axis');
+        
+        console.log('Setting up monthly view...');
+        
+        // Clear existing content
+        barGraph.innerHTML = '';
+        xAxis.innerHTML = '';
+        
+        // Create 12 bars for 12 months
+        for (let i = 0; i < 12; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar monthly-bar';
+            bar.style.height = '5%';
+            bar.setAttribute('data-value', '₱0');
+            bar.setAttribute('data-date', '');
+            barGraph.appendChild(bar);
+        }
+        
+        // Create 12 month labels from January to December
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        for (let i = 0; i < 12; i++) {
+            const label = document.createElement('span');
+            label.className = 'monthly-label';
+            label.textContent = monthNames[i];
+            xAxis.appendChild(label);
+        }
+        
+        console.log('Monthly view setup complete with 12 bars and labels');
+        console.log('Bar count:', barGraph.children.length);
+        console.log('Label count:', xAxis.children.length);
+        
+        // Reset total display for monthly view
+        setTimeout(() => calculateAndDisplayWeeklyTotal(), 100);
+    }
+
+    // Setup daily/weekly view with 7 bars
+    function setupDailyWeeklyView() {
+        const barGraph = document.getElementById('sales-bar-graph');
+        const xAxis = document.getElementById('date-axis');
+        
+        // Clear existing content
+        barGraph.innerHTML = '';
+        xAxis.innerHTML = '';
+        
+        // Create 7 bars for daily/weekly view
+        for (let i = 0; i < 7; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = '5%';
+            bar.setAttribute('data-value', '₱0');
+            bar.setAttribute('data-date', '');
+            barGraph.appendChild(bar);
+        }
+        
+        // Create default daily labels (will be updated by API data)
+        const defaultLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        for (let i = 0; i < 7; i++) {
+            const label = document.createElement('span');
+            label.textContent = defaultLabels[i];
+            xAxis.appendChild(label);
+        }
+        
+        // Reset total display for daily/weekly view
+        setTimeout(() => calculateAndDisplayWeeklyTotal(), 100);
+    }    // Initialize month picker with current month
+    const monthPicker = document.getElementById('month-picker');
+    if (monthPicker) {
+        const currentMonth = new Date().toISOString().slice(0, 7); // Format: YYYY-MM
+        monthPicker.value = currentMonth;
+          // Add change event listener for auto-sync functionality with debouncing
+        monthPicker.addEventListener('change', function() {
+            const selectedMonth = monthPicker.value;
+            
+            // Clear any existing timeout to prevent rapid calls
+            if (monthPicker.changeTimeout) {
+                clearTimeout(monthPicker.changeTimeout);
+            }
+            
+            // Debounce the change event to prevent flickering
+            monthPicker.changeTimeout = setTimeout(() => {
+                if (selectedMonth) {
+                    console.log('Auto-applying month filter:', selectedMonth);
+                    loadTopProductsForMonth(selectedMonth);
+                } else {
+                    console.log('Month cleared, loading all-time data');
+                    updateProductsTableHeader(null);
+                    loadTopProducts();
+                }
+                updateMonthPickerVisualState();
+            }, 150); // Short delay to prevent rapid consecutive calls
+        });
+        
+        // Initial visual state update
+        updateMonthPickerVisualState();
+    }
+
+    // Add month filter event listeners - only Reset button now
+    const resetMonthBtn = document.getElementById('reset-month-filter');    if (resetMonthBtn) {
+        resetMonthBtn.addEventListener('click', function() {
+            monthPicker.value = '';
+            updateMonthPickerVisualState();
+            updateProductsTableHeader(null);
+            console.log('Resetting month filter');
+            
+            resetMonthBtn.disabled = true;
+            resetMonthBtn.textContent = 'Resetting...';
+            
+            loadTopProducts().finally(() => {
+                resetMonthBtn.disabled = false;
+                resetMonthBtn.textContent = 'Reset';
+            }); // Load all products without month filter
+        });
+    }    // Show feedback messages in the products table with invisible loading
+    function showProductsMessage(message, type = 'info') {
+        const tbody = document.querySelector('.products-table tbody');
+        if (!tbody) return;
+        
+        // Only show loading message if table is not already in loading state
+        if (type === 'info' && tbody.classList.contains('loading')) {
+            return; // Prevent multiple loading messages
+        }
+        
+        const tableContainer = tbody.closest('.products-table');
+        let overlay = tableContainer.querySelector('.invisible-refresh-overlay');
+        
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'invisible-refresh-overlay';
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(1px);
+                z-index: 10;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+                pointer-events: none;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            tableContainer.style.position = 'relative';
+            tableContainer.appendChild(overlay);
+        }
+        
+        const messageClass = type === 'error' ? 'error-message' : 
+                           type === 'success' ? 'success-message' : 'loading-message';
+        
+        // Add loading class for state tracking
+        if (type === 'info') {
+            tbody.classList.add('loading');
+        }
+        
+        // Create loading indicator on overlay instead of replacing table content
+        if (type === 'info') {
+            overlay.innerHTML = `
+                <div style="
+                    color: #67503b; 
+                    font-size: 14px; 
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    padding: 10px 15px;
+                    background: rgba(255, 255, 255, 0.9);
+                    border-radius: 6px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                ">
+                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px; color: #67503b;"></i>
+                    ${message}
+                </div>
+            `;
+            overlay.style.opacity = '0.9';
+        } else {
+            // For error/success messages, briefly show overlay then hide
+            overlay.innerHTML = `
+                <div style="
+                    color: ${type === 'error' ? '#d32f2f' : '#2e7d32'}; 
+                    font-size: 14px; 
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    padding: 10px 15px;
+                    background: rgba(255, 255, 255, 0.95);
+                    border-radius: 6px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                ">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}" style="margin-right: 8px;"></i>
+                    ${message}
+                </div>
+            `;
+            overlay.style.opacity = '0.9';
+            
+            // Auto-hide error/success messages
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+            }, 3000);
+        }
+    }// Add keyboard shortcuts for month picker - updated for auto-sync
+    if (monthPicker) {
+        monthPicker.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                resetMonthBtn.click();
+            }
+        });
+        
+        // Add tooltip/help text - updated for auto-sync
+        monthPicker.title = 'Select a month to automatically filter top selling products. Press Escape to reset.';
+    }
+
+    // Add accessibility labels - updated for auto-sync
+    if (resetMonthBtn) {
+        resetMonthBtn.setAttribute('aria-label', 'Reset month filter to show all top selling products');
     }
 });

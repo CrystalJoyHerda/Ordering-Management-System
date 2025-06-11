@@ -90,8 +90,7 @@
                     </div>
                     <div class="chart">
                         <div class="chart-placeholder">
-                            <div class="chart-labels">
-                                <div class="x-axis" id="date-axis">
+                            <div class="chart-labels">                                <div class="x-axis" id="date-axis">
                                     <span>Mon</span>
                                     <span>Tue</span>
                                     <span>Wed</span>
@@ -99,6 +98,12 @@
                                     <span>Fri</span>
                                     <span>Sat</span>
                                     <span>Sun</span>
+                                    <!-- Additional spans for monthly view (hidden by default) -->
+                                    <span class="monthly-label" style="display: none;">Aug</span>
+                                    <span class="monthly-label" style="display: none;">Sep</span>
+                                    <span class="monthly-label" style="display: none;">Oct</span>
+                                    <span class="monthly-label" style="display: none;">Nov</span>
+                                    <span class="monthly-label" style="display: none;">Dec</span>
                                 </div>
                             </div>                            <div class="bar-graph" id="sales-bar-graph">
                                 <div class="bar" style="height: 60%" data-date="" data-value="₱15,000"></div>
@@ -108,20 +113,29 @@
                                 <div class="bar" style="height: 90%" data-date="" data-value="₱30,000"></div>
                                 <div class="bar" style="height: 55%" data-date="" data-value="₱18,000"></div>
                                 <div class="bar" style="height: 75%" data-date="" data-value="₱22,000"></div>
+                                <!-- Additional bars for monthly view (hidden by default) -->
+                                <div class="bar monthly-bar" style="height: 65%; display: none;" data-date="" data-value="₱19,000"></div>
+                                <div class="bar monthly-bar" style="height: 85%; display: none;" data-date="" data-value="₱27,000"></div>
+                                <div class="bar monthly-bar" style="height: 50%; display: none;" data-date="" data-value="₱16,000"></div>
+                                <div class="bar monthly-bar" style="height: 72%; display: none;" data-date="" data-value="₱21,000"></div>
+                                <div class="bar monthly-bar" style="height: 45%; display: none;" data-date="" data-value="₱14,000"></div>
                             </div>
                         </div>
                         <div class="chart-description">
                             <p>Daily revenue trends for the current week</p>
                             <div class="chart-legend">
-                                <span class="legend-item"><i class="fas fa-square"></i> Revenue</span>
-                                <span class="legend-avg">Average: ₱25,340</span>
+                                <span class="legend-item"><i class="fas fa-square"></i> <span id="revenue-with-total">Revenue</span></span>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="products-table">
-                    <h2>Top Selling Products</h2>
+                </div>                <div class="products-table">
+                    <div class="products-header">
+                        <h2>Top Selling Products - All-Time</h2>                        <div class="month-filter">
+                            <label for="month-picker">Filter by Month:</label>
+                            <input type="month" id="month-picker" class="month-picker-input">
+                            <button class="reset-month-btn" id="reset-month-filter">Reset</button>
+                        </div>
+                    </div>
                     <table>
                         <thead>
                             <tr>

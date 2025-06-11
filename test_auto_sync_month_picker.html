@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Sync Month Picker Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            color: #67503b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #67503b;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #faf7f2;
+            border-radius: 5px;
+            border-left: 4px solid #67503b;
+        }
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .products-header h2 {
+            color: #3b2a1f;
+            margin: 0;
+        }
+        .month-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #f9f5f1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #d4c8b9;
+        }
+        .month-filter label {
+            font-size: 14px;
+            color: #67503b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .month-picker-input {
+            padding: 6px 10px;
+            border: 1px solid #d4c8b9;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #3b2a1f;
+            background-color: white;
+            cursor: pointer;
+            min-width: 140px;
+        }
+        .month-picker-input:focus {
+            outline: none;
+            border-color: #67503b;
+            box-shadow: 0 0 0 2px rgba(103, 80, 59, 0.1);
+        }
+        .reset-month-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            background-color: #6c757d;
+            color: white;
+        }
+        .reset-month-btn:hover {
+            background-color: #545b62;
+            transform: translateY(-1px);
+        }
+        .reset-month-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .products-header h2.filtered {
+            color: #2c5282;
+        }
+        .products-header h2.filtered::before {
+            content: "🔍 ";
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-entry.change {
+            color: #007bff;
+        }
+        .log-entry.reset {
+            color: #dc3545;
+        }
+        .log-entry.update {
+            color: #28a745;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-header">Auto-Sync Month Picker Test</h1>
+        
+        <div class="test-section">
+            <h3>Auto-Sync Features Implemented:</h3>
+            <ul class="feature-list">
+                <li>Removed Apply button - filtering now happens automatically</li>
+                <li>Added change event listener to month picker for instant filtering</li>
+                <li>Maintains Reset button for clearing the filter</li>
+                <li>Visual feedback shows when a month is selected</li>
+                <li>Header updates automatically to show selected month</li>
+                <li>Keyboard shortcut: Escape to reset filter</li>
+                <li>Tooltip updated to reflect auto-sync behavior</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Test the Auto-Sync Month Picker:</h3>
+            
+            <!-- Month picker component as it appears in the actual sales dashboard -->
+            <div class="products-header">
+                <h2 id="products-title">Top Selling Products - All-Time</h2>
+                <div class="month-filter">
+                    <label for="month-picker-test">Filter by Month:</label>
+                    <input type="month" id="month-picker-test" class="month-picker-input">
+                    <button class="reset-month-btn" id="reset-month-test">Reset</button>
+                </div>
+            </div>
+
+            <div class="status" id="status-display">
+                Ready to test auto-sync functionality
+            </div>
+
+            <div class="log" id="test-log">
+                <div class="log-entry">Auto-sync month picker test initialized</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Instructions:</h3>
+            <ol>
+                <li><strong>Select a month</strong> from the month picker - notice how the header updates immediately</li>
+                <li><strong>Change to different months</strong> - each change triggers automatic filtering</li>
+                <li><strong>Click Reset</strong> to clear the filter and return to "All-Time" view</li>
+                <li><strong>Press Escape</strong> while focused on the month picker to reset</li>
+                <li><strong>Notice visual feedback</strong> - selected month appears with blue background and bold text</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Mock the auto-sync functionality for testing
+        function addLogEntry(message, type = '') {
+            const log = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status-display');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateProductsTableHeader(monthYear = null) {
+            const headerElement = document.getElementById('products-title');
+            if (headerElement) {
+                if (monthYear) {
+                    const [year, month] = monthYear.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    headerElement.textContent = `Top Selling Products - ${monthName}`;
+                    headerElement.classList.add('filtered');
+                    addLogEntry(`Header updated to show: ${monthName}`, 'update');
+                } else {
+                    headerElement.textContent = 'Top Selling Products - All-Time';
+                    headerElement.classList.remove('filtered');
+                    addLogEntry('Header reset to show: All-Time', 'update');
+                }
+            }
+        }
+
+        function updateMonthPickerVisualState() {
+            const monthPicker = document.getElementById('month-picker-test');
+            const resetBtn = document.getElementById('reset-month-test');
+            
+            if (monthPicker && resetBtn) {
+                const hasValue = monthPicker.value !== '';
+                
+                resetBtn.disabled = !hasValue;
+                
+                if (hasValue) {
+                    monthPicker.style.backgroundColor = '#f0f8ff';
+                    monthPicker.style.borderColor = '#67503b';
+                    monthPicker.style.fontWeight = '600';
+                    addLogEntry('Visual state updated: Month selected', 'change');
+                } else {
+                    monthPicker.style.backgroundColor = 'white';
+                    monthPicker.style.borderColor = '#d4c8b9';
+                    monthPicker.style.fontWeight = 'normal';
+                    addLogEntry('Visual state updated: No month selected', 'change');
+                }
+            }
+        }
+
+        // Simulate the API call for loading products
+        function loadTopProductsForMonth(monthYear) {
+            addLogEntry(`Auto-sync triggered: Loading products for ${monthYear}`, 'change');
+            updateStatus('Loading products for selected month...', 'info');
+            
+            // Simulate API delay
+            setTimeout(() => {
+                updateStatus(`Successfully loaded products for ${monthYear}`, 'success');
+                addLogEntry(`API simulation complete for ${monthYear}`, 'change');
+            }, 500);
+        }
+
+        function loadTopProducts() {
+            addLogEntry('Loading all-time top products', 'reset');
+            updateStatus('Loading all-time top selling products...', 'info');
+            
+            setTimeout(() => {
+                updateStatus('Successfully loaded all-time top products', 'success');
+                addLogEntry('All-time products loaded', 'reset');
+            }, 500);
+        }
+
+        // Initialize the test
+        document.addEventListener('DOMContentLoaded', function() {
+            const monthPicker = document.getElementById('month-picker-test');
+            const resetBtn = document.getElementById('reset-month-test');
+
+            // Set current month as default
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            monthPicker.value = currentMonth;
+            
+            // Auto-sync functionality - change event listener
+            monthPicker.addEventListener('change', function() {
+                const selectedMonth = monthPicker.value;
+                if (selectedMonth) {
+                    addLogEntry(`Month picker changed to: ${selectedMonth}`, 'change');
+                    loadTopProductsForMonth(selectedMonth);
+                    updateProductsTableHeader(selectedMonth);
+                } else {
+                    addLogEntry('Month picker cleared', 'change');
+                    updateProductsTableHeader(null);
+                    loadTopProducts();
+                }
+                updateMonthPickerVisualState();
+            });
+
+            // Reset button functionality
+            resetBtn.addEventListener('click', function() {
+                addLogEntry('Reset button clicked', 'reset');
+                monthPicker.value = '';
+                updateMonthPickerVisualState();
+                updateProductsTableHeader(null);
+                loadTopProducts();
+            });
+
+            // Keyboard shortcuts
+            monthPicker.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    addLogEntry('Escape key pressed', 'reset');
+                    resetBtn.click();
+                }
+            });
+
+            // Tooltip update
+            monthPicker.title = 'Select a month to automatically filter top selling products. Press Escape to reset.';
+
+            // Initial state
+            updateMonthPickerVisualState();
+            updateProductsTableHeader(currentMonth);
+            addLogEntry(`Initialized with current month: ${currentMonth}`, 'update');
+            updateStatus('Auto-sync month picker ready for testing', 'success');
+        });
+    </script>
+</body>
+</html>

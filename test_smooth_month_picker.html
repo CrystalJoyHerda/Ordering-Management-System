@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smooth Month Picker Transitions Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            color: #67503b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #67503b;
+        }
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #faf7f2;
+            border-radius: 8px;
+            border-left: 4px solid #67503b;
+        }
+        
+        /* Copy the smooth transition CSS from sales.css */
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .products-header h2 {
+            color: #3b2a1f;
+            margin: 0;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .products-header h2.updating {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+        .products-header h2.filtered {
+            color: #2c5282;
+        }
+        .products-header h2.filtered::before {
+            content: "🔍 ";
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        
+        .month-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #f9f5f1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #d4c8b9;
+        }
+        .month-filter label {
+            font-size: 14px;
+            color: #67503b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .month-picker-input {
+            padding: 6px 10px;
+            border: 1px solid #d4c8b9;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #3b2a1f;
+            background-color: white;
+            cursor: pointer;
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+        .month-picker-input:focus {
+            outline: none;
+            border-color: #67503b;
+            box-shadow: 0 0 0 2px rgba(103, 80, 59, 0.1);
+            transform: scale(1.02);
+        }
+        .month-picker-input:not([value=""]) {
+            background-color: #f0f8ff;
+            border-color: #67503b;
+            font-weight: 600;
+            transform: scale(1.01);
+        }
+        
+        .reset-month-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            background-color: #6c757d;
+            color: white;
+        }
+        .reset-month-btn:hover {
+            background-color: #545b62;
+            transform: translateY(-1px);
+        }
+        .reset-month-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .products-table {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .products-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .products-table th,
+        .products-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0e9e1;
+        }
+        .products-table th {
+            background-color: #f9f5f1;
+            color: #3b2a1f;
+            font-weight: 600;
+        }
+        
+        /* Smooth transition animations */
+        .products-table tbody {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .products-table tbody.loading {
+            opacity: 0.6;
+        }
+        .products-table tbody.fadeOut {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .products-table tbody.fadeIn {
+            opacity: 1;
+            transform: translateY(0);
+            animation: slideInUp 0.4s ease-out;
+        }
+        
+        .products-table tr {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInRow 0.4s ease-out forwards;
+        }
+        .products-table tr:nth-child(1) { animation-delay: 0.1s; }
+        .products-table tr:nth-child(2) { animation-delay: 0.2s; }
+        .products-table tr:nth-child(3) { animation-delay: 0.3s; }
+        .products-table tr:nth-child(4) { animation-delay: 0.4s; }
+        .products-table tr:nth-child(5) { animation-delay: 0.5s; }
+        
+        .products-table tr:hover {
+            background-color: #fcf9f5;
+            transform: translateX(5px);
+        }
+        
+        .loading-message {
+            text-align: center;
+            padding: 30px;
+            color: #67503b;
+            font-style: italic;
+            opacity: 0;
+            animation: fadeInMessage 0.3s ease-in forwards;
+        }
+        
+        .smooth-loading {
+            position: relative;
+            overflow: hidden;
+        }
+        .smooth-loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(103, 80, 59, 0.1), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes fadeInMessage {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes shimmer {
+            to { left: 100%; }
+        }
+        
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .improvement-item {
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+        
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-entry.transition { color: #007bff; }
+        .log-entry.api { color: #28a745; }
+        .log-entry.error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-header">🚀 Smooth Month Picker Transitions - Fixed!</h1>
+        
+        <div class="demo-section">
+            <h3>🎯 Flickering Issues Fixed:</h3>
+            <ul class="feature-list">
+                <li>Added smooth fade-out/fade-in transitions between table states</li>
+                <li>Implemented debouncing (200ms delay) to prevent rapid API calls</li>
+                <li>Enhanced loading states with shimmer effects and proper timing</li>
+                <li>Smooth header transitions with scaling and opacity effects</li>
+                <li>Sequential row animations with staggered delays</li>
+                <li>Improved hover effects with transform animations</li>
+                <li>Prevented multiple loading messages from overlapping</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>⚡ Performance Improvements:</h3>
+            
+            <div class="improvement-item">
+                <strong>Debouncing:</strong> 200ms delay prevents rapid consecutive API calls when user changes months quickly
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Smart Loading States:</strong> Prevents duplicate loading messages and manages transition timing
+            </div>
+            
+            <div class="improvement-item">
+                <strong>CSS Transitions:</strong> Hardware-accelerated animations using transform and opacity
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Sequential Animations:</strong> Staggered row animations create smooth, professional appearance
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Test the Smooth Transitions:</h3>
+            
+            <!-- Interactive demo of the fixed month picker -->
+            <div class="products-table">
+                <div class="products-header">
+                    <h2 id="demo-title">Top Selling Products - All-Time</h2>
+                    <div class="month-filter">
+                        <label for="demo-month-picker">Filter by Month:</label>
+                        <input type="month" id="demo-month-picker" class="month-picker-input">
+                        <button class="reset-month-btn" id="demo-reset">Reset</button>
+                    </div>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Units Sold</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody id="demo-tbody">
+                        <tr><td>Cappuccino</td><td>245</td><td>₱980.00</td></tr>
+                        <tr><td>Latte</td><td>189</td><td>₱756.00</td></tr>
+                        <tr><td>Espresso</td><td>156</td><td>₱468.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="log" id="demo-log">
+                <div class="log-entry">Demo initialized - Ready to test smooth transitions</div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Implementation:</h3>
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; font-size: 12px; overflow-x: auto;">
+// Key improvements in the JavaScript:
+
+1. **Debounced Change Handler:**
+   monthPicker.addEventListener('change', function() {
+       clearTimeout(monthPicker.changeTimeout);
+       monthPicker.changeTimeout = setTimeout(() => {
+           // Actual filtering logic here
+       }, 150); // Prevents rapid calls
+   });
+
+2. **Smooth Table Updates:**
+   function updateProductsTable(products) {
+       tbody.classList.add('fadeOut');
+       setTimeout(() => {
+           // Update content
+           tbody.classList.add('fadeIn');
+       }, 150);
+   }
+
+3. **Enhanced Loading States:**
+   function showProductsMessage(message, type) {
+       if (type === 'info' && tbody.classList.contains('loading')) {
+           return; // Prevent duplicate loading messages
+       }
+   }
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        function addLogEntry(message, type = '') {
+            const log = document.getElementById('demo-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateDemoTable(data, monthYear = null) {
+            const tbody = document.getElementById('demo-tbody');
+            const title = document.getElementById('demo-title');
+            
+            // Add smooth transitions
+            title.classList.add('updating');
+            tbody.classList.add('fadeOut');
+            
+            setTimeout(() => {
+                // Update header
+                if (monthYear) {
+                    const [year, month] = monthYear.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    title.textContent = `Top Selling Products - ${monthName}`;
+                    title.classList.add('filtered');
+                } else {
+                    title.textContent = 'Top Selling Products - All-Time';
+                    title.classList.remove('filtered');
+                }
+                title.classList.remove('updating');
+                
+                // Update table content
+                tbody.innerHTML = '';
+                data.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${item.name}</td><td>${item.units}</td><td>₱${item.revenue}</td>`;
+                    row.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#fcf9f5';
+                        this.style.transform = 'translateX(5px)';
+                    });
+                    row.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '';
+                        this.style.transform = 'translateX(0)';
+                    });
+                    tbody.appendChild(row);
+                });
+                
+                tbody.classList.remove('fadeOut');
+                tbody.classList.add('fadeIn');
+                
+                addLogEntry(`Table updated with ${data.length} products`, 'transition');
+            }, 150);
+        }
+
+        function showDemoLoading(message) {
+            const tbody = document.getElementById('demo-tbody');
+            tbody.classList.add('loading');
+            tbody.style.opacity = '0.7';
+            
+            setTimeout(() => {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="loading-message smooth-loading">
+                            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                            ${message}
+                        </td>
+                    </tr>
+                `;
+                tbody.style.opacity = '1';
+            }, 100);
+        }
+
+        // Demo data for different months
+        const demoData = {
+            'all-time': [
+                { name: 'Cappuccino', units: 245, revenue: '980.00' },
+                { name: 'Latte', units: 189, revenue: '756.00' },
+                { name: 'Espresso', units: 156, revenue: '468.00' }
+            ],
+            '2024-12': [
+                { name: 'Hot Chocolate', units: 189, revenue: '945.00' },
+                { name: 'Cappuccino', units: 167, revenue: '668.00' },
+                { name: 'Americano', units: 134, revenue: '536.00' }
+            ],
+            '2024-11': [
+                { name: 'Pumpkin Spice Latte', units: 210, revenue: '1050.00' },
+                { name: 'Macchiato', units: 145, revenue: '725.00' },
+                { name: 'Mocha', units: 112, revenue: '560.00' }
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const monthPicker = document.getElementById('demo-month-picker');
+            const resetBtn = document.getElementById('demo-reset');
+
+            // Set current month as default
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            monthPicker.value = currentMonth;
+
+            // Debounced change handler (simulates the fixed behavior)
+            monthPicker.addEventListener('change', function() {
+                clearTimeout(monthPicker.changeTimeout);
+                
+                monthPicker.changeTimeout = setTimeout(() => {
+                    const selectedMonth = monthPicker.value;
+                    if (selectedMonth) {
+                        addLogEntry(`Month changed to: ${selectedMonth}`, 'transition');
+                        showDemoLoading('Loading products for selected month...');
+                        
+                        // Simulate API delay
+                        setTimeout(() => {
+                            const data = demoData[selectedMonth] || demoData['2024-11'];
+                            updateDemoTable(data, selectedMonth);
+                            addLogEntry('API call completed successfully', 'api');
+                        }, 500);
+                    } else {
+                        addLogEntry('Month cleared, loading all-time data', 'transition');
+                        updateDemoTable(demoData['all-time']);
+                    }
+                }, 150); // Debounce delay
+            });
+
+            resetBtn.addEventListener('click', function() {
+                addLogEntry('Reset button clicked', 'transition');
+                monthPicker.value = '';
+                showDemoLoading('Loading all-time data...');
+                
+                setTimeout(() => {
+                    updateDemoTable(demoData['all-time']);
+                    addLogEntry('Reset completed', 'api');
+                }, 300);
+            });
+
+            addLogEntry('Demo ready - Try changing the month to see smooth transitions!', 'api');
+        });
+
+        // Initialize with current month data
+        setTimeout(() => {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            updateDemoTable(demoData['2024-12'], currentMonth);
+        }, 100);
+    </script>
+</body>
+</html>
