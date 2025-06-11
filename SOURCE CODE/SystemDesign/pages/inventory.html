@@ -85,21 +85,22 @@
                     </div>
                     
                     <div class="table-container">
-                        <table>                            <thead>
+                        <table>
+                            <thead>
                                 <tr>
-                                    <th width="4%">#</th>
-                                    <th width="12%">Image</th>
-                                    <th width="20%">Product Name</th>
-                                    <th width="12%">Price</th>
-                                    <th width="12%">Category</th>
-                                    <th width="10%">Stock</th>
-                                    <th width="10%">Status</th>
-                                    <th width="20%">Actions</th>
+                                    <th width="5%">#</th>
+                                    <th width="25%">Product Name</th>
+                                    <th width="15%">Price</th>
+                                    <th width="15%">Category</th>
+                                    <th width="12%">Stock</th>
+                                    <th width="12%">Status</th>
+                                    <th width="16%">Actions</th>
                                 </tr>
-                            </thead>                            <tbody id="products-list">
+                            </thead>
+                            <tbody id="products-list">
                                 <!-- Products will be loaded here dynamically -->
                                 <tr>
-                                    <td colspan="8" class="text-center">Loading products...</td>
+                                    <td colspan="7" class="text-center">Loading products...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -124,15 +125,6 @@
                 <div class="modal-body">
                     <form id="product-form">
                         <input type="hidden" id="product-id">
-                        
-                        <!-- Product Image Upload -->
-                        <div class="product-image-upload" id="image-upload-container">
-                            <input type="file" id="product-image" accept="image/*">
-                            <div class="upload-icon">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div class="upload-text">Click to upload product image</div>
-                        </div>
                         
                         <div class="form-row">
                             <div class="form-col">
@@ -315,16 +307,7 @@
         
         // Function to get category-specific default image
         function getCategoryDefaultImage(category) {
-            const categoryImages = {
-                'Hot Coffee': '../assets/images/products/hot-coffee-default.png',
-                'Cold Coffee': '../assets/images/products/cold-coffee-default.png',
-                'Non Coffee': '../assets/images/products/non-coffee-default.png',
-                'Pastry': '../assets/images/products/pastry-default.png',
-                'Sandwich': '../assets/images/products/sandwich-default.png',
-                'Cake': '../assets/images/products/cake-default.png'
-            };
-            
-            return categoryImages[category] || '../assets/images/logo.png';
+            return '../assets/images/logo.png'; // Always return default logo
         }
         
         // Store these functions globally

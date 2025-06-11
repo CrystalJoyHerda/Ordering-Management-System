@@ -6,7 +6,6 @@ let currentPage = 1;
 const productsPerPage = 6;
 let filteredProducts = [];
 let currentModalMode = 'add'; // 'add' or 'edit'
-let selectedImageFile = null;
 
 // API Configuration
 const API_CONFIG_PARAMS = {
@@ -176,9 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setAttribute('autocomplete', 'off');
         });
     }
-    
-    // Image upload preview
-    setupImageUpload();
 });
 
 // Authentication check
@@ -525,7 +521,7 @@ function displayProducts(productsToShow) {
     if (!productsToShow || productsToShow.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center">
+                <td colspan="7" class="text-center">
                     <div class="no-products">
                         <i class="fas fa-coffee"></i>
                         <p>No products found</p>
@@ -558,19 +554,10 @@ function displayProducts(productsToShow) {
         
         // Determine what the status should be based on stock levels
         const autoStatus = determineAutoStatus(stockQuantity, lowStockThreshold);
-        const displayStatus = autoStatus;
-        
-        // Get appropriate image with category fallback
-        const productImage = getProductImage(product);
-        const fallbackImage = getCategoryDefaultImage(product.category);
+        const displayStatus = autoStatus; // Use the automatically determined status for display
         
         row.innerHTML = `
             <td>${startIndex + index + 1}</td>
-            <td>
-                <img src="${productImage}" alt="${product.name}" 
-                     class="product-image" 
-                     onerror="this.onerror=null; this.src='${fallbackImage}'; if(this.src==='${fallbackImage}' && this.complete && this.naturalHeight===0) this.src='../assets/images/logo.png';">
-            </td>
             <td>
                 <strong>${product.name}</strong><br>
                 <small>${product.description}</small>
@@ -634,10 +621,10 @@ function openModal(mode, productId = null) {
     const modalTitle = document.getElementById('modal-title');
     const form = document.getElementById('product-form');
     
-    // Reset form and image upload
+    // Reset form
     form.reset();
-    resetImageUpload();
-      // Get stock field row elements (now separated)
+    
+    // Get stock field row elements (now separated)
     const stockQuantityRow = document.getElementById('stock-quantity-row');
     const lowStockThresholdRow = document.getElementById('low-stock-threshold-row');
     const stockQuantityInput = document.getElementById('product-stock-quantity');
@@ -646,7 +633,8 @@ function openModal(mode, productId = null) {
     if (mode === 'add') {
         modalTitle.textContent = 'Add New Product';
         document.getElementById('product-id').value = '';
-          // Show both stock fields for add mode
+        
+        // Show both stock fields for add mode
         if (stockQuantityRow) {
             stockQuantityRow.style.display = 'flex';
         }
@@ -666,7 +654,8 @@ function openModal(mode, productId = null) {
         }
     } else if (mode === 'edit') {
         modalTitle.textContent = 'Edit Product';
-          // Hide stock quantity field but show low stock threshold field for edit mode
+        
+        // Hide stock quantity field but show low stock threshold field for edit mode
         if (stockQuantityRow) {
             stockQuantityRow.style.display = 'none';
         }
@@ -677,8 +666,11 @@ function openModal(mode, productId = null) {
         // Remove required attribute from stock quantity but keep it for low stock threshold
         if (stockQuantityInput) stockQuantityInput.removeAttribute('required');
         if (lowStockThresholdInput) lowStockThresholdInput.setAttribute('required', 'required');
-          // Find the product by ID
-        const product = products.find(p => p.id === productId);        if (product) {
+        
+        // Find the product by ID
+        const product = products.find(p => p.id === productId);
+        
+        if (product) {
             // Fill form with product data
             document.getElementById('product-id').value = product.id;
             document.getElementById('product-name').value = product.name;
@@ -686,36 +678,10 @@ function openModal(mode, productId = null) {
             document.getElementById('product-category').value = product.category;
             document.getElementById('product-status').value = product.status || 'active';
             document.getElementById('product-description').value = product.description || '';
-              // Populate stock fields (stock quantity hidden, low stock threshold visible)
+            
+            // Populate stock fields (stock quantity hidden, low stock threshold visible)
             document.getElementById('product-stock-quantity').value = product.stock_quantity || 0;
             document.getElementById('product-low-stock-threshold').value = product.low_stock_threshold || 5;
-              // If product has an image, show it in the upload container
-            if (product.image) {
-                const uploadContainer = document.getElementById('image-upload-container');
-                uploadContainer.style.border = 'none';
-                uploadContainer.innerHTML = `
-                    <div class="image-preview" style="width:100%;height:100%;position:relative;">
-                        <img src="${product.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <div class="image-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:none;align-items:center;justify-content:center;border-radius:8px;">
-                            <div style="color:white;text-align:center;">
-                                <i class="fas fa-edit" style="font-size:24px;margin-bottom:5px;"></i>
-                                <div>Click to change image</div>
-                            </div>
-                        </div>
-                        <div class="remove-image" style="position:absolute;top:5px;right:5px;background:rgba(255,0,0,0.7);color:white;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Remove image">
-                            <i class="fas fa-times"></i>
-                        </div>
-                    </div>
-                `;
-                  // Add event listener to remove button
-                uploadContainer.querySelector('.remove-image').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    resetImageUpload();
-                });
-                
-                // Add hover effect and click functionality using helper function
-                addImagePreviewEvents(uploadContainer);
-            }
         }
     }
     
@@ -727,8 +693,6 @@ function openModal(mode, productId = null) {
 function closeModal() {
     const modal = document.getElementById('product-modal');
     modal.classList.remove('show');
-    // Reset the selected image file when closing modal
-    selectedImageFile = null;
 }
 
 // Function to handle form submission
@@ -801,41 +765,12 @@ function editProduct(productId) {
     openModal('edit', productId);
 }
 
-// Function to get category-specific default image
-function getCategoryDefaultImage(category) {
-    const categoryImages = {
-        'Hot Coffee': '../assets/images/products/hot-coffee-default.png',
-        'Cold Coffee': '../assets/images/products/cold-coffee-default.png',
-        'Non Coffee': '../assets/images/products/non-coffee-default.png',
-        'Pastry': '../assets/images/products/pastry-default.png',
-        'Sandwich': '../assets/images/products/sandwich-default.png',
-        'Cake': '../assets/images/products/cake-default.png'
-    };
-    
-    return categoryImages[category] || '../assets/images/logo.png';
-}
-
-// Function to get product image with proper fallback
-function getProductImage(product) {
-    // If product has a specific image and it's not empty
-    if (product.image && product.image.trim() !== '' && product.image !== '../assets/images/logo.png') {
-        return product.image;
-    }
-    
-    // Use category-specific default image
-    return getCategoryDefaultImage(product.category);
-}
-
 // Function to view product details
 function viewProduct(productId) {
     // Find the product
     const product = products.find(p => p.id === productId);
     
     if (product) {
-        // Get appropriate image with category fallback
-        const productImage = getProductImage(product);
-        const fallbackImage = getCategoryDefaultImage(product.category);
-        
         // Create and show a product details modal
         const detailsHTML = `
             <div class="modal-header">
@@ -843,31 +778,23 @@ function viewProduct(productId) {
                 <button class="close-modal" onclick="this.closest('.modal').classList.remove('show')">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="display: flex; margin-bottom: 20px;">
-                    <div style="flex: 0 0 120px; margin-right: 20px;">
-                        <img src="${productImage}" 
-                             alt="${product.name}" 
-                             style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e0d5c5;"
-                             onerror="this.onerror=null; this.src='${fallbackImage}'; if(this.src==='${fallbackImage}' && this.complete && this.naturalHeight===0) this.src='../assets/images/logo.png';">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 10px 0; color: #3b2a1f;">${product.name}</h3>
+                    <div style="margin-bottom: 5px;">
+                        <span class="status-badge ${product.status ? 
+                            (product.status === 'active' ? 'status-active' : 
+                             product.status === 'inactive' ? 'status-inactive' : 'status-low') 
+                            : 'status-active'}">
+                            ${product.status ? 
+                              (product.status.charAt(0).toUpperCase() + product.status.slice(1)) 
+                              : 'Active'}
+                        </span>
                     </div>
-                    <div style="flex: 1;">
-                        <h3 style="margin: 0 0 10px 0; color: #3b2a1f;">${product.name}</h3>
-                        <div style="margin-bottom: 5px;">
-                            <span class="status-badge ${product.status ? 
-                                (product.status === 'active' ? 'status-active' : 
-                                 product.status === 'inactive' ? 'status-inactive' : 'status-low') 
-                                : 'status-active'}">
-                                ${product.status ? 
-                                  (product.status.charAt(0).toUpperCase() + product.status.slice(1)) 
-                                  : 'Active'}
-                            </span>
-                        </div>
-                        <div style="color: #67503b; font-size: 20px; font-weight: 600; margin-top: 10px;">
-                            ${new Intl.NumberFormat('en-PH', {
-                                style: 'currency',
-                                currency: 'PHP'
-                            }).format(product.price)}
-                        </div>
+                    <div style="color: #67503b; font-size: 20px; font-weight: 600; margin-top: 10px;">
+                        ${new Intl.NumberFormat('en-PH', {
+                            style: 'currency',
+                            currency: 'PHP'
+                        }).format(product.price)}
                     </div>
                 </div>
                 
